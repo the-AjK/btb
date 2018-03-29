@@ -1,0 +1,31 @@
+{
+  "name": "dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "downshift": "^1.31.2",
+    "flow-bin": "^0.66.0",
+    "jwt-decode": "^2.2.0",
+    "keycode": "^2.2.0",
+    "material-ui": "^1.0.0-beta.35",
+    "material-ui-icons": "^1.0.0-beta.36",
+    "mobx": "^3.6.1",
+    "mobx-react": "^4.4.2",
+    "moment": "^2.21.0",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-router-dom": "^4.2.2",
+    "react-scripts": "^1.1.1",
+    "react-table": "^6.8.0",
+    "styled-components": "^3.2.3",
+    "superagent": "^3.8.2",
+    "typeface-roboto": "^0.0.54",
+    "validatorjs": "^3.14.2"
+  },
+  "scripts": {
+    "start": "REACT_APP_JTW_TOKEN_STORAGE_KEY='btb_token' react-scripts start",
+    "build": "REACT_APP_JTW_TOKEN_STORAGE_KEY='btb_token' react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "flow": "flow"
+  }
+}
