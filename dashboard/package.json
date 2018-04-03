@@ -25,6 +25,7 @@
   "scripts": {
     "start": "REACT_APP_JTW_TOKEN_STORAGE_KEY='btb_token' react-scripts start",
     "build": "REACT_APP_JTW_TOKEN_STORAGE_KEY='btb_token' react-scripts build",
+    "postinstall": "REACT_APP_JTW_TOKEN_STORAGE_KEY='btb_token' react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "flow": "flow"
   }
