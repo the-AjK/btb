@@ -17,6 +17,10 @@ import GenericCourseSelect from "./inputs/GenericCourseSelect";
 import TableSelect from "./inputs/TableSelect";
 import FloatingSaveButton from "./buttons/FloatingSaveButton";
 import Button from 'material-ui/Button';
+import TimePicker from 'react-times';
+
+import 'react-times/css/material/default.css';
+import 'react-times/css/classic/default.css';
 
 import moment from 'moment';
 
@@ -137,8 +141,8 @@ const Menu = inject("ctx")(
                         console.error(err);
                     } else if (tables) {
                         let t = [];
-                        for(let i=0; i<tables.length; i++){
-                            if(tables[i].enabled){
+                        for (let i = 0; i < tables.length; i++) {
+                            if (tables[i].enabled) {
                                 t.push(tables[i]._id);
                             }
                         }
@@ -223,6 +227,11 @@ const Menu = inject("ctx")(
             handleChangeField = action((field, event) => {
                 this.menu[field] = event.target.value
             });
+
+            handleDeadlineChange = action((value) => {
+                this.menu.deadline = value
+            });
+
 
             handleTableChange = action((tables) => {
                 console.log(tables)
@@ -333,9 +342,10 @@ const Menu = inject("ctx")(
                                             </Grid>
                                             <Grid item xs={12}>
                                                 <Grid container direction={"row"}>
-                                                    <Grid item xs={6} md={4}>
+                                                    <Grid item xs={12} md={4}>
                                                         <TextField
                                                             id="day"
+                                                            fullWidth
                                                             label="Day"
                                                             type="date"
                                                             value={this.menu.day}
@@ -343,18 +353,14 @@ const Menu = inject("ctx")(
                                                             onChange={(e) => { this.handleChangeField('day', e) }}
                                                         />
                                                     </Grid>
-                                                    <Grid item xs={6} md={4}>
-                                                        <TextField
-                                                            id="deadline"
-                                                            label="Deadline"
-                                                            type="time"
-                                                            format="HH:mm"
-                                                            value={this.menu.deadline}
-                                                            onChange={(e) => { this.handleChangeField('deadline', e) }}
-                                                            //className={classes.textField}
-                                                            inputProps={{
-                                                                step: 300, // 5 min
-                                                            }}
+                                                    <Grid item xs={12} md={4}>
+                                                        <TimePicker
+                                                            onTimeChange={this.handleDeadlineChange}
+                                                            time={this.menu.deadline}
+                                                            theme="material"
+                                                            timeMode="24"
+                                                            //showTimezone={true} 
+                                                            timezone="Europe/Rome"
                                                         />
                                                     </Grid>
                                                     <Grid item xs={12} md={4}>
