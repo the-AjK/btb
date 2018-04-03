@@ -106,6 +106,12 @@ exports.login = function (req, res) {
           loginCounter: user.loginCounter + 1,
           lastIp: req.clientIp,
           lastLogin: new Date()
+        }, (err) => {
+          if (err) {
+            console.error(err);
+          } else {
+            console.log("User stats udpated!");
+          }
         });
         //notify root users
         bot.broadcastMessage("User login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, true);
