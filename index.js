@@ -104,42 +104,6 @@ console.log("DB connecting...");
 const db = require("./src/db");
 db.init(() => {
 
-	/*db.addMenu({
-		owner: "5a9a9e660727643f52f94915",
-		enabled: true,
-		label: "Daily menu",
-		firstCourse: {
-			items: [{
-				value: "carbonara"
-			},{
-				value: "aglio, olio, peperoncino",
-				types: ["spaghetti"]
-			}],
-			types: ["spaghetti", "penne integrali"]
-		},
-		secondCourse: {
-			items: ["polpette", "tonno al sesamo"],
-			sideDishes: ["patate e carciofi", "verdura cotta", "cavolfiori al vapore"]
-		},
-		additionalInfos: "Tonno +2euro",
-		deadline: moment().hours(11).format(),
-		tables: [{
-			name: "Tavolo1",
-			availableSeats: 8
-		}, {
-			name: "Tavolo2",
-			availableSeats: 6
-		}, {
-			name: "Tavolo3",
-			availableSeats: 6
-		}, {
-			name: "Riserva",
-			availableSeats: 6
-		}, {
-			name: "Asporti",
-			availableSeats: 99
-		}]
-	})*/
 });
 
 console.log("Starting telegram bot...");
