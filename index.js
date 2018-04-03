@@ -18,6 +18,7 @@ if (process.env.NODE_ENV !== "production") {
 
 const express = require("express"),
 	bodyParser = require("body-parser"),
+	Raven = require('raven'),
 	path = require("path"),
 	cors = require("cors"),
 	auth = require("./src/auth"),
@@ -28,6 +29,9 @@ const express = require("express"),
 
 auth.init(app);
 apiRouter.init(app);
+
+Raven.config(process.env.SENTRY_DSN).install();
+app.use(Raven.requestHandler());
 
 //app.use(require("morgan")("combined"));
 
@@ -64,6 +68,9 @@ app.use((req, res, next) => {
 		return next();
 	}
 });
+
+//Raven error handler
+app.use(Raven.errorHandler());
 
 //body parser error catching middleware
 app.use((req, res, next) => {
