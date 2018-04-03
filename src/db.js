@@ -103,6 +103,14 @@ const UserSchema = new mongoose.Schema({
       type: Boolean,
       default: true
     },
+    adminReminders: {
+      type: Boolean,
+      default: true
+    },
+    rootReminders: {
+      type: Boolean,
+      default: true
+    },
     dailyMenu: {
       type: Boolean,
       default: true
