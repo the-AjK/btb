@@ -12,10 +12,10 @@ const userRoles = roles.userRoles;
 const accessLevels = roles.accessLevels;
 const db = mongoose.connection;
 
-exports.init = function(cb) {
+exports.init = function (cb) {
   mongoose.connect(process.env.MONGODB_URI);
   db.on("error", console.error.bind(console, "connection error:"));
-  db.once("open", function() {
+  db.once("open", function () {
     console.log("DB connected!");
     if (cb) cb();
   });
@@ -261,7 +261,7 @@ const TableSchema = new mongoose.Schema({
 });
 
 //Root user utility presave function
-UserSchema.pre('save', function(next) {
+UserSchema.pre('save', function (next) {
   if (process.env.ROOT_TELEGRAM_ID && this.telegram.id === parseInt(process.env.ROOT_TELEGRAM_ID)) {
     console.log('Saving ***ROOT*** user.')
     this.role = userRoles.root;
@@ -323,7 +323,7 @@ exports.getDailyOrders = (day, cb) => {
 }
 
 function sortSideDishesAndJoin(sd) {
-  return sd.sort(function(a, b) {
+  return sd.sort(function (a, b) {
     return a.localeCompare(b);
   }).join(" - ");
 }
@@ -400,7 +400,11 @@ exports.getDailyOrderStats = (day, cb) => {
 
     };
   Menu.findOne(query, (err, menu) => {
-    if (!err && menu) {
+    if (err) {
+      cb(err || "DB menu error");
+    } else if (!menu) {
+      cb("Daily menu not found");
+    } else {
       Order.find({
         deleted: false,
         menu: menu._id
@@ -411,8 +415,6 @@ exports.getDailyOrderStats = (day, cb) => {
           cb(err || "DB order error");
         }
       });
-    } else {
-      cb(err || "DB menu error");
     }
   });
 }
@@ -444,9 +446,9 @@ exports.getTablesStatus = (day, cb) => {
               used: 0
             }
             for (let i = 0; i < orders.length; i++) {
-              if (orders[i].table._id.equals(menu.tables[j]._id)){
+              if (orders[i].table._id.equals(menu.tables[j]._id)) {
                 result[menu.tables[j]._id].used += 1;
-              }                
+              }
             }
           }
           cb(null, result);
