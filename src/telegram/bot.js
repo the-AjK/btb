@@ -220,15 +220,64 @@ function parseMention(ctx) {
   return mentions;
 }
 
-//TODO generate mention handler based on the available tables?
 //Mention handler to broadcast by table
-bot.mention(['@table', '@takeaway', '@table1', '@table2', '@table3'], (ctx) => {
-  console.log('************************************mention')
+bot.mention(['@tables', '@table'], (ctx) => {
   const mentions = parseMention(ctx);
   for (let idx in mentions) {
     const mention = mentions[idx];
-    //TODO broadcast message to users who ordered at this table
-    console.log("Broadcasting to: " + mention);
+    DB.getDailyOrders(null, (err, orders) => {
+      if (err) {
+        ctx.reply(err);
+      } else {
+        let message = "[" + ctx.session.user.email + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text,
+          userMessage = "Broadcast service",
+          userHasOrdered = false,
+          counter = 0;
+        if (mention == 'table') {
+          //find user table and broadcast the message
+          for (let i = 0; i < orders.length; i++) {
+
+            if (orders[i].owner._id.equals(ctx.session.user._id)) {
+              userHasOrdered = true;
+              const userTableName = orders[i].table.name;
+              for (let j = 0; j < orders.length; j++) {
+                if (!orders[j].owner._id.equals(ctx.session.user._id) &&
+                  orders[j].table.name == userTableName) {
+                  bot.telegram.sendMessage(orders[j].owner.telegram.id, message, {
+                    parse_mode: "markdown"
+                  });
+                  counter += 1;
+                }
+              }
+            }
+            break;
+          }
+          if (!userHasOrdered) {
+            userMessage = "You should place an order and choose your table!"
+          } else if (counter == 0) {
+            userMessage = "Ehm, you are the only one in your table..."
+          }
+        } else if (mention == 'tables') {
+          for (let i = 0; i < orders.length; i++) {
+            if (!orders[i].owner._id.equals(ctx.session.user._id)) {
+              bot.telegram.sendMessage(orders[i].owner.telegram.id, message, {
+                parse_mode: "markdown"
+              });
+              counter += 1;
+            } else {
+              userHasOrdered = true;
+            }
+          }
+          if (counter == 0) {
+            userMessage = "Seems like people are not hungry anymore!"
+          }
+        }
+        if (counter > 0) {
+          userMessage = "Message broadcasted to " + counter + " users."
+        }
+        ctx.reply(userMessage);
+      }
+    });
   }
 })
 
@@ -292,7 +341,7 @@ function formatOrder(order) {
     }
   }
   text = text + "\n\n__Table__:\n* - " + order.table.name + "*";
-  text = text + "\n\nare you Hungry? 🤤";
+  text = text + "\n\nare you hungry? 🤤";
   return text;
 }
 exports.formatOrder = formatOrder;
@@ -385,7 +434,7 @@ function broadcastMessage(message, accessLevel, opts, silent) {
 }
 exports.broadcastMessage = broadcastMessage;
 
-exports.broadcastDailyMenu = function() {
+exports.broadcastDailyMenu = function () {
   _getDailyMenu((err, text, menu) => {
     if (err) {
       console.error(err);
@@ -396,7 +445,7 @@ exports.broadcastDailyMenu = function() {
   });
 }
 
-exports.init = function(expressApp) {
+exports.init = function (expressApp) {
   bot.startPolling();
   if (process.env.NODE_ENV === "production") {
     broadcastMessage("BTB has started!", accessLevels.root);

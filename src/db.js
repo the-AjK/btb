@@ -311,13 +311,15 @@ exports.getDailyOrders = (day, cb) => {
 
     };
   Menu.findOne(query, (err, menu) => {
-    if (!err && menu) {
+    if (err) {
+      cb("DB error");
+    } else if (!menu) {
+      cb("Daily menu not available yet")
+    } else {
       Order.find({
         deleted: false,
         menu: menu._id
-      }).exec(cb)
-    } else {
-      cb(err || "DB error");
+      }).populate('owner').populate('menu').populate('table').exec(cb)
     }
   });
 }
