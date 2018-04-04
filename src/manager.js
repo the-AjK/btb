@@ -167,9 +167,9 @@ function _updateUser(req, res) {
         } else if (!user) {
             return res.sendStatus(404);
         }
-        if (!user.telegram.enabled && data.$set && data.$set["telegram.enabled"] && data.sendNotification) {
+        if (!user.telegram.enabled && data.$set && data.$set["telegram.enabled"] == true && data.sendNotification) {
             botNotifications.accountEnabledDisabled(user, true);
-        } else if (user.telegram.enabled && data.$set && !data.$set["telegram.enabled"] && data.sendNotification) {
+        } else if (user.telegram.enabled && data.$set && data.$set["telegram.enabled"] == false && data.sendNotification) {
             botNotifications.accountEnabledDisabled(user, false);
         }
         res.sendStatus(200);
@@ -766,7 +766,7 @@ exports.tables = {
     delete: _deleteTable
 };
 
-exports.getStats = function(req, res) {
+exports.getStats = function (req, res) {
     let stats = {
         users: 1,
         dailyOrders: 2,
