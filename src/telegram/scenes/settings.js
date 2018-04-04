@@ -208,7 +208,7 @@ function setDailyMenuSetting(ctx, status) {
 
 function generateAbout(ctx) {
     let about = "*BiteTheBot* v1.0.0\n\n" +
-        "made with ❤️ by *Alberto Garbui* aka JK\n" +
+        "made with ❤️ by [Alberto Garbui](tg://user?id=7050263) aka JK\n" +
         "(alberto.garbui@gmail.com)\n" +
         "\n" +
         "_A special thanks goes to my girlfriend Giulia for the support and for choosing the name BiteTheBot._" +
