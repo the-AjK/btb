@@ -6,11 +6,12 @@
 "use strict";
 
 const roles = require("../roles"),
+    db = require("../db"),
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels;
 
 module.exports = {
-    register: function(ctx) {
+    register: function (ctx) {
         let keyboard = [],
             cmd = {
                 register: "Register"
@@ -31,7 +32,7 @@ module.exports = {
             cmd: cmd
         };
     },
-    btb: function(ctx) {
+    btb: function (ctx) {
         let keyboard = [],
             cmd = {
                 menu: "Menu",
@@ -67,7 +68,7 @@ module.exports = {
             cmd: cmd
         };
     },
-    order: function(ctx) {
+    order: function (ctx) {
         let keyboard = [],
             cmd = {
                 first: "First course",
@@ -99,34 +100,21 @@ module.exports = {
 
         return obj;
     },
-    settings: function(ctx) {
+    reminders: function (ctx) {
         let keyboard = [],
             cmd = {
-                orderDelete: "✖️ Delete Order",
-                beer: "🍺 Beer",
+                back: "Back to settings",
                 orderReminder: "⏰ Order Reminder",
                 dailyMenuReminder: "⏰ Menu Reminder",
-                leave: "❗️ Leave the ship",
-                about: "ℹ️ About"
             };
         keyboard.push([{
             text: cmd.dailyMenuReminder
-        }, {
-            text: cmd.beer
         }]);
         keyboard.push([{
             text: cmd.orderReminder
-        }, {
-            text: cmd.about
         }]);
         keyboard.push([{
-            text: "Cancel"
-        }]);
-        keyboard.push([{
-            text: cmd.orderDelete
-        }]);
-        keyboard.push([{
-            text: cmd.leave
+            text: cmd.back
         }]);
 
         let obj = {
@@ -139,7 +127,7 @@ module.exports = {
                     keyboard: keyboard
                 })
             },
-            text: "*Settings*",
+            text: "*Reminders*",
             cmd: cmd
         };
 
@@ -181,30 +169,6 @@ module.exports = {
             });
         }
 
-        obj[cmd.orderDelete] = () => {
-            let inline_keyboard = [
-                    [{
-                        text: 'Delete',
-                        callback_data: 'deletedailyorder'
-                    }, {
-                        text: 'Cancel',
-                        callback_data: 'cancel'
-                    }]
-                ],
-                text = "Are you sure to delete your daily order?";
-
-            ctx.reply(text, {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: inline_keyboard
-                })
-            }).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
-        }
-
         // cmd dailyMenuReminder
         obj[cmd.dailyMenuReminder] = () => {
             let inline_keyboard = [
@@ -230,6 +194,88 @@ module.exports = {
                 ];
                 text = "Daily Menu reminder is *ON*, do you like to switch it off?";
             }
+
+            ctx.reply(text, {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    inline_keyboard: inline_keyboard
+                })
+            }).then((msg) => {
+                //lets save the message to delete it afterward
+                ctx.session.lastMessage = msg;
+            });
+        }
+
+        return obj;
+    },
+    settings: function (ctx) {
+        let keyboard = [],
+            cmd = {
+                orderDelete: "✖️ Delete Order",
+                beer: "🍺 Beer",
+                reminders: "⏰ Reminders",
+                leave: "❗️ Leave the ship",
+                about: "ℹ️ About"
+            };
+
+        let done = false,
+            userHasOrdered = false;
+        db.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
+            if (!err && order) {
+                userHasOrdered = true;
+            }
+            done = true;
+        });
+        require('deasync').loopWhile(function () {
+            return !done;
+        });
+
+        if (userHasOrdered) {
+            keyboard.push([{
+                text: cmd.orderDelete
+            }]);
+        }
+        keyboard.push([{
+            text: cmd.beer
+        }, {
+            text: cmd.reminders
+        }]);
+        keyboard.push([{
+            text: cmd.about
+        }]);
+        keyboard.push([{
+            text: "Cancel"
+        }]);
+        keyboard.push([{
+            text: cmd.leave
+        }]);
+
+        let obj = {
+            availableCmd: Object.keys(cmd).map(c => cmd[c]),
+            opts: {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    one_time_keyboard: false,
+                    keyboard: keyboard
+                })
+            },
+            text: "*Settings*",
+            cmd: cmd
+        };
+
+        obj[cmd.orderDelete] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'Delete',
+                        callback_data: 'deletedailyorder'
+                    }, {
+                        text: 'Cancel',
+                        callback_data: 'cancel'
+                    }]
+                ],
+                text = "Are you sure to delete your daily order?";
 
             ctx.reply(text, {
                 parse_mode: "markdown",

@@ -27,10 +27,16 @@ function textManager(ctx) {
 
     if (keyboards.settings(ctx)[ctx.message.text]) {
         keyboards.settings(ctx)[ctx.message.text]();
+    } else if (ctx.message.text == keyboards.settings(ctx).cmd.reminders) {
+        ctx.reply(keyboards.reminders(ctx).text, keyboards.reminders(ctx).opts);
+    } else if (keyboards.reminders(ctx)[ctx.message.text]) {
+        keyboards.reminders(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.settings(ctx).cmd.about) {
         ctx.reply(generateAbout(ctx), {
             parse_mode: "markdown"
         });
+    } else if (ctx.message.text == keyboards.reminders(ctx).cmd.back) {
+        ctx.reply(keyboards.settings(ctx).text, keyboards.settings(ctx).opts);
     } else {
         ctx.reply("ACK", keyboards.btb(ctx).opts)
         ctx.scene.leave();
@@ -89,7 +95,7 @@ function deleteDailyOrder(ctx) {
                 menu: menu._id
             }).exec((err, order) => {
                 if (!err && order) {
-                    ctx.reply("Your daily order has been deleted!"); 
+                    ctx.reply("Your daily order has been deleted!");
                 } else if (!order) {
                     ctx.reply("You didn't placed any order yet! c'mon...");
                 } else {
