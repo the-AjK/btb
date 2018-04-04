@@ -26,7 +26,12 @@ exports.accountEnabledDisabled = function (user, status) {
         }
     if (status) {
         msg = "Hey *" + name + "*\nyour account has been enabled!\nGive me a beer!";
-        opts = keyboards.btb().opts;
+        const ctx = {
+            session: {
+                user: user
+            }
+        };
+        opts = keyboards.btb(ctx).opts;
     }
     bot.telegram.sendMessage(user.telegram.id, msg, opts);
 }
@@ -47,7 +52,12 @@ exports.dailyMenu = function (menu) {
         } else {
             for (let i = 0; i < users.length; i++) {
                 console.log("broadcasting dailyMenu to: " + users[i].telegram.id);
-                bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb().opts);
+                const ctx = {
+                    session: {
+                        user: users[i]
+                    }
+                };
+                bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts);
             }
         }
     });
@@ -71,7 +81,12 @@ exports.dailyMenuUpdated = function (menu) {
                 DB.getDailyUserOrder(null, users[i]._id, (err, order) => {
                     if (!err && order) {
                         console.log("broadcasting dailyMenu update to: " + users[i].telegram.id);
-                        bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb().opts)
+                        const ctx = {
+                            session: {
+                                user: users[i]
+                            }
+                        };
+                        bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts)
                     }
                 });
             }
@@ -104,7 +119,12 @@ exports.orderReminder = function (deadline) {
                 DB.getDailyUserOrder(null, users[i]._id, (err, order) => {
                     if (!err && !order) {
                         console.log("broadcasting orderReminder to: " + users[i].telegram.id);
-                        bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb().opts);
+                        const ctx = {
+                            session: {
+                                user: users[i]
+                            }
+                        };
+                        bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts);
                     }
                 });
             }
