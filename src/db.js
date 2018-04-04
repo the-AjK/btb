@@ -403,7 +403,7 @@ exports.getDailyOrderStats = (day, cb) => {
     if (err) {
       cb(err || "DB menu error");
     } else if (!menu) {
-      cb("Daily menu not found");
+      cb("Daily menu not available yet");
     } else {
       Order.find({
         deleted: false,
@@ -482,7 +482,7 @@ exports.getDailyUserOrder = (day, userID, cb) => {
         menu: menu._id
       }).populate('menu').populate('table').populate('owner').exec(cb)
     } else if (!menu) {
-      cb("Daily menu not available yet.");
+      cb("Daily menu not available yet");
     } else {
       console.error(err);
       cb(err || "DB error");

@@ -178,7 +178,7 @@ function textManager(ctx) {
     } else {
       DB.getDailyOrderStats(null, (err, stats) => {
         if (err) {
-          ctx.reply("DB error");
+          ctx.reply(err);
         } else {
           ctx.reply(formatOrderComplete(stats), {
             parse_mode: "markdown"
@@ -337,7 +337,7 @@ function _getDailyMenu(cb) {
       console.error(err);
       cb("Error while retrieving the daily menu");
     } else if (!menu) {
-      cb("Daily menu not available yet.");
+      cb("Daily menu not available yet");
     } else {
       cb(null, formatMenu(menu), menu);
     }
