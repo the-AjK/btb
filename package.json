@@ -5,11 +5,11 @@
   "main": "index.js",
   "repository": "https://github.com/the-AjK/btb.git",
   "author": "Alberto Garbui aka JK <alberto.garbui@gmail.com>",
-  "license": "UNLICENSED",
+  "license": "BSD-3",
   "private": true,
   "scripts": {
     "start": "node index.js",
-    "postinstall": "cd dashboard/ && yarn install"
+    "postinstall": "cd dashboard/ && yarn install && yarn run build"
   },
   "dependencies": {
     "async": "^2.6.0",

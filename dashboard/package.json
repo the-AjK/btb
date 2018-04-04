@@ -1,7 +1,11 @@
 {
   "name": "dashboard",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "BiteTheBot - Smart menu ordering system dashboard",
+  "repository": "https://github.com/the-AjK/btb.git",
+  "author": "Alberto Garbui aka JK <alberto.garbui@gmail.com>",
   "private": true,
+  "license": "BSD-3",
   "dependencies": {
     "downshift": "^1.31.2",
     "flow-bin": "^0.66.0",
@@ -26,7 +30,6 @@
   "scripts": {
     "start": "REACT_APP_JTW_TOKEN_STORAGE_KEY='btb_token' react-scripts start",
     "build": "REACT_APP_JTW_TOKEN_STORAGE_KEY='btb_token' react-scripts build",
-    "postinstall": "REACT_APP_JTW_TOKEN_STORAGE_KEY='btb_token' react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "flow": "flow"
   }
