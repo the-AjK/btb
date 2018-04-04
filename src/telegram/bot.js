@@ -201,12 +201,26 @@ function textManager(ctx) {
       msg = bender.getRandomTagQuote(["hi", "fuck", "ass"]);
       //reset session counter to start answer politely again
       ctx.session.mainCounter = 0;
-      replyDiscussion(ctx, msg)
+      ctx.replyWithSticker({
+        source: require('fs').createReadStream(__dirname + "/../../img/11.webp")
+      }).then(() => {
+        replyDiscussion(ctx, msg);
+      });
     } else {
-      replyDiscussion(ctx, msg, keyboards.btb(ctx).opts)
+      ctx.replyWithSticker({
+        source: require('fs').createReadStream(__dirname + "/../../img/0" + getRandomInt(1, 10) +".webp")
+      }).then(() => {
+        replyDiscussion(ctx, msg, keyboards.btb(ctx).opts)
+      });
     }
   }
 };
+
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min)) + min; //Il max è escluso e il min è incluso
+}
 
 function parseMention(ctx) {
   //ctx.message.entities = [ { offset: 0, length: 7, type: 'mention' } ]
