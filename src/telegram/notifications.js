@@ -44,7 +44,7 @@ exports.dailyMenu = function (menu) {
             "deleted": false,
             "settings.dailyMenu": true
         },
-        message = "New daily menu is available!\n" + require('./bot').formatMenu(menu)
+        message = "🤘 New daily menu is available!\n" + require('./bot').formatMenu(menu)
 
     DB.User.find(query, (err, users) => {
         if (err) {
@@ -71,7 +71,7 @@ exports.dailyMenuUpdated = function (menu) {
             "deleted": false,
             "settings.dailyMenu": true
         },
-        message = "Daily menu has been changed and your order has been deleted!\nPlease place your order again.";
+        message = "⚠️ Daily menu has been changed and your order has been deleted!\nPlease place your order again.";
 
     DB.User.find(query, (err, users) => {
         if (err) {
@@ -103,7 +103,7 @@ exports.orderReminder = function (deadline) {
         "deleted": false,
         "settings.orderReminder": true
     };
-    let message = "*Hurry up!*\nIf you wanna eat today, you should place an order before the deadline";
+    let message = "🚀 *Hurry up!*\nIf you wanna eat today, you should place an order before the deadline";
 
     if (deadline) {
         message = message + " (" + moment(deadline).format('HH:mm') + ")";

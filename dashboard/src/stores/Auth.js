@@ -47,11 +47,6 @@ export default class Auth {
         return this.jwt.iss === "BTB" && !isExpired;
       }
     });
-
-    setInterval(() => {
-      //TODO check token expiring
-
-    }, 60000);
   }
 
   clearToken = action(value => {

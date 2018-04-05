@@ -15,7 +15,12 @@ import ActionsButtons from "./buttons/ActionsButtons"
 import Button from "material-ui/Button";
 
 const styles = theme => ({
-
+    enabled: {
+        color: "green"
+    },
+    disabled: {
+        color: "red"
+    }
 });
 
 const Tables = inject("ctx")(
@@ -123,7 +128,7 @@ const Tables = inject("ctx")(
                         Header: 'Enabled',
                         accessor: 'enabled',
                         filterable: false,
-                        Cell: props => <Button onClick={this.handleEnabled(props)}>{props.value ? "Enabled" : "Disabled"}</Button>
+                        Cell: props => <Button className={props.value ? classes.enabled : classes.disabled} onClick={this.handleEnabled(props)}>{props.value ? "Enabled" : "Disabled"}</Button>
                     }, {
                         Header: 'Name',
                         accessor: 'name',

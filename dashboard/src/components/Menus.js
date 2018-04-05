@@ -16,7 +16,12 @@ import EnabledIcon from "material-ui-icons/Done"
 import DisabledIcon from "material-ui-icons/Clear"
 
 const styles = theme => ({
-
+    enabled: {
+        color: "green"
+    },
+    disabled: {
+        color: "red"
+    }
 });
 
 const Menus = inject("ctx")(
@@ -73,13 +78,13 @@ const Menus = inject("ctx")(
                         Header: 'Enabled',
                         accessor: 'enabled',
                         filterable: false,
-                        Cell: props => { return props.value ? <EnabledIcon /> : <DisabledIcon /> }
+                        Cell: props => { return props.value ? <EnabledIcon className={props.value ? classes.enabled : classes.disabled}/> : <DisabledIcon className={props.value ? classes.enabled : classes.disabled}/> }
                     }, {
                         Header: 'Deleted',
                         accessor: 'deleted',
                         filterable: false,
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
-                        Cell: props => { return props.value ? <EnabledIcon /> : <DisabledIcon /> }
+                        Cell: props => { return props.value ? <EnabledIcon className={!props.value ? classes.enabled : classes.disabled}/> : <DisabledIcon className={!props.value ? classes.enabled : classes.disabled}/> }
                     }, {
                         Header: 'Label',
                         accessor: 'label'

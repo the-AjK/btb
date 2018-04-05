@@ -23,6 +23,7 @@
     "express": "^4.16.2",
     "express-rate-limit": "^2.11.0",
     "jsonwebtoken": "^8.2.0",
+    "md5": "^2.2.1",
     "moment": "^2.21.0",
     "mongoose": "^5.0.7",
     "morgan": "^1.9.0",

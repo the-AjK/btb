@@ -104,14 +104,14 @@ function registerUser(ctx) {
             //ROOT user
             ctx.reply("ROOT Registration successfull.", keyboards.btb(ctx).opts);
             bot.broadcastMessage(
-                "New ROOT user: " + newUser.username + " (telegramID: " + newUser.telegram.id + ")",
+                "New ROOT user: [" + newUser.username + "](tg://user?id=" + newUser.telegram.id + ")",
                 accessLevels.root
             );
         } else {
             //Non root users
             ctx.reply("Registration successfull.\nThe admin should enable your account soon. Please wait.");
             bot.broadcastMessage(
-                "New user: " + newUser.username + " (telegramID: " + newUser.telegram.id + ")",
+                "New pending user: [" + newUser.username + "](tg://user?id=" + newUser.telegram.id + ")",
                 accessLevels.admin
             );
         }

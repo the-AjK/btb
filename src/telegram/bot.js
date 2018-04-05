@@ -160,7 +160,7 @@ function textManager(ctx) {
   if (ctx.message.text == 'ACK') {
     //user is coming back from a scene
     return;
-  } else if (ctx.message.text.toLowerCase().indexOf("menu") != -1) {
+  } else if (ctx.message.text.toLowerCase().indexOf("menu") == 0) {
     ctx.session.mainCounter = 0;
     _getDailyMenu((err, text, menu) => {
       ctx.reply(text || err, {
@@ -208,7 +208,7 @@ function textManager(ctx) {
       });
     } else {
       ctx.replyWithSticker({
-        source: require('fs').createReadStream(__dirname + "/../../img/0" + getRandomInt(1, 10) +".webp")
+        source: require('fs').createReadStream(__dirname + "/../../img/0" + getRandomInt(1, 10) + ".webp")
       }).then(() => {
         replyDiscussion(ctx, msg, keyboards.btb(ctx).opts)
       });
@@ -308,7 +308,7 @@ function formatMenu(menu) {
     "\n__Daily menu__: *" + moment(menu.day).format("MMMM Do YYYY") + "*" +
     "\n\n__First courses__:";
   menu.firstCourse.items.map((fc) => {
-    text = text + "\n\n- *" + fc.value + "*:";
+    text = text + "\n\n- *" + fc.value + "*" + (fc.condiments.length > 0 ? ":" : "");
     fc.condiments.map((c) => {
       text = text + "\n  -- *" + c + "*"
     });

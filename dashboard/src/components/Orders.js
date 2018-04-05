@@ -11,9 +11,16 @@ import { withStyles } from "material-ui/styles";
 import Table from "./GenericTable"
 import Grid from "material-ui/Grid";
 import ActionsButtons from "./buttons/ActionsButtons"
+import EnabledIcon from "material-ui-icons/Done"
+import DisabledIcon from "material-ui-icons/Clear"
 
 const styles = theme => ({
-
+    enabled: {
+        color: "green"
+    },
+    disabled: {
+        color: "red"
+    }
 });
 
 const Orders = inject("ctx")(
@@ -83,6 +90,12 @@ const Orders = inject("ctx")(
                         id: 'tableName',
                         Header: 'Table',
                         accessor: d => { return d.table ? d.table.name : '-' }
+                    }, {
+                        Header: 'Deleted',
+                        accessor: 'deleted',
+                        filterable: false,
+                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
+                        Cell: props => { return props.value ? <EnabledIcon className={!props.value ? classes.enabled : classes.disabled} /> : <DisabledIcon className={!props.value ? classes.enabled : classes.disabled} /> }
                     }, {
                         Header: 'Created at',
                         accessor: 'createdAt',

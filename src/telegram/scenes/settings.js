@@ -59,6 +59,14 @@ scene.on("callback_query", ctx => {
         setOrderReminderSetting(ctx, false);
     } else if (ctx.update.callback_query.data == 'orderreminderon') {
         setOrderReminderSetting(ctx, true);
+    } else if (ctx.update.callback_query.data == 'adminremindersoff') {
+        setAdminReminders(ctx, false);
+    } else if (ctx.update.callback_query.data == 'adminreminderson') {
+        setAdminReminders(ctx, true);
+    } else if (ctx.update.callback_query.data == 'rootremindersoff') {
+        setRootReminders(ctx, false);
+    } else if (ctx.update.callback_query.data == 'rootreminderson') {
+        setRootReminders(ctx, true);
     } else if (ctx.update.callback_query.data.toLowerCase().indexOf('pint') != -1) {
         addBeer(ctx);
     } else if (ctx.update.callback_query.data == 'leave') {
@@ -201,7 +209,43 @@ function setDailyMenuSetting(ctx, status) {
             ctx.reply("Something went wrong...");
             return;
         }
-        ctx.answerCbQuery("Daily Menu " + (updatedUser.settings.dailyMenu == true ? "ON" : "OFF") + "!", true);
+        ctx.answerCbQuery("Daily Menu Notification " + (updatedUser.settings.dailyMenu == true ? "ON" : "OFF") + "!", true);
+        ctx.session.user = updatedUser;
+    });
+}
+
+function setAdminReminders(ctx, status) {
+    DB.User.findByIdAndUpdate(ctx.session.user._id, {
+        $set: {
+            "settings.adminReminders": status
+        }
+    }, {
+        new: true
+    }, (err, updatedUser) => {
+        if (err) {
+            console.error(err);
+            ctx.reply("Something went wrong...");
+            return;
+        }
+        ctx.answerCbQuery("Admin Reminders " + (updatedUser.settings.dailyMenu == true ? "ON" : "OFF") + "!", true);
+        ctx.session.user = updatedUser;
+    });
+}
+
+function setRootReminders(ctx, status) {
+    DB.User.findByIdAndUpdate(ctx.session.user._id, {
+        $set: {
+            "settings.rootReminders": status
+        }
+    }, {
+        new: true
+    }, (err, updatedUser) => {
+        if (err) {
+            console.error(err);
+            ctx.reply("Something went wrong...");
+            return;
+        }
+        ctx.answerCbQuery("Root Reminders " + (updatedUser.settings.dailyMenu == true ? "ON" : "OFF") + "!", true);
         ctx.session.user = updatedUser;
     });
 }
@@ -212,6 +256,8 @@ function generateAbout(ctx) {
         "(alberto.garbui@gmail.com)\n" +
         "\n" +
         "_A special thanks goes to my girlfriend Giulia for the support and for choosing the name BiteTheBot._" +
-        "";
+        "\n\n*Tips&Tricks*:" +
+        "\nOnce you have placed an order you can use mentions like *@ table* to broadcast a message to all the people who will eat at the same table as yours." + 
+        "\nYou can use *@ tables* to broadcast a message to all the people who already made an order.";
     return about;
 }

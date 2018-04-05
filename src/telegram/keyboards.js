@@ -104,8 +104,10 @@ module.exports = {
         let keyboard = [],
             cmd = {
                 back: "Back to settings",
-                orderReminder: "⏰ Order Reminder",
-                dailyMenuReminder: "⏰ Menu Reminder",
+                orderReminder: "Order Reminder",
+                dailyMenuReminder: "Daily Menu Notification",
+                rootReminders: "Root Notifications",
+                adminReminders: "Admin Notifications",
             };
         keyboard.push([{
             text: cmd.dailyMenuReminder
@@ -113,6 +115,16 @@ module.exports = {
         keyboard.push([{
             text: cmd.orderReminder
         }]);
+        if (ctx && ctx.session.user && roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+            keyboard.push([{
+                text: cmd.adminReminders
+            }]);
+        }
+        if (ctx && ctx.session.user && roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+            keyboard.push([{
+                text: cmd.rootReminders
+            }]);
+        }
         keyboard.push([{
             text: cmd.back
         }]);
@@ -131,7 +143,90 @@ module.exports = {
             cmd: cmd
         };
 
-        // cmd reminder
+        obj[cmd.rootReminders] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'On',
+                        callback_data: 'rootreminderson'
+                    }, {
+                        text: 'Cancel',
+                        callback_data: 'cancel'
+                    }]
+                ],
+                text = "Root Notifications are *OFF*, do you like to switch them on?";
+
+            if (ctx.session.user.settings.rootReminders == true) {
+                inline_keyboard = [
+                    [{
+                        text: 'Off',
+                        callback_data: 'rootremindersoff'
+                    }, {
+                        text: 'Cancel',
+                        callback_data: 'cancel'
+                    }]
+                ];
+                text = "Root Notifications are *ON*, do you like to switch them off?";
+            }
+
+            let infoMessage = "*Root Notifications setting* allow you to receive roots related notifications";
+            ctx.reply(infoMessage, {
+                parse_mode: "markdown"
+            }).then(() => {
+                ctx.reply(text, {
+                    parse_mode: "markdown",
+                    force_reply: true,
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: inline_keyboard
+                    })
+                }).then((msg) => {
+                    //lets save the message to delete it afterward
+                    ctx.session.lastMessage = msg;
+                });
+            });
+        }
+
+        obj[cmd.adminReminders] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'On',
+                        callback_data: 'adminreminderson'
+                    }, {
+                        text: 'Cancel',
+                        callback_data: 'cancel'
+                    }]
+                ],
+                text = "Admin Notifications are *OFF*, do you like to switch them on?";
+
+            if (ctx.session.user.settings.adminReminders == true) {
+                inline_keyboard = [
+                    [{
+                        text: 'Off',
+                        callback_data: 'adminremindersoff'
+                    }, {
+                        text: 'Cancel',
+                        callback_data: 'cancel'
+                    }]
+                ];
+                text = "Admin Notifications are *ON*, do you like to switch them off?";
+            }
+
+            let infoMessage = "*Admin Notifications setting* allow you to receive admins related notifications";
+            ctx.reply(infoMessage, {
+                parse_mode: "markdown"
+            }).then(() => {
+                ctx.reply(text, {
+                    parse_mode: "markdown",
+                    force_reply: true,
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: inline_keyboard
+                    })
+                }).then((msg) => {
+                    //lets save the message to delete it afterward
+                    ctx.session.lastMessage = msg;
+                });
+            });
+        }
+
         obj[cmd.orderReminder] = () => {
             let inline_keyboard = [
                     [{
@@ -142,7 +237,7 @@ module.exports = {
                         callback_data: 'cancel'
                     }]
                 ],
-                text = "Order reminder is *OFF*, do you like to switch it on?";
+                text = "Order Reminder is *OFF*, do you like to switch it on?";
 
             if (ctx.session.user.settings.orderReminder == true) {
                 inline_keyboard = [
@@ -154,19 +249,25 @@ module.exports = {
                         callback_data: 'cancel'
                     }]
                 ];
-                text = "Order reminder is *ON*, do you like to switch it off?";
+                text = "Order Reminder is *ON*, do you like to switch it off?";
             }
 
-            ctx.reply(text, {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: inline_keyboard
-                })
-            }).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
+            let infoMessage = "*Order Reminder setting* allow you to receive a reminder if you didn't placed any order before the daily deadline";
+            ctx.reply(infoMessage, {
+                parse_mode: "markdown"
+            }).then(() => {
+                ctx.reply(text, {
+                    parse_mode: "markdown",
+                    force_reply: true,
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: inline_keyboard
+                    })
+                }).then((msg) => {
+                    //lets save the message to delete it afterward
+                    ctx.session.lastMessage = msg;
+                });
             });
+
         }
 
         // cmd dailyMenuReminder
@@ -180,7 +281,7 @@ module.exports = {
                         callback_data: 'cancel'
                     }]
                 ],
-                text = "Daily Menu reminder is *OFF*, do you like to switch it on?";
+                text = "Daily Menu Notification is *OFF*, do you like to switch it on?";
 
             if (ctx.session.user.settings.dailyMenu == true) {
                 inline_keyboard = [
@@ -192,19 +293,24 @@ module.exports = {
                         callback_data: 'cancel'
                     }]
                 ];
-                text = "Daily Menu reminder is *ON*, do you like to switch it off?";
+                text = "Daily Menu Notification is *ON*, do you like to switch it off?";
             }
 
-            ctx.reply(text, {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: inline_keyboard
-                })
-            }).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
+            let infoMessage = "*Daily Menu Notification setting* allow you to receive your daily menu as soon as it becomes available";
+            ctx.reply(infoMessage, {
+                parse_mode: "markdown"
+            }).then(() => {
+                ctx.reply(text, {
+                    parse_mode: "markdown",
+                    force_reply: true,
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: inline_keyboard
+                    })
+                }).then((msg) => {
+                    //lets save the message to delete it afterward
+                    ctx.session.lastMessage = msg;
+                });
+            })
         }
 
         return obj;
