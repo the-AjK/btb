@@ -208,7 +208,7 @@ function textManager(ctx) {
       });
     } else {
       ctx.replyWithSticker({
-        source: require('fs').createReadStream(__dirname + "/../../img/0" + getRandomInt(1, 10) +".webp")
+        source: require('fs').createReadStream(__dirname + "/../../img/0" + getRandomInt(1, 10) + ".webp")
       }).then(() => {
         replyDiscussion(ctx, msg, keyboards.btb(ctx).opts)
       });
@@ -308,7 +308,7 @@ function formatMenu(menu) {
     "\n__Daily menu__: *" + moment(menu.day).format("MMMM Do YYYY") + "*" +
     "\n\n__First courses__:";
   menu.firstCourse.items.map((fc) => {
-    text = text + "\n\n- *" + fc.value + "*:";
+    text = text + "\n\n- *" + fc.value + "*" + (fc.condiments.length > 0 ? ":" : "");
     fc.condiments.map((c) => {
       text = text + "\n  -- *" + c + "*"
     });
