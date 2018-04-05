@@ -38,14 +38,17 @@ const Home = inject("ctx")(
         class extends React.Component {
             constructor(props) {
                 super(props);
-                setInterval(()=>{
-                    this.refresh();
-                }, 5000);
-                this.refresh();
-            }
-            refresh(){
                 this.props.ctx.stats.fetch();
             }
+
+            componentDidMount() {
+                this.props.ctx.stats.setAutoRefresh(true);
+            }
+
+            componentWillUnmount() {
+                this.props.ctx.stats.setAutoRefresh(false);
+            }
+
             render() {
                 const { classes, theme } = this.props;
                 const dailyMenuLinkID = this.props.ctx.stats.dailyMenu && this.props.ctx.stats.dailyMenu._id ? this.props.ctx.stats.dailyMenu._id : "new";

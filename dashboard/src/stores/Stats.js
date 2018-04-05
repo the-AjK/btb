@@ -10,7 +10,8 @@ import API from "./../utils/API";
 export default class Stats {
     constructor() {
         this.api = new API();
-        extendObservable(this, { 
+        extendObservable(this, {
+            autorefresh: false,
             users: 0,
             dailyOrders: 0,
             usersPending: 0,
@@ -18,7 +19,7 @@ export default class Stats {
             ordersStats: {},
             menus: 0,
             dailyMenu: {},
-            isLoading: false, 
+            isLoading: false,
             error: null
         });
     }
@@ -34,6 +35,15 @@ export default class Stats {
     setError = value => {
         this.setField('error', value);
     }
+
+    setAutoRefresh = action((value) => {
+        if (value) {
+            this.autorefreshInterval = setInterval(()=>this.fetch(), 8000);
+        } else {
+            clearInterval(this.autorefreshInterval);
+        }
+        this.autorefresh = value;
+    });
 
     fetch(cb) {
         if (!this.isLoading) {
