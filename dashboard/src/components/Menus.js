@@ -53,7 +53,7 @@ const Menus = inject("ctx")(
                 const options = {
                     defaultSorted: [
                         {
-                            id: "updatedAt",
+                            id: "day",
                             desc: true
                         }
                     ]
