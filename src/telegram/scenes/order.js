@@ -549,7 +549,7 @@ scene.enter((ctx) => {
                     ctx.reply("Daily menu not available yet.");
                     return ctx.scene.leave();
                 } else if (moment().isAfter(dailyMenu.deadline)) {
-                    ctx.reply("Sorry bro, you are late! Come back tomorrow!", {
+                    ctx.reply("🤦🏻‍♂️ Sorry bro, you are late! Come back tomorrow!", {
                         parse_mode: "markdown"
                     });
                     return ctx.scene.leave();
