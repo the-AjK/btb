@@ -33,7 +33,7 @@ function clearScheduler(schedulerName) {
 function setScheduler(schedulerName, date, action) {
     clearScheduler(schedulerName);
     const s = {
-        date: date.day(),
+        date: date.date(),
         month: date.month(),
         year: date.year(),
         hour: date.hours(),
@@ -87,9 +87,8 @@ function initDailyReminders() {
                 //The dailyMenu was updated in the past days, so lets remind the users that
                 //its available today
                 setScheduler("dailyMenu", moment(menu.deadline).subtract(60, 'minutes'), () => {
-                    //send ordersCompleteReminder to the bot admin users
-                    //with the dailyOrders results
-                    botNotifications.ordersCompleteReminder();
+                    //send daily menu notification
+                    botNotifications.dailyMenu(menu);
                 });
             } else {
                 //The dailyMenu has been update today. There is nothing to do. Manager section
