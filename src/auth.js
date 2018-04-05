@@ -76,7 +76,7 @@ function generateToken(payload) {
     algorithm: "HS256",
     audience: JWTOptions.audience,
     issuer: JWTOptions.issuer,
-    expiresIn: Math.floor(Date.now() / 1000) + 60 * 60
+    expiresIn: 60 * 60 * 2 //2h
   };
   return jwt.sign(payload, process.env.JWT_SECRET, options);
 }

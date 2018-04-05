@@ -31,6 +31,7 @@ import AccountCircle from 'material-ui-icons/AccountCircle';
 import Menu, { MenuItem } from 'material-ui/Menu';
 import { accessLevels, checkUserAccessLevel } from '../utils/Roles';
 import Grid from "material-ui/Grid";
+import moment from "moment";
 
 import BenderBottom from "./ee/BenderBottom"
 
@@ -95,6 +96,19 @@ const Dashboard = inject("ctx")(
         mobileOpen: false,
         anchorEl: null,
       };
+
+      componentDidMount() {
+        this.tokenValidityCheckInterval = setInterval(() => {
+          if (this.props.ctx.auth.jwt && moment().isAfter(moment.unix(this.props.ctx.auth.jwt.exp))) {
+            this.setState({ anchorEl: null });
+            this.props.history.push('/login');
+          }
+        }, 10000);
+      }
+
+      componentWillUnmount() {
+        clearInterval(this.tokenValidityCheckInterval);
+      }
 
       handleDrawerToggle = () => {
         this.setState({ mobileOpen: !this.state.mobileOpen });
