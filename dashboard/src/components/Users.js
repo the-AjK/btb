@@ -14,7 +14,12 @@ import ActionsButtons from "./buttons/ActionsButtons"
 import Button from "material-ui/Button";
 
 const styles = theme => ({
-
+    enabled: {
+        color: "green"
+    },
+    disabled: {
+        color: "red"
+    }
 });
 
 const Users = inject("ctx")(
@@ -143,18 +148,18 @@ const Users = inject("ctx")(
                         Header: 'Enabled',
                         filterable: false,
                         accessor: d => d.telegram.enabled,
-                        Cell: props => <Button onClick={this.handleTelegram(props)}>{props.value ? "Enabled" : "Disabled"}</Button>
+                        Cell: props => <Button className={props.value ? classes.enabled : classes.disabled} onClick={this.handleTelegram(props)}>{props.value ? "Enabled" : "Disabled"}</Button>
                     }, {
                         Header: 'Dashboard Enabled',
                         accessor: 'enabled',
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
-                        Cell: props => <Button onClick={this.handleDashboard(props)}>{props.value ? "Enabled" : "Disabled"}</Button>
+                        Cell: props => <Button className={props.value ? classes.enabled : classes.disabled} onClick={this.handleDashboard(props)}>{props.value ? "Enabled" : "Disabled"}</Button>
                     }, {
                         id: 'telegramBanned',
                         Header: 'Banned',
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
                         accessor: d => d.telegram.banned,
-                        Cell: props => <Button onClick={this.handleBanned(props)}>{props.value ? "Banned" : "Unbanned"}</Button>
+                        Cell: props => <Button className={!props.value ? classes.enabled : classes.disabled} onClick={this.handleBanned(props)}>{props.value ? "Banned" : "Unbanned"}</Button>
                     }, {
                         Header: 'Deleted',
                         accessor: 'deleted',
