@@ -332,7 +332,7 @@ function _addMenu(req, res) {
                             botNotifications.dailyMenu(menu);
                     }
                     //update reminder stuff
-                    reminder.setOrderReminder();
+                    reminder.initDailyReminders();
                     res.status(201).send(menu);
                 });
             }
@@ -388,7 +388,7 @@ function _updateMenu(req, res) {
                                 return res.sendStatus(404);
                             }
                             if (data.sendNotification) {
-                                if (moment(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
+                                if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
                                     if (!oldMenu.enabled && menu.enabled) {
                                         botNotifications.dailyMenu(menu);
                                     } else if (menu.enabled) {
@@ -413,7 +413,7 @@ function _updateMenu(req, res) {
                                 }
                             }
                             //update reminder stuff
-                            reminder.setOrderReminder();
+                            reminder.initDailyReminders();
                             res.sendStatus(200);
                         });
                     });

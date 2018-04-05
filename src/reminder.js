@@ -17,8 +17,32 @@ const schedule = require('node-schedule'),
     botNotifications = require('./telegram/notifications'),
     DB = require("./db");
 
-let dailyReminderSchedule,
-    dailyCompleteOrderSchedule;
+const schedulers = {
+    dailyMenu: null,
+    orderReminder: null,
+    completeOrder: null
+}
+
+function clearScheduler(schedulerName) {
+    if (schedulers[schedulerName] && schedulers[schedulerName].cancel) {
+        console.log("clearScheduler: " + schedulerName);
+        schedulers[schedulerName].cancel();
+    }
+}
+
+function setScheduler(schedulerName, date, action) {
+    clearScheduler(schedulerName);
+    const s = {
+        date: date.day(),
+        month: date.month(),
+        year: date.year(),
+        hour: date.hours(),
+        minute: date.minutes(),
+        second: 0
+    };
+    console.log("setScheduler: " + schedulerName + " - " + JSON.stringify(s))
+    schedulers[schedulerName] = schedule.scheduleJob(s, action);
+}
 
 exports.init = () => {
     console.log("Setup nightly scheduler...");
@@ -28,65 +52,51 @@ exports.init = () => {
         minute: 30,
         second: 0
     }, function () {
-        //chech if there are enabled daily menu, if yes, set the dailyReminder for that Menu
-        setOrderReminder();
+        //chech if there are enabled daily menu, if yes, set the dailyReminders for that Menu
+        initDailyReminders();
     });
 
-    //in case of node process restart, lets set the reminder at the init time
-    setOrderReminder();
+    //in case of node process restart, lets set the reminders at the init time
+    initDailyReminders();
 }
 
-function clearOrderReminder() {
-    if (dailyReminderSchedule && dailyReminderSchedule.cancel) {
-        console.log("clearOrderReminder - Cancel previous scheduler.");
-        dailyReminderSchedule.cancel();
-    }
-}
-
-function clearOrdersReminder() {
-    if (dailyCompleteOrderSchedule && dailyCompleteOrderSchedule.cancel) {
-        console.log("dailyCompleteOrderSchedule - Cancel previous scheduler.");
-        dailyCompleteOrderSchedule.cancel();
-    }
-}
-
-function setOrderReminder() {
-    console.log("setOrderReminder...")
+function initDailyReminders() {
+    console.log("initDailyReminders...")
     DB.getDailyMenu(null, (err, menu) => {
         if (err) {
             console.error(err);
         } else if (!menu) {
-            console.warn("setOrderReminder - Daily menu not available yet.");
-            clearOrderReminder();
-            clearOrdersReminder();
+            console.warn("initDailyReminders - Daily menu not available yet.");
+            clearScheduler("dailyMenu");
+            clearScheduler("orderReminder");
+            clearScheduler("completeOrder");
         } else {
-            clearOrderReminder();
-            const r = moment(menu.deadline).subtract(10, 'minutes'),
-                s = {
-                    hour: r.hours(),
-                    minute: r.minutes(),
-                    second: 0
-                };
-            console.log("setOrderReminder - " + JSON.stringify(s))
-            dailyReminderSchedule = schedule.scheduleJob(s, function () {
-                //send orderReminder to the bot users
+
+            setScheduler("orderReminder", moment(menu.deadline).subtract(10, 'minutes'), () => {
+                //send orderReminder to the bot users 10mins before the deadline
                 botNotifications.orderReminder(menu.deadline);
             });
 
-            clearOrdersReminder();
-            const rr = moment(menu.deadline).add(10, 'minutes'),
-                ss = {
-                    hour: rr.hours(),
-                    minute: rr.minutes(),
-                    second: 0
-                };
-            console.log("setOrdersReminder - " + JSON.stringify(ss))
-            dailyCompleteOrderSchedule = schedule.scheduleJob(ss, function () {
-                //send orderReminder to the bot users
+            setScheduler("completeOrder", moment(menu.deadline).add(10, 'minutes'), () => {
+                //send ordersCompleteReminder to the bot admin users
+                //with the dailyOrders results
                 botNotifications.ordersCompleteReminder();
             });
+            
+            if (!moment.utc(menu.updatedAt).isSame(moment(), 'day')) {
+                //The dailyMenu was updated in the past days, so lets remind the users that
+                //its available today
+                setScheduler("dailyMenu", moment(menu.deadline).subtract(60, 'minutes'), () => {
+                    //send ordersCompleteReminder to the bot admin users
+                    //with the dailyOrders results
+                    botNotifications.ordersCompleteReminder();
+                });
+            } else {
+                //The dailyMenu has been update today. There is nothing to do. Manager section
+                //will notify the users 
+            }
         }
     });
 }
 
-exports.setOrderReminder = setOrderReminder;
+exports.initDailyReminders = initDailyReminders;
