@@ -65,7 +65,7 @@ const Users = inject("ctx")(
                         }
                     },
                     title: "Telegram " + (props.original.telegram.enabled ? "disable " : "enable ") + props.original.email,
-                    description: "Are you sure to " + (props.original.telegram.enabled ? "disable" : "enable") + " the user?" 
+                    description: "Are you sure to " + (props.original.telegram.enabled ? "disable" : "enable") + " the user?"
                 })
             }
 
@@ -88,7 +88,7 @@ const Users = inject("ctx")(
                         }
                     },
                     title: "Dashboard " + (props.original.enabled ? "disable " : "enable ") + props.original.email,
-                    description: "Are you sure to " + (props.original.enabled ? "disable" : "enable") + " the user?" 
+                    description: "Are you sure to " + (props.original.enabled ? "disable" : "enable") + " the user?"
                 })
             }
 
@@ -99,9 +99,9 @@ const Users = inject("ctx")(
                     onClose: (response) => {
                         if (response) {
                             let userID = props.original._id,
-                                data = { banned: true, sendNotification: true };
-                            if (props.original.banned) {
-                                data.banned = false;
+                                data = { telegram: { banned: true }, sendNotification: true };
+                            if (props.original.telegram.banned) {
+                                data.telegram.banned = false;
                             }
                             this.props.ctx.users.update(userID, data, (err) => {
                                 if (!err) {
