@@ -108,7 +108,7 @@ const Tables = inject("ctx")(
                 const options = {
                     defaultSorted: [
                         {
-                            id: "updatedAt",
+                            id: "name",
                             desc: true
                         }
                     ]
