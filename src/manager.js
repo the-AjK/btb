@@ -399,11 +399,15 @@ function _updateMenu(req, res) {
                                             if (err) {
                                                 console.error(err);
                                             } else {
-                                                orders.map((o) => {
-                                                    DB.Order.findOneAndRemove(o._id).exec();
-                                                })
+                                                for (let i = 0; i < orders.length; i++) {
+                                                    DB.Order.findOneAndRemove(orders[i]._id).exec(() => {
+                                                        if (err)
+                                                            console.error(err);
+                                                    });
+                                                }
                                             }
                                         });
+                                        //and lets notify the users to place an order again
                                         botNotifications.dailyMenuUpdated(menu);
                                     }
                                 }
