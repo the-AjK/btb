@@ -160,7 +160,7 @@ function textManager(ctx) {
   if (ctx.message.text == 'ACK') {
     //user is coming back from a scene
     return;
-  } else if (ctx.message.text.toLowerCase().indexOf("menu") != -1) {
+  } else if (ctx.message.text.toLowerCase().indexOf("menu") == 0) {
     ctx.session.mainCounter = 0;
     _getDailyMenu((err, text, menu) => {
       ctx.reply(text || err, {
