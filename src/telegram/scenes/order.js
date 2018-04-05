@@ -283,8 +283,8 @@ function sendAddSideDishesQuery(ctx) {
     }
     const sideDishes = inline_keyboard.length;
     inline_keyboard.push([{
-        text: "Continue",
-        callback_data: "continue"
+        text: sideDishes > 0 ? "Skip" : "Continue",
+        callback_data: "skipcontinue"
     }])
     ctx.reply(sideDishes > 0 ? "Add side dish:" : "No side dishes left.", {
         parse_mode: "markdown",
@@ -363,9 +363,9 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             //loop over side dishes
             sendAddSideDishesQuery(ctx);
 
-        } else if (ctx.update.callback_query && ctx.update.callback_query.data == "continue") {
+        } else if (ctx.update.callback_query && ctx.update.callback_query.data == "skipcontinue") {
             if (ctx.session.lastMessage) {
-                let text = (ctx.update.callback_query.data != "continue" ? ("Side dish: *" + ctx.update.callback_query.data + "*") : "😬");
+                let text = (ctx.update.callback_query.data != "skipcontinue" ? ("Side dish: *" + ctx.update.callback_query.data + "*") : "😬");
                 require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
                     parse_mode: "markdown"
                 });
