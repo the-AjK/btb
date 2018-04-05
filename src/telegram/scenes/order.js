@@ -7,6 +7,7 @@
 
 const Telegraf = require("telegraf"),
     moment = require("moment"),
+    md5 = require('md5'),
     mongoose = require("mongoose"),
     Scene = require('telegraf/scenes/base'),
     Composer = require('telegraf/composer'),
@@ -58,7 +59,7 @@ function checkReEnter(ctx) {
 
 function sendTables(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-    ordersLock.writeLock('order', function(release) {
+    ordersLock.writeLock('order', function (release) {
         DB.getTablesStatus(null, (err, tables) => {
             if (err) {
                 console.error(err);
@@ -95,7 +96,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
         let inline_keyboard = ctx.session.dailyMenu.firstCourse.items.map((fc) => {
             return [{
                 text: fc.value,
-                callback_data: fc.value
+                callback_data: md5(fc.value)
             }]
         });
         if (!inline_keyboard.length) {
@@ -117,22 +118,28 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
     (ctx) => {
         if (checkReEnter(ctx)) {
             return;
-        } else if (ctx.update.callback_query && ctx.session.dailyMenu.availableFirstCourses.indexOf(ctx.update.callback_query.data) >= 0) {
+        } else if (ctx.update.callback_query && ctx.session.dailyMenu.availableFirstCourses.map(fc => md5(fc)).indexOf(ctx.update.callback_query.data) >= 0) {
+            let choosenFC = "";
+            ctx.session.dailyMenu.availableFirstCourses.map(fc => {
+                if (md5(fc) == ctx.update.callback_query.data) {
+                    choosenFC = fc;
+                }
+            });
             if (ctx.session.lastMessage) {
-                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "First course: *" + ctx.update.callback_query.data + "*", {
+                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "First course: *" + choosenFC + "*", {
                     parse_mode: "markdown"
                 });
                 delete ctx.session.lastMessage;
             }
-            ctx.session.order.firstCourse.item = ctx.update.callback_query.data;
+            ctx.session.order.firstCourse.item = choosenFC;
             //lets find the firstCourse condiments
             let inline_keyboard = []
             for (let i = 0; i < ctx.session.dailyMenu.firstCourse.items.length; i++) {
-                if (ctx.session.dailyMenu.firstCourse.items[i].value == ctx.update.callback_query.data) {
+                if (ctx.session.dailyMenu.firstCourse.items[i].value == choosenFC) {
                     inline_keyboard = ctx.session.dailyMenu.firstCourse.items[i].condiments.map((c) => {
                         return [{
                             text: c,
-                            callback_data: c
+                            callback_data: md5(c)
                         }]
                     });
                     break;
@@ -165,14 +172,20 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
     (ctx) => {
         if (checkReEnter(ctx)) {
             return;
-        } else if (ctx.update.callback_query && ctx.session.dailyMenu.availableCondiments.indexOf(ctx.update.callback_query.data) >= 0) {
+        } else if (ctx.update.callback_query && ctx.session.dailyMenu.availableCondiments.map(c => md5(c)).indexOf(ctx.update.callback_query.data) >= 0) {
+            let choosenC = "";
+            ctx.session.dailyMenu.availableCondiments.map(c => {
+                if (md5(c) == ctx.update.callback_query.data) {
+                    choosenC = c;
+                }
+            });
             if (ctx.session.lastMessage) {
-                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Condiment: *" + ctx.update.callback_query.data + "*", {
+                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Condiment: *" + choosenC + "*", {
                     parse_mode: "markdown"
                 });
                 delete ctx.session.lastMessage;
             }
-            ctx.session.order.firstCourse.condiment = ctx.update.callback_query.data;
+            ctx.session.order.firstCourse.condiment = choosenC;
             sendTables(ctx);
             ctx.wizard.next()
         } else {
@@ -224,7 +237,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
             return;
         } else if (ctx.update.callback_query && ctx.update.callback_query.data == 'confirm') {
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-            ordersLock.writeLock('order', function(release) {
+            ordersLock.writeLock('order', function (release) {
                 DB.getTablesStatus(null, (err, tables) => {
                     if (err) {
                         console.error(err);
@@ -269,7 +282,6 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
 )
 exports.firstCourse = firstCourseWizard;
 
-
 function sendAddSideDishesQuery(ctx) {
     let inline_keyboard = [];
     for (let i = 0; i < ctx.session.dailyMenu.secondCourse.sideDishes.length; i++) {
@@ -277,7 +289,7 @@ function sendAddSideDishesQuery(ctx) {
         if (ctx.session.order.secondCourse.sideDishes.indexOf(sd) < 0) {
             inline_keyboard.push([{
                 text: sd,
-                callback_data: sd
+                callback_data: md5(sd)
             }]);
         }
     }
@@ -303,7 +315,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
         let inline_keyboard = ctx.session.dailyMenu.secondCourse.items.map((sc) => {
             return [{
                 text: sc,
-                callback_data: sc
+                callback_data: md5(sc)
             }]
         });
         if (!inline_keyboard.length) {
@@ -325,14 +337,20 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
     (ctx) => {
         if (checkReEnter(ctx)) {
             return;
-        } else if (ctx.update.callback_query && ctx.session.dailyMenu.secondCourse.items.indexOf(ctx.update.callback_query.data) >= 0) {
+        } else if (ctx.update.callback_query && ctx.session.dailyMenu.secondCourse.items.map(sc => md5(sc)).indexOf(ctx.update.callback_query.data) >= 0) {
+            let choosenSC = "";
+            ctx.session.dailyMenu.secondCourse.items.map(sc => {
+                if (md5(sc) == ctx.update.callback_query.data) {
+                    choosenSC = sc;
+                }
+            });
             if (ctx.session.lastMessage) {
-                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Second course: *" + ctx.update.callback_query.data + "*", {
+                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Second course: *" + choosenSC + "*", {
                     parse_mode: "markdown"
                 });
                 delete ctx.session.lastMessage;
             }
-            ctx.session.order.secondCourse.item = ctx.update.callback_query.data;
+            ctx.session.order.secondCourse.item = choosenSC;
             sendAddSideDishesQuery(ctx);
             return ctx.wizard.next()
         } else {
@@ -342,15 +360,21 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
     (ctx) => {
         if (checkReEnter(ctx)) {
             return;
-        } else if (ctx.update.callback_query && ctx.session.dailyMenu.secondCourse.sideDishes.indexOf(ctx.update.callback_query.data) >= 0) {
-            if (ctx.session.order.secondCourse.sideDishes.indexOf(ctx.update.callback_query.data) < 0) {
+        } else if (ctx.update.callback_query && ctx.session.dailyMenu.secondCourse.sideDishes.map(sd => md5(sd)).indexOf(ctx.update.callback_query.data) >= 0) {
+            let choosenSD = "";
+            ctx.session.dailyMenu.secondCourse.sideDishes.map(sd => {
+                if (md5(sd) == ctx.update.callback_query.data) {
+                    choosenSD = sd;
+                }
+            });
+            if (ctx.session.order.secondCourse.sideDishes.indexOf(choosenSD) < 0) {
                 if (ctx.session.lastMessage) {
-                    require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Side dish: *" + ctx.update.callback_query.data + "*", {
+                    require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Side dish: *" + choosenSD + "*", {
                         parse_mode: "markdown"
                     });
                     delete ctx.session.lastMessage;
                 }
-                ctx.session.order.secondCourse.sideDishes.push(ctx.update.callback_query.data);
+                ctx.session.order.secondCourse.sideDishes.push(choosenSD);
             } else {
                 //Item already present
                 if (ctx.session.lastMessage) {
@@ -364,8 +388,14 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             sendAddSideDishesQuery(ctx);
 
         } else if (ctx.update.callback_query && ctx.update.callback_query.data == "skipcontinue") {
+            let choosenSD = "";
+            ctx.session.dailyMenu.secondCourse.sideDishes.map(sd => {
+                if (md5(sd) == ctx.update.callback_query.data) {
+                    choosenSD = sd;
+                }
+            });
             if (ctx.session.lastMessage) {
-                let text = (ctx.update.callback_query.data != "skipcontinue" ? ("Side dish: *" + ctx.update.callback_query.data + "*") : "😬");
+                let text = (ctx.update.callback_query.data != "skipcontinue" ? ("Side dish: *" + choosenSD + "*") : "😬");
                 require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
                     parse_mode: "markdown"
                 });
@@ -373,7 +403,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             }
             //no more side dishes to add, go ahead...
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-            ordersLock.writeLock('order', function(release) {
+            ordersLock.writeLock('order', function (release) {
                 DB.getTablesStatus(null, (err, tables) => {
                     if (err) {
                         console.error(err);
@@ -453,7 +483,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             return;
         } else if (ctx.update.callback_query && ctx.update.callback_query.data == 'confirm') {
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-            ordersLock.writeLock('order', function(release) {
+            ordersLock.writeLock('order', function (release) {
                 DB.getTablesStatus(null, (err, tables) => {
                     if (err) {
                         console.error(err);
