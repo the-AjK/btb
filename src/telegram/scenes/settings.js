@@ -9,6 +9,7 @@ const Telegraf = require("telegraf"),
     moment = require('moment'),
     Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
+    packageJSON = require('../../../package.json'),
     DB = require("../../db"),
     ACTIONS = require('../bot').ACTIONS;
 
@@ -251,13 +252,14 @@ function setRootReminders(ctx, status) {
 }
 
 function generateAbout(ctx) {
-    let about = "*BiteTheBot* v1.0.0\n\n" +
+    let version = packageJSON.version,
+        about = "*BiteTheBot* v" + version + "\n\n" +
         "made with ❤️ by [Alberto Garbui](tg://user?id=7050263) aka JK\n" +
         "(alberto.garbui@gmail.com)\n" +
         "\n" +
         "_A special thanks goes to my girlfriend Giulia for the support and for choosing the name BiteTheBot._" +
         "\n\n*Tips&Tricks*:" +
-        "\nOnce you have placed an order you can use mentions like *@ table* to broadcast a message to all the people who will eat at the same table as yours." + 
+        "\nOnce you have placed an order you can use mentions like *@ table* to broadcast a message to all the people who will eat at the same table as yours." +
         "\nYou can use *@ tables* to broadcast a message to all the people who already made an order.";
     return about;
 }

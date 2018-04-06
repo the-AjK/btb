@@ -10,6 +10,7 @@ import { withStyles } from "material-ui/styles";
 import Button from 'material-ui/Button';
 import Grid from "material-ui/Grid";
 import Hidden from "material-ui/Hidden";
+import { version } from "../../package.json";
 
 const styles = theme => ({
     root: {
@@ -53,7 +54,7 @@ const About = inject("ctx")(
                                 <Grid  item xs={12} md={8}>
                                     <Grid container className={classes.root} direction={"column"} justify={"center"} alignItems={"stretch"}>
                                         <Grid item xs={12} md={12}>
-                                            <h3>BiteTheBot <span className={classes.version}>(v1.0.0)</span></h3>
+                                            <h3>BiteTheBot <span className={classes.version}>(v{version})</span></h3>
                                             <p>BiteTheBot aka BTB is a smart menu ordering system.</p>
                                             <h4>About me</h4>
                                             <p>I'm Alberto Garbui. I do stuff.</p>
