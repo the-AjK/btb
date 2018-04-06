@@ -228,7 +228,7 @@ function setAdminReminders(ctx, status) {
             ctx.reply("Something went wrong...");
             return;
         }
-        ctx.answerCbQuery("Admin Reminders " + (updatedUser.settings.dailyMenu == true ? "ON" : "OFF") + "!", true);
+        ctx.answerCbQuery("Admin Reminders " + (updatedUser.settings.adminReminders == true ? "ON" : "OFF") + "!", true);
         ctx.session.user = updatedUser;
     });
 }
@@ -246,7 +246,7 @@ function setRootReminders(ctx, status) {
             ctx.reply("Something went wrong...");
             return;
         }
-        ctx.answerCbQuery("Root Reminders " + (updatedUser.settings.dailyMenu == true ? "ON" : "OFF") + "!", true);
+        ctx.answerCbQuery("Root Reminders " + (updatedUser.settings.rootReminders == true ? "ON" : "OFF") + "!", true);
         ctx.session.user = updatedUser;
     });
 }
