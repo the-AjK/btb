@@ -180,7 +180,7 @@ function textManager(ctx) {
         if (err) {
           ctx.reply(err);
         } else {
-          ctx.reply(formatOrderComplete(stats), {
+          ctx.reply("*Orders status*:" + formatOrderComplete(stats), {
             parse_mode: "markdown"
           });
         }
@@ -362,8 +362,8 @@ exports.formatOrder = formatOrder;
 
 
 function formatOrderComplete(stats) {
-  let text =
-    "\n__FullOrder__:\n*" + moment().format("MMMM Do YYYY") + "*";
+  let text = "";
+  //"\n__Day__:\n*" + moment().format("MMMM Do YYYY") + "*";
 
   for (let table in stats) {
     text = text + "\n\nTable: *" + table + "*";
@@ -378,14 +378,17 @@ function formatOrderComplete(stats) {
       for (let sc in stats[table].secondCourses) {
         const order = stats[table].secondCourses[sc];
         if (order.length) {
-          text = text + "\nn°*" + order.length + "*: " + order[0].item + " (_";
+          text = text + "\nn°*" + order.length + "*: *" + order[0].item + "* ";
 
           for (let i = 0; i < order[0].sideDishes.length; i++) {
+            if (i == 0)
+              text = text + "(_";
             if (i > 0)
               text = text + ", ";
             text = text + order[0].sideDishes[i];
           }
-          text = text + "_)";
+          if (order[0].sideDishes.length > 0)
+            text = text + "_)";
         }
       }
     }
@@ -427,10 +430,11 @@ function broadcastMessage(message, accessLevel, opts, silent) {
       console.error(err);
     } else {
       for (let i = 0; i < users.length; i++) {
-        if (accessLevel && !roles.checkUserAccessLevel(users[i].role, accessLevel)) {
+        const user = users[i];
+        if (accessLevel && !roles.checkUserAccessLevel(user.role, accessLevel)) {
           continue;
         } else if (accessLevel) {
-          let logText = "broadcasting to: " + users[i].telegram.id + "-" + users[i].telegram.first_name + " [";
+          let logText = "broadcasting to: " + user.telegram.id + "-" + user.telegram.first_name + " [";
           if (roles.checkUserAccessLevel(accessLevel, roles.accessLevels.root)) {
             message = "(ROOT) " + message;
             logText = logText + "ROOT";
@@ -441,7 +445,21 @@ function broadcastMessage(message, accessLevel, opts, silent) {
           logText = logText + "]";
           console.log(logText);
         }
-        bot.telegram.sendMessage(users[i].telegram.id, message, _options);
+        if (roles.compareAccessLevel(accessLevel, roles.accessLevels.admin)) {
+          // root or admins who set the admin reminder setting off, skip
+          if ((roles.checkUser(user.role, roles.userRoles.root) || roles.checkUser(user.role, roles.userRoles.admin)) &&
+            user.settings.adminReminders == false) {
+            continue;
+          }
+        }
+        // root users who set the root reminders off
+        if (roles.compareAccessLevel(accessLevel, roles.accessLevels.root) &&
+          roles.checkUser(user.role, roles.userRoles.root) &&
+          user.settings.rootReminders == false) {
+          continue;
+        }
+
+        bot.telegram.sendMessage(user.telegram.id, message, _options);
       }
     }
   });

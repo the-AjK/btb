@@ -29,6 +29,10 @@
     exports.userRoles
   );
 
+  exports.compareAccessLevel = function (accessLevel1, accessLevel2) {
+    return accessLevel1.bitMask == accessLevel2.bitMask;
+  }
+
   exports.checkUserAccessLevel = function (userRole, accessLevel) {
     return (userRole.bitMask & accessLevel.bitMask) == userRole.bitMask;
   };
