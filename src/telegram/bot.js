@@ -180,7 +180,7 @@ function textManager(ctx) {
         if (err) {
           ctx.reply(err);
         } else {
-          ctx.reply(formatOrderComplete(stats), {
+          ctx.reply("*Orders status*:" + formatOrderComplete(stats), {
             parse_mode: "markdown"
           });
         }
@@ -362,8 +362,8 @@ exports.formatOrder = formatOrder;
 
 
 function formatOrderComplete(stats) {
-  let text =
-    "\n__FullOrder__:\n*" + moment().format("MMMM Do YYYY") + "*";
+  let text = "";
+  //"\n__Day__:\n*" + moment().format("MMMM Do YYYY") + "*";
 
   for (let table in stats) {
     text = text + "\n\nTable: *" + table + "*";
@@ -378,14 +378,17 @@ function formatOrderComplete(stats) {
       for (let sc in stats[table].secondCourses) {
         const order = stats[table].secondCourses[sc];
         if (order.length) {
-          text = text + "\nn°*" + order.length + "*: " + order[0].item + " (_";
+          text = text + "\nn°*" + order.length + "*: *" + order[0].item + "* ";
 
           for (let i = 0; i < order[0].sideDishes.length; i++) {
+            if (i == 0)
+              text = text + "(_";
             if (i > 0)
               text = text + ", ";
             text = text + order[0].sideDishes[i];
           }
-          text = text + "_)";
+          if (order[0].sideDishes.length > 0)
+            text = text + "_)";
         }
       }
     }
