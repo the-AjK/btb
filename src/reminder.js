@@ -72,7 +72,7 @@ function initDailyReminders() {
             clearScheduler("completeOrder");
         } else {
 
-            setScheduler("orderReminder", moment(menu.deadline).subtract(10, 'minutes'), () => {
+            setScheduler("orderReminder", moment(menu.deadline).subtract(15, 'minutes'), () => {
                 //send orderReminder to the bot users 10mins before the deadline
                 botNotifications.orderReminder(menu.deadline);
             });
