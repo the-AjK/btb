@@ -1,6 +1,6 @@
 {
   "name": "dashboard",
-  "version": "1.0.0",
+  "version": "1.0.0-RC3",
   "description": "BiteTheBot - Smart menu ordering system dashboard",
   "repository": "https://github.com/the-AjK/btb.git",
   "author": "Alberto Garbui aka JK <alberto.garbui@gmail.com>",
