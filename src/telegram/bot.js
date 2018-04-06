@@ -430,10 +430,11 @@ function broadcastMessage(message, accessLevel, opts, silent) {
       console.error(err);
     } else {
       for (let i = 0; i < users.length; i++) {
-        if (accessLevel && !roles.checkUserAccessLevel(users[i].role, accessLevel)) {
+        const user = users[i];
+        if (accessLevel && !roles.checkUserAccessLevel(user.role, accessLevel)) {
           continue;
         } else if (accessLevel) {
-          let logText = "broadcasting to: " + users[i].telegram.id + "-" + users[i].telegram.first_name + " [";
+          let logText = "broadcasting to: " + user.telegram.id + "-" + user.telegram.first_name + " [";
           if (roles.checkUserAccessLevel(accessLevel, roles.accessLevels.root)) {
             message = "(ROOT) " + message;
             logText = logText + "ROOT";
@@ -444,7 +445,21 @@ function broadcastMessage(message, accessLevel, opts, silent) {
           logText = logText + "]";
           console.log(logText);
         }
-        bot.telegram.sendMessage(users[i].telegram.id, message, _options);
+        if (roles.compareAccessLevel(accessLevel, roles.accessLevels.admin)) {
+          // root or admins who set the admin reminder setting off, skip
+          if ((roles.checkUser(user.role, roles.userRoles.root) || roles.checkUser(user.role, roles.userRoles.admin)) &&
+            user.settings.adminReminders == false) {
+            continue;
+          }
+        }
+        // root users who set the root reminders off
+        if (roles.compareAccessLevel(accessLevel, roles.accessLevels.root) &&
+          roles.checkUser(user.role, roles.userRoles.root) &&
+          user.settings.rootReminders == false) {
+          continue;
+        }
+
+        bot.telegram.sendMessage(user.telegram.id, message, _options);
       }
     }
   });
