@@ -129,19 +129,16 @@ function addBeer(ctx) {
     } else {
         beerLock = ctx.session.user.username;
         const type = ctx.update.callback_query.data,
-            updateQuery = {
-                $inc: {}
-            };
-        updateQuery.$inc["beerCounter." + type] = 1;
-        DB.User.findByIdAndUpdate(ctx.session.user._id, updateQuery, {
-            new: true
-        }, (err, updatedUser) => {
+            newBeer = new DB.Beer({
+                owner: ctx.session.user._id,
+                type: (type == 'pint' ? 1 : 0)
+            });
+        newBeer.save((err, beer) => {
             if (err) {
                 console.error(err);
                 ctx.reply("Something went wrong...");
                 return;
             }
-            ctx.session.user = updatedUser;
             //TODO send beer image
             ctx.reply("Oh yeah, let me drink it...");
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
@@ -152,6 +149,29 @@ function addBeer(ctx) {
                     ctx.reply("Thanks, but next time give me a pint!")
                 };
                 beerLock = null;
+
+                //lets check the total beers
+                DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
+                    if (!err) {
+                        const beersLevelMap = {
+                            10: 1,
+                            50: 2,
+                            200: 3,
+                            500: 4,
+                            1000: 5
+                        };
+                        if (beersLevelMap[beers.length])
+                            DB.setUserLevel(ctx.session.user._id, beersLevelMap[beers.length], (err) => {
+                                if (err) {
+                                    console.error(err);
+                                } else {
+                                    ctx.reply("⭐️ Level UP! ( " + beers.length + " beers 🍻 )");
+                                }
+                            });
+                    } else {
+                        console.error(err);
+                    }
+                });
             }, type == 'pint' ? 3000 : 2000)
         });
     }

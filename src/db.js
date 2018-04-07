@@ -93,6 +93,11 @@ const UserSchema = new mongoose.Schema({
       default: userRoles.user.title
     }
   },
+  level: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
   loginCounter: {
     type: Number,
     min: 0,
@@ -116,18 +121,6 @@ const UserSchema = new mongoose.Schema({
       default: true
     }
   },
-  beerCounter: {
-    pint: {
-      type: Number,
-      min: 0,
-      default: 0
-    },
-    halfPint: {
-      type: Number,
-      min: 0,
-      default: 0
-    }
-  },
   lastLogin: Date,
   lastIp: String,
   createdAt: {
@@ -135,6 +128,22 @@ const UserSchema = new mongoose.Schema({
     default: Date.now
   },
   updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+const BeerSchema = new mongoose.Schema({
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  type: {
+    type: Number,
+    default: 0
+  },
+  createdAt: {
     type: Date,
     default: Date.now
   }
@@ -272,11 +281,13 @@ UserSchema.pre('save', function (next) {
 });
 
 const User = mongoose.model("User", UserSchema),
+  Beer = mongoose.model("Beer", BeerSchema),
   Menu = mongoose.model("Menu", MenuSchema),
   Order = mongoose.model("Order", OrderSchema),
   Table = mongoose.model("Table", TableSchema);
 
 exports.User = User;
+exports.Beer = Beer;
 exports.Menu = Menu;
 exports.Order = Order;
 exports.Table = Table;
@@ -515,3 +526,16 @@ exports.getDailyOrdersCount = (day, cb) => {
     }
   });
 }
+
+exports.getUserBeers = (userID, type, callback)=>{
+  let query = {
+    owner: userID
+  };
+  if(type)
+    query.type = type;
+  Beer.find(query).populate('tables').exec(callback);
+};
+
+exports.setUserLevel = (userID, level, callback) => {
+  User.findByIdAndUpdate(userID, {level: level}, callback);
+};
