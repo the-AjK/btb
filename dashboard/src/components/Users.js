@@ -198,16 +198,6 @@ const Users = inject("ctx")(
                         accessor: 'loginCounter',
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root)
                     }, {
-                        id: 'pintBeers',
-                        Header: 'Pints',
-                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
-                        accessor: d => d.beerCounter.pint
-                    }, {
-                        id: 'halfPintBeers',
-                        Header: 'HalfPints',
-                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
-                        accessor: d => d.beerCounter.halfPint
-                    }, {
                         Header: 'Created at',
                         accessor: 'createdAt',
                         filterable: false,
