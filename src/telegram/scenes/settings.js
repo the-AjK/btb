@@ -280,6 +280,7 @@ function generateAbout(ctx) {
         "_A special thanks goes to my girlfriend Giulia for the support and for choosing the name BiteTheBot._" +
         "\n\n*Tips&Tricks*:" +
         "\nOnce you have placed an order you can use mentions like *@ table* to broadcast a message to all the people who will eat at the same table as yours." +
-        "\nYou can use *@ tables* to broadcast a message to all the people who already made an order.";
+        "\nYou can use *@ tables* to broadcast a message to all the people who already made an order." + 
+        "\n\nAre you a developer?\n[Pull Requests are welcome!](https://github.com/the-AjK/btb/pulls)";
     return about;
 }

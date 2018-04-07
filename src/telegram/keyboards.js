@@ -73,7 +73,7 @@ module.exports = {
             cmd = {
                 first: "First course",
                 second: "Second course",
-                cancel: "Cancel",
+                cancel: "◀️ Back",
             };
         keyboard.push([{
             text: cmd.first
@@ -103,7 +103,7 @@ module.exports = {
     reminders: function (ctx) {
         let keyboard = [],
             cmd = {
-                back: "Back to settings",
+                back: "◀️ Back to settings",
                 orderReminder: "Order Reminder",
                 dailyMenuReminder: "Daily Menu Notification",
                 rootReminders: "Root Notifications",
@@ -321,8 +321,8 @@ module.exports = {
                 orderDelete: "✖️ Delete Order",
                 beer: "🍺 Beer",
                 reminders: "⏰ Reminders",
-                leave: "❗️ Leave the ship",
-                about: "ℹ️ About"
+                leave: "⚠️ Unsubscribe",
+                about: "ℹ️ About BTB"
             };
 
         let done = false,
@@ -343,17 +343,16 @@ module.exports = {
             }]);
         }
         keyboard.push([{
+            text: cmd.about
+        }]);
+        keyboard.push([{
             text: cmd.beer
         }, {
             text: cmd.reminders
         }]);
         keyboard.push([{
-            text: cmd.about
-        }]);
-        keyboard.push([{
-            text: "Cancel"
-        }]);
-        keyboard.push([{
+            text: "◀️ Back"
+        }, {
             text: cmd.leave
         }]);
 
@@ -409,7 +408,7 @@ module.exports = {
                         callback_data: 'cancel'
                     }]
                 ],
-                text = "Give me a beer and I will love you!";
+                text = "Send me a beer!";
 
             ctx.reply(text, {
                 parse_mode: "markdown",
@@ -444,7 +443,7 @@ module.exports = {
                         callback_data: 'cancel'
                     }]
                 ],
-                text = "WHAT!? Do you really wanna leave? Your account will be deleted and you will no longer be able to give me a beer!\nYou should think about it!\nJust sayin...",
+                text = "*WHAT!?*\nDo you really wanna leave?\nYour account will be deleted and you will no longer be able to give me a beer!\nYou should think about it!",
                 value = true;
 
             ctx.reply(text, {
