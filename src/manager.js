@@ -79,6 +79,10 @@ function _getUsers(req, res) {
 }
 
 function _addUser(req, res) {
+
+    //Disabled for now
+    return res.sendStatus(400);
+
     let data = req.body;
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root user limitations
@@ -137,6 +141,7 @@ function _updateUser(req, res) {
         delete data.telegram.first_name;
         delete data.telegram.last_name;
         delete data.telegram.language_code;
+        delete data.role;
         //TODO avoid to update root users or other admind
 
         //non root users can update only basic users
