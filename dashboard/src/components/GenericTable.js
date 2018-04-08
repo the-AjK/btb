@@ -69,12 +69,10 @@ const Table = inject("ctx")(
 
                 let options = {
                     className: this.props.highlightRows === false ? undefined : "-highlight",
-                    showPagination: false,
-                    defaultPageSize: 200,
                     loading: false,
                     noDataText: this.props.store.isLoading ? "Loading" : (this.props.store.error ? this.props.errorDataText : this.props.emptyDataText),
                     style: {
-                        maxHeight: "400px"
+                        //maxHeight: "400px"
                     },
                     minRows: 1,
                     defaultFilterMethod: (filter, row, column) => {
@@ -158,6 +156,11 @@ const Table = inject("ctx")(
                                                 filterable={this.filters_enabled}
                                                 data={this.props.data}
                                                 columns={this.props.columns}
+                                                showPagination={this.props.showPagination || false}
+                                                showPaginationBottom={true}
+                                                showPageSizeOptions={true}
+                                                pageSizeOptions={[5, 10, 20, 50, 100]}
+                                                defaultPageSize={5}
                                             />}
                                             {this.props.checkbox && <CheckboxTable
                                                 {...options}

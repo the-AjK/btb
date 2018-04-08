@@ -272,6 +272,7 @@ const Users = inject("ctx")(
                                 columns={columns}
                                 data={this.props.ctx.users.users}
                                 store={this.props.ctx.users}
+                                showPagination={true}
                             />
                         </Grid>
                     </Grid>

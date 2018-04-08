@@ -172,6 +172,7 @@ const Tables = inject("ctx")(
                                 columns={columns}
                                 data={this.props.ctx.tables.tables}
                                 store={this.props.ctx.tables}
+                                showPagination={true}
                             />
                             <FloatingAddButton
                                 onClick={this.handleAddTable}

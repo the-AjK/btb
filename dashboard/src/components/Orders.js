@@ -176,6 +176,7 @@ const Orders = inject("ctx")(
                                 columns={dailyOrderColumns}
                                 data={dailyOrders}
                                 store={this.props.ctx.stats}
+                                showPagination={false}
                             />
                         </Grid>
                         <Grid item xs={12}>
@@ -189,6 +190,7 @@ const Orders = inject("ctx")(
                                 columns={columns}
                                 data={this.props.ctx.orders.orders}
                                 store={this.props.ctx.orders}
+                                showPagination={true}
                             />
                         </Grid>
                     </Grid>
