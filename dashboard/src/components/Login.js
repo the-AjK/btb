@@ -49,6 +49,12 @@ const styles = theme => ({
 const LoginError = class extends Component {
   render() {
     const { classes } = this.props;
+    let message;
+    try {
+      message = JSON.parse(this.props.message);
+    } catch (ex) {
+      message = this.props.message;
+    }
     return (
       <div>
         <Card className={classes.card}>
@@ -61,7 +67,7 @@ const LoginError = class extends Component {
             <Typography variant="headline" component="h2">
               Are you kidding me!?
             </Typography>
-            <Typography component="p">{this.props.message}</Typography>
+            <Typography component="p">{message.message ? message.message : message}</Typography>
           </CardContent>
           <CardActions>
             <Button size="small" color="primary" onClick={this.props.action}>

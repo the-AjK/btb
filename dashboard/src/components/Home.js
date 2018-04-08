@@ -9,6 +9,7 @@ import { observer, inject } from "mobx-react";
 import { withStyles } from "material-ui/styles";
 import GridList, { GridListTile, GridListTileBar } from 'material-ui/GridList';
 import Subheader from 'material-ui/List/ListSubheader';
+import Autorenew from 'material-ui-icons/Autorenew';
 
 const styles = theme => ({
     root: {
@@ -89,7 +90,7 @@ const Home = inject("ctx")(
                     <div className={classes.root}>
                         <GridList cellHeight={180} cols={3} className={classes.gridList}>
                             <GridListTile key="Subheader" cols={3} style={{ height: 'auto' }}>
-                                <Subheader component="div">BTB - Smart Menu Ordering System {this.props.ctx.stats.isLoading ? "[ updating... ]" : ""}</Subheader>
+                                <Subheader component="div">BTB - Smart Menu Ordering System {this.props.ctx.stats.isLoading ? <Autorenew /> : ""}</Subheader>
                             </GridListTile>
                             {tileData.map(tile => (
                                 <GridListTile key={tile.img} cols={tile.cols || 1}>

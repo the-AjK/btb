@@ -121,6 +121,7 @@ const Menus = inject("ctx")(
                                 columns={columns}
                                 data={this.props.ctx.menus.menus}
                                 store={this.props.ctx.menus}
+                                showPagination={true}
                             />
                             <FloatingAddButton
                                 onClick={() => this.props.ctx.history.push('/menus/new')}

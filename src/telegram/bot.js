@@ -202,13 +202,13 @@ function textManager(ctx) {
       //reset session counter to start answer politely again
       ctx.session.mainCounter = 0;
       ctx.replyWithSticker({
-        source: require('fs').createReadStream(__dirname + "/../../img/11.webp")
+        source: require('fs').createReadStream(__dirname + "/img/11.webp")
       }).then(() => {
         replyDiscussion(ctx, msg);
       });
     } else {
       ctx.replyWithSticker({
-        source: require('fs').createReadStream(__dirname + "/../../img/0" + getRandomInt(1, 10) + ".webp")
+        source: require('fs').createReadStream(__dirname + "/img/0" + getRandomInt(1, 10) + ".webp")
       }).then(() => {
         replyDiscussion(ctx, msg, keyboards.btb(ctx).opts)
       });

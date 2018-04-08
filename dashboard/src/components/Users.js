@@ -12,6 +12,8 @@ import Table from "./GenericTable"
 import Grid from "material-ui/Grid";
 import ActionsButtons from "./buttons/ActionsButtons"
 import Button from "material-ui/Button";
+import Autorenew from 'material-ui-icons/Autorenew';
+
 
 const styles = theme => ({
     enabled: {
@@ -19,6 +21,15 @@ const styles = theme => ({
     },
     disabled: {
         color: "red"
+    },
+    rootRole: {
+        color: "black"
+    },
+    adminRole: {
+        color: "orange"
+    },
+    userRole: {
+        color: "blue"
     }
 });
 
@@ -92,6 +103,42 @@ const Users = inject("ctx")(
                 })
             }
 
+            showAlert = (title, description, onClose) => {
+                this.props.ctx.dialog.set({
+                    open: true,
+                    onClose: (response) => {
+                        if (onClose)
+                            onClose(response);
+                    },
+                    showCancel: false,
+                    title: title,
+                    description: description
+                })
+            }
+
+            handlePasswordReset = props => () => {
+                this.props.ctx.dialog.set({
+                    open: true,
+                    showCancel: true,
+                    onClose: (response) => {
+                        if (response) {
+                            let userID = props.original._id,
+                                data = { password: props.original.telegram.id.toString() }
+                            this.props.ctx.users.update(userID, data, (err) => {
+                                if (err) {
+                                    this.showAlert("Error", err);
+                                } else {
+                                    this.showAlert("Success", "Password successfully reset");
+                                    this.props.ctx.users.fetch();
+                                }
+                            });
+                        }
+                    },
+                    title: "Password reset",
+                    description: "Are you sure to reset password for the user: " + props.original.email + "?"
+                });
+            }
+
             handleBanned = props => () => {
                 this.props.ctx.dialog.set({
                     open: true,
@@ -115,6 +162,22 @@ const Users = inject("ctx")(
                 })
             }
 
+            handleRole = props => () => {
+                let role = prompt("Enter user role:", props.original.role.title);
+                if (role != "" && role != props.original.role.title) {
+                    let id = props.original._id,
+                        data = { role: role };
+                    this.props.ctx.users.update(id, data, (err) => {
+                        if (err) {
+                            this.showAlert("Error", err);
+                        } else {
+                            this.showAlert("Success", "Role successfully set");
+                            this.props.ctx.users.fetch();
+                        }
+                    });
+                }
+            }
+
             render() {
 
                 const options = {
@@ -127,12 +190,16 @@ const Users = inject("ctx")(
                 };
 
                 const actions = (props) => {
-                    return (
-                        <ActionsButtons
-                            //edit={() => { this.props.ctx.history.push('/users/' + props.original._id) }}
-                            delete={this.handleDelete(props.original)}
-                        />
-                    )
+                    if (props.original.email != this.props.ctx.auth.user.email) {
+                        return (
+                            <ActionsButtons
+                                //edit={() => { this.props.ctx.history.push('/users/' + props.original._id) }}
+                                delete={this.handleDelete(props.original)}
+                            />
+                        )
+                    } else {
+                        return
+                    }
                 };
 
                 const { classes, theme } = this.props,
@@ -154,6 +221,10 @@ const Users = inject("ctx")(
                         accessor: 'enabled',
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
                         Cell: props => <Button className={props.value ? classes.enabled : classes.disabled} onClick={this.handleDashboard(props)}>{props.value ? "Enabled" : "Disabled"}</Button>
+                    }, {
+                        Header: 'Password reset',
+                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
+                        Cell: props => <Autorenew onClick={this.handlePasswordReset(props)} />
                     }, {
                         id: 'telegramBanned',
                         Header: 'Banned',
@@ -182,7 +253,8 @@ const Users = inject("ctx")(
                         Header: 'Role',
                         filterable: false,
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
-                        accessor: d => d.role.title
+                        accessor: d => d.role.title,
+                        Cell: props => <Button className={classes[props.value + "Role"]} onClick={this.handleRole(props)}>{props.value}</Button>
                     }, {
                         id: 'telegramID',
                         Header: 'Telegram ID',
@@ -197,16 +269,6 @@ const Users = inject("ctx")(
                         Header: 'Logins',
                         accessor: 'loginCounter',
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root)
-                    }, {
-                        id: 'pintBeers',
-                        Header: 'Pints',
-                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
-                        accessor: d => d.beerCounter.pint
-                    }, {
-                        id: 'halfPintBeers',
-                        Header: 'HalfPints',
-                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
-                        accessor: d => d.beerCounter.halfPint
                     }, {
                         Header: 'Created at',
                         accessor: 'createdAt',
@@ -236,6 +298,7 @@ const Users = inject("ctx")(
                                 columns={columns}
                                 data={this.props.ctx.users.users}
                                 store={this.props.ctx.users}
+                                showPagination={true}
                             />
                         </Grid>
                     </Grid>

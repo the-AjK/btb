@@ -6,7 +6,9 @@
 "use strict";
 
 const passport = require("passport"),
+  validator = require('validator'),
   jwt = require("jsonwebtoken"),
+  moment = require("moment"),
   crypto = require("crypto"),
   JwtStrategy = require("passport-jwt").Strategy,
   ExtractJwt = require("passport-jwt").ExtractJwt,
@@ -128,8 +130,40 @@ exports.login = function (req, res) {
   });
 };
 
-exports.updateProfile = function (req, res) {
+function isValidPassword(password) {
+  if (password.length < 8)
+    return false;
+  return true;
+}
 
+exports.updateProfile = function (req, res) {
+  const data = {
+    username: req.body.username,
+    email: req.body.email,
+    updatedAt: moment().format()
+  };
+  if (req.body.password) {
+    let pass = req.body.password.trim();
+    if (!isValidPassword(pass))
+      return res.sendStatus(400);
+    const newPassword = saltHashPassword(pass);
+    data.password = newPassword.hash;
+    data.salt = newPassword.salt;
+  }
+  if (!validator.isEmail(data.email))
+    return res.sendStatus(400);
+  DB.User.findByIdAndUpdate(req.user._id, data, {
+    new: true
+  }, (err, user) => {
+    if (err) {
+      console.error(err);
+      return res.sendStatus(500);
+    }
+    res.json({
+      username: user.username,
+      email: user.email
+    });
+  });
 }
 
 exports.logout = function (req, res) {

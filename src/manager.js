@@ -14,6 +14,7 @@ const schedule = require('node-schedule'),
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
     reminder = require('./reminder'),
+    auth = require('./auth'),
     bot = require("./telegram/bot"),
     botNotifications = require('./telegram/notifications'),
     DB = require("./db");
@@ -79,6 +80,10 @@ function _getUsers(req, res) {
 }
 
 function _addUser(req, res) {
+
+    //Disabled for now
+    return res.sendStatus(400);
+
     let data = req.body;
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root user limitations
@@ -137,6 +142,8 @@ function _updateUser(req, res) {
         delete data.telegram.first_name;
         delete data.telegram.last_name;
         delete data.telegram.language_code;
+        delete data.role;
+        delete data.password;
         //TODO avoid to update root users or other admind
 
         //non root users can update only basic users
@@ -148,6 +155,12 @@ function _updateUser(req, res) {
         const newPassword = auth.saltHashPassword(data.password)
         data.password = newPassword.hash;
         data.salt = newPassword.salt;
+    }
+
+    if (data.role) {
+        if (!roles.userRoles[data.role])
+            return res.sendStatus(400);
+        data.role = roles.userRoles[data.role];
     }
 
     data.updatedAt = moment().format();

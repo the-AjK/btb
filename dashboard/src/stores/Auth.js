@@ -30,7 +30,7 @@ export default class Auth {
     extendObservable(this, {
       jwt: stored_token || null,
       isLoading: false,
-      user: stored_token || {},
+      user: JSON.parse(JSON.stringify(stored_token)) || {},
       set token(jwt) {
         this.jwt = JWTDecode(jwt);
         this.user = JSON.parse(JSON.stringify(this.jwt));
@@ -50,7 +50,16 @@ export default class Auth {
   }
 
   clearToken = action(value => {
+    localStorage.removeItem(this.access_token_local_storage_key);
     this.jwt = null;
+  });
+
+  setEmail = action(value => {
+    this.user.email = value;
+  });
+
+  setUsername = action(value => {
+    this.user.username = value;
   });
 
   setLoading = action(value => {
@@ -106,10 +115,26 @@ export default class Auth {
         err = err.response ? err.response.text : err;
         console.error(err);
       }
-      localStorage.removeItem(this.access_token_local_storage_key);
       this.clearToken();
       this.setLoading(false);
       if (cb) cb(err);
     });
   }
+
+  updateProfile(username, email, password, cb) {
+    this.setLoading(true);
+    this.api.updateProfile(username, email, password !== "" ? password : null, (err, res) => {
+      if (err) {
+        err = err.response ? err.response.text : err;
+        console.error(err);
+      } else if (res && res.ok) {
+        this.setEmail(res.body.email);
+        this.setUsername(res.body.username);
+        this.clearToken();
+      }
+      this.setLoading(false);
+      if (cb) cb(err);
+    });
+  }
+
 }

@@ -40,6 +40,21 @@ export default class API {
     );
   }
 
+  updateProfile(username, email, password, cb) {
+    const data = {
+      username: username,
+      email: email,
+      password: password
+    };
+    this.server.http({
+        method: "POST",
+        endpoint: this.base_path + "/profile"
+      },
+      data,
+      cb
+    );
+  }
+
   //generi resource functions
   _getResources(path, resourceID, cb) {
     this.server.http({
