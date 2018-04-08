@@ -109,7 +109,7 @@ const Tables = inject("ctx")(
                     defaultSorted: [
                         {
                             id: "name",
-                            desc: true
+                            desc: false
                         }
                     ]
                 };
