@@ -34,7 +34,8 @@ function textManager(ctx) {
         keyboards.reminders(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.settings(ctx).cmd.about) {
         ctx.reply(generateAbout(ctx), {
-            parse_mode: "markdown"
+            parse_mode: "markdown",
+            disable_web_page_preview: true
         });
     } else if (ctx.message.text == keyboards.reminders(ctx).cmd.back) {
         ctx.reply(keyboards.settings(ctx).text, keyboards.settings(ctx).opts);
@@ -279,8 +280,9 @@ function generateAbout(ctx) {
         "\n" +
         "_A special thanks goes to my girlfriend Giulia for the support and for choosing the name BiteTheBot._" +
         "\n\n*Tips&Tricks*:" +
-        "\nOnce you have placed an order you can use mentions like *@ table* to broadcast a message to all the people who will eat at the same table as yours." +
+        "\nOnce you have placed an order you can use mentions like *@ table* to broadcast a message to all the people in your table." +
         "\nYou can use *@ tables* to broadcast a message to all the people who already made an order." + 
-        "\n\nAre you a developer?\n[Pull Requests are welcome!](https://github.com/the-AjK/btb/pulls)";
+        "\n\n*Do you like BTB?*\n[Give me a real beer](https://www.paypal.me/AlbertoGarbui)" +
+        "\n\n*Are you a developer?*\n[Pull Requests are welcome!](https://github.com/the-AjK/btb/pulls)\n";
     return about;
 }
