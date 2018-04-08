@@ -14,6 +14,7 @@ const schedule = require('node-schedule'),
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
     reminder = require('./reminder'),
+    auth = require('./auth'),
     bot = require("./telegram/bot"),
     botNotifications = require('./telegram/notifications'),
     DB = require("./db");
@@ -142,6 +143,7 @@ function _updateUser(req, res) {
         delete data.telegram.last_name;
         delete data.telegram.language_code;
         delete data.role;
+        delete data.password;
         //TODO avoid to update root users or other admind
 
         //non root users can update only basic users
