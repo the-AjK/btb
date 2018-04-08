@@ -21,6 +21,15 @@ const styles = theme => ({
     },
     disabled: {
         color: "red"
+    },
+    rootRole: {
+        color: "black"
+    },
+    adminRole: {
+        color: "orange"
+    },
+    userRole: {
+        color: "blue"
     }
 });
 
@@ -153,6 +162,22 @@ const Users = inject("ctx")(
                 })
             }
 
+            handleRole = props => () => {
+                let role = prompt("Enter user role:", props.original.role.title);
+                if (role != "" && role != props.original.role.title) {
+                    let id = props.original._id,
+                        data = { role: role };
+                    this.props.ctx.users.update(id, data, (err) => {
+                        if (err) {
+                            this.showAlert("Error", err);
+                        } else {
+                            this.showAlert("Success", "Role successfully set");
+                            this.props.ctx.users.fetch();
+                        }
+                    });
+                }
+            }
+
             render() {
 
                 const options = {
@@ -228,7 +253,8 @@ const Users = inject("ctx")(
                         Header: 'Role',
                         filterable: false,
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
-                        accessor: d => d.role.title
+                        accessor: d => d.role.title,
+                        Cell: props => <Button className={classes[props.value + "Role"]} onClick={this.handleRole(props)}>{props.value}</Button>
                     }, {
                         id: 'telegramID',
                         Header: 'Telegram ID',

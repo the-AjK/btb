@@ -157,6 +157,12 @@ function _updateUser(req, res) {
         data.salt = newPassword.salt;
     }
 
+    if (data.role) {
+        if (!roles.userRoles[data.role])
+            return res.sendStatus(400);
+        data.role = roles.userRoles[data.role];
+    }
+
     data.updatedAt = moment().format();
 
     if (data.telegram) {
