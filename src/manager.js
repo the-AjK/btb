@@ -823,7 +823,7 @@ exports.getStats = function (req, res) {
         ordersStats: (callback) => {
             DB.getDailyOrderStats(null, (err, stats) => {
                 if (err) {
-                    return callback(err);
+                    return callback(null, null);
                 }
                 //console.log(stats)
                 callback(null, {
@@ -833,15 +833,40 @@ exports.getStats = function (req, res) {
             })
         },
         dailyOrders: (callback) => {
-            DB.getDailyOrdersCount(null, callback);
+            DB.getDailyOrdersCount(null, (err, res) => {
+                if (err) {
+                    callback(null, 0)
+                } else {
+                    callback(null, res);
+                }
+            });
         },
         dailyMenu: (callback) => {
-            DB.getDailyMenu(null, callback);
+            DB.getDailyMenu(null, (err, res) => {
+                if (err) {
+                    callback(null)
+                } else {
+                    callback(null, res);
+                }
+            });
         },
         suggestions: (callback) => {
-            DB.getMenuSuggestions(callback);
+            DB.getMenuSuggestions((err, res) => {
+                if (err) {
+                    callback(null, {
+                        fc: [],
+                        condiments: [],
+                        sc: [],
+                        sideDishes: []
+                    });
+                } else {
+                    callback(null, res);
+                }
+            });
         }
     }, (err, results) => {
+        if (err)
+            console.error(err);
         stats.users = results.users;
         stats.suggestions = results.suggestions;
         stats.usersPending = results.usersPending;

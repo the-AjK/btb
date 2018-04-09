@@ -161,7 +161,7 @@ const DownshiftMultiple = observer(
                                         id: 'integration-downshift-multiple',
                                     }),
                                 })}
-                                {isOpen && (!this.props.multiple && this.props.selectedItem.length < 1) ? (
+                                {(isOpen && this.props.multiple) || (isOpen && (!this.props.multiple && this.props.selectedItem.length < 1)) ? (
                                     <Paper className={classes.paper} square>
                                         {this.getSuggestions(inputValue2).map((suggestion, index) =>
                                             renderSuggestion({
