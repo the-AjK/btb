@@ -509,10 +509,10 @@ exports.getMenuSuggestions = (cb) => {
         for (let j = 0; j < m.firstCourse.items.length; j++) {
           const fc = m.firstCourse.items[j];
           fcs.push(fc.value);
-          condiments.concat(fc.condiments);
+          condiments = condiments.concat(fc.condiments);
         }
-        scs.concat(m.secondCourse.items);
-        sideDishes.concat(m.secondCourse.sideDishes);
+        scs = scs.concat(m.secondCourse.items);
+        sideDishes = sideDishes.concat(m.secondCourse.sideDishes);
       }
       cb(null, {
         fc: removeDuplicates(fcs),
