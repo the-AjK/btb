@@ -363,15 +363,15 @@ exports.formatOrder = formatOrder;
 
 function formatOrderComplete(stats) {
   let text = "";
-  //"\n__Day__:\n*" + moment().format("MMMM Do YYYY") + "*";
 
   for (let table in stats) {
     text = text + "\n\nTable: *" + table + "*";
     if (stats[table].firstCourses) {
       for (let fc in stats[table].firstCourses) {
         const order = stats[table].firstCourses[fc];
-        if (order.length)
+        if (order.length) {
           text = text + "\nn°*" + order.length + "*: *" + order[0].item + "*" + (order[0].condiment ? (" (_" + order[0].condiment + "_)") : "");
+        }
       }
     }
     if (stats[table].secondCourses) {
@@ -379,7 +379,6 @@ function formatOrderComplete(stats) {
         const order = stats[table].secondCourses[sc];
         if (order.length) {
           text = text + "\nn°*" + order.length + "*: *" + order[0].item + "* ";
-
           for (let i = 0; i < order[0].sideDishes.length; i++) {
             if (i == 0)
               text = text + "(_";
@@ -391,6 +390,9 @@ function formatOrderComplete(stats) {
             text = text + "_)";
         }
       }
+    }
+    if (text == "") {
+      text = "*No orders received*";
     }
   }
   return text;
