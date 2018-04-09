@@ -112,7 +112,9 @@ function deleteDailyOrder(ctx) {
             }).exec((err, order) => {
                 if (!err && order) {
                     ctx.reply("Your daily order has been deleted!");
-                    bot.broadcastMessage("Order deleted by *" + ctx.session.user.email + "* ", accessLevels.root, null, true);
+                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                        bot.broadcastMessage("Order deleted by *" + ctx.session.user.email + "* ", accessLevels.root, null, true);
+                    }
                 } else if (!order) {
                     ctx.reply("You didn't placed any order yet! c'mon...");
                 } else {
@@ -150,7 +152,9 @@ function addBeer(ctx) {
             //TODO send beer image
             ctx.reply("Oh yeah, let me drink it...");
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-            bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
+            if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
+            }
             setTimeout(() => {
                 if (type == 'pint') {
                     ctx.reply("Thank you bro!")

@@ -510,7 +510,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                             if (err) {
                                 console.error(err)
                                 text = "*Something went wrong!*\nContact the admin for more info.";
-                            } else {
+                            } else if (!checkUser(ctx.session.user.role, userRoles.root)) {
                                 bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
                             }
                             if (ctx.session.lastMessage) {
