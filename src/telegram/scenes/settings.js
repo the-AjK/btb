@@ -10,8 +10,14 @@ const Telegraf = require("telegraf"),
     Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     packageJSON = require('../../../package.json'),
+    roles = require("../../roles"),
+    checkUserAccessLevel = roles.checkUserAccessLevel,
+    checkUser = roles.checkUser,
+    userRoles = roles.userRoles,
+    accessLevels = roles.accessLevels,
+    bot = require('../bot'),
     DB = require("../../db"),
-    ACTIONS = require('../bot').ACTIONS;
+    ACTIONS = bot.ACTIONS;
 
 let beerLock = null;
 
@@ -96,7 +102,7 @@ function deleteDailyOrder(ctx) {
     DB.Menu.findOne(query, (err, menu) => {
         if (!err && menu) {
             if (moment().isAfter(menu.deadline)) {
-                ctx.reply("AAHahahAH too late!\nRemoving the daily order is no longer possible when the deadline is reached.");
+                ctx.reply("AAHahahAH too late! 😂\n\nRemoving the daily order is no longer possible when the deadline is reached.");
                 return;
             }
             DB.Order.findOneAndRemove({
@@ -106,6 +112,9 @@ function deleteDailyOrder(ctx) {
             }).exec((err, order) => {
                 if (!err && order) {
                     ctx.reply("Your daily order has been deleted!");
+                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                        bot.broadcastMessage("Order deleted by *" + ctx.session.user.email + "* ", accessLevels.root, null, true);
+                    }
                 } else if (!order) {
                     ctx.reply("You didn't placed any order yet! c'mon...");
                 } else {
@@ -143,6 +152,9 @@ function addBeer(ctx) {
             //TODO send beer image
             ctx.reply("Oh yeah, let me drink it...");
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
+            if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
+            }
             setTimeout(() => {
                 if (type == 'pint') {
                     ctx.reply("Thank you bro!")
@@ -190,6 +202,7 @@ function leave(ctx) {
             ctx.reply("Something went wrong...");
             return;
         }
+        bot.broadcastMessage("User unsubscribe: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
         delete ctx.session.user;
         ctx.reply('Account successfully deleted!', {
             reply_markup: JSON.stringify({
@@ -281,8 +294,9 @@ function generateAbout(ctx) {
         "_A special thanks goes to my girlfriend Giulia for the support and for choosing the name BiteTheBot._" +
         "\n\n*Tips&Tricks*:" +
         "\nOnce you have placed an order you can use mentions like *@ table* to broadcast a message to all the people in your table." +
-        "\nYou can use *@ tables* to broadcast a message to all the people who already made an order." + 
+        "\nYou can use *@ tables* to broadcast a message to all the people who already made an order." +
         "\n\n*Do you like BTB?*\n[Give me a real beer](https://www.paypal.me/AlbertoGarbui)" +
-        "\n\n*Are you a developer?*\n[Pull Requests are welcome!](https://github.com/the-AjK/btb/pulls)\n";
+        "\n\n*Are you a developer?*\n[Pull Requests are welcome!](https://github.com/the-AjK/btb/pulls)\n\n" +
+        "*License*:\n[BSD-3](https://github.com/the-AjK/btb/blob/master/LICENSE)";
     return about;
 }

@@ -326,10 +326,12 @@ module.exports = {
             };
 
         let done = false,
-            userHasOrdered = false;
+            userHasOrdered = false,
+            dailyDeadlineReached = false;
         db.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
             if (!err && order) {
                 userHasOrdered = true;
+                dailyDeadlineReached = moment().isAfter(order.menu.deadline);
             }
             done = true;
         });
@@ -337,7 +339,7 @@ module.exports = {
             return !done;
         });
 
-        if (userHasOrdered) {
+        if (userHasOrdered && !dailyDeadlineReached) {
             keyboard.push([{
                 text: cmd.orderDelete
             }]);

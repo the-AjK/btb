@@ -292,7 +292,7 @@ exports.Menu = Menu;
 exports.Order = Order;
 exports.Table = Table;
 
-exports.getDailyMenu = (day, cb) => {
+function getDailyMenu(day, cb) {
   const today = moment(day || moment()).startOf("day"),
     tomorrow = moment(today).add(1, "days"),
     query = {
@@ -308,20 +308,10 @@ exports.getDailyMenu = (day, cb) => {
     select: 'username email _id'
   }).exec(cb);
 }
+exports.getDailyMenu = getDailyMenu;
 
 exports.getDailyOrders = (day, cb) => {
-  const today = moment(day || moment()).startOf("day"),
-    tomorrow = moment(today).add(1, "days"),
-    query = {
-      deleted: false,
-      enabled: true,
-      day: {
-        $gte: today.toDate(),
-        $lt: tomorrow.toDate()
-      },
-
-    };
-  Menu.findOne(query, (err, menu) => {
+  getDailyMenu(null, (err, menu) => {
     if (err) {
       cb("DB error");
     } else if (!menu) {
@@ -401,18 +391,7 @@ function _decodeOrders(orders) {
 
 //calculate the daily order statistics
 exports.getDailyOrderStats = (day, cb) => {
-  const today = moment(day || moment()).startOf("day"),
-    tomorrow = moment(today).add(1, "days"),
-    query = {
-      deleted: false,
-      enabled: true,
-      day: {
-        $gte: today.toDate(),
-        $lt: tomorrow.toDate()
-      },
-
-    };
-  Menu.findOne(query, (err, menu) => {
+  getDailyMenu(null, (err, menu) => {
     if (err) {
       cb(err || "DB menu error");
     } else if (!menu) {
@@ -433,18 +412,7 @@ exports.getDailyOrderStats = (day, cb) => {
 }
 
 exports.getTablesStatus = (day, cb) => {
-  const today = moment(day || moment()).startOf("day"),
-    tomorrow = moment(today).add(1, "days"),
-    query = {
-      deleted: false,
-      enabled: true,
-      day: {
-        $gte: today.toDate(),
-        $lt: tomorrow.toDate()
-      },
-
-    };
-  Menu.findOne(query).populate('tables').exec((err, menu) => {
+  getDailyMenu(null, (err, menu) => {
     if (!err && menu) {
       Order.find({
         deleted: false,
@@ -476,18 +444,7 @@ exports.getTablesStatus = (day, cb) => {
 }
 
 exports.getDailyUserOrder = (day, userID, cb) => {
-  const today = moment(day || moment()).startOf("day"),
-    tomorrow = moment(today).add(1, "days"),
-    query = {
-      deleted: false,
-      enabled: true,
-      day: {
-        $gte: today.toDate(),
-        $lt: tomorrow.toDate()
-      },
-
-    };
-  Menu.findOne(query, (err, menu) => {
+  getDailyMenu(null, (err, menu) => {
     if (!err && menu) {
       Order.findOne({
         deleted: false,
@@ -504,18 +461,7 @@ exports.getDailyUserOrder = (day, userID, cb) => {
 }
 
 exports.getDailyOrdersCount = (day, cb) => {
-  const today = moment(day || moment()).startOf("day"),
-    tomorrow = moment(today).add(1, "days"),
-    query = {
-      deleted: false,
-      enabled: true,
-      day: {
-        $gte: today.toDate(),
-        $lt: tomorrow.toDate()
-      },
-
-    };
-  Menu.findOne(query, (err, menu) => {
+  getDailyMenu(null, (err, menu) => {
     if (!err && menu) {
       Order.find({
         deleted: false,
@@ -527,15 +473,53 @@ exports.getDailyOrdersCount = (day, cb) => {
   });
 }
 
-exports.getUserBeers = (userID, type, callback)=>{
+exports.getUserBeers = (userID, type, callback) => {
   let query = {
     owner: userID
   };
-  if(type)
+  if (type)
     query.type = type;
   Beer.find(query).populate('tables').exec(callback);
 };
 
 exports.setUserLevel = (userID, level, callback) => {
-  User.findByIdAndUpdate(userID, {level: level}, callback);
+  User.findByIdAndUpdate(userID, {
+    level: level
+  }, callback);
 };
+
+function removeDuplicates(arr){
+  let unique_array = Array.from(new Set(arr))
+  return unique_array
+}
+
+exports.getMenuSuggestions = (cb) => {
+  Menu.find({
+    deleted: false
+  }, (err, menus) => {
+    if (err) {
+      cb(err);
+    } else {
+      let fcs = [],
+        condiments = [],
+        scs = [],
+        sideDishes = [];
+      for (let i = 0; i < menus.length; i++) {
+        const m = menus[i];
+        for (let j = 0; j < m.firstCourse.items.length; j++) {
+          const fc = m.firstCourse.items[j];
+          fcs.push(fc.value);
+          condiments.concat(fc.condiments);
+        }
+        scs.concat(m.secondCourse.items);
+        sideDishes.concat(m.secondCourse.sideDishes);
+      }
+      cb(null, {
+        fc: removeDuplicates(fcs),
+        condiments: removeDuplicates(condiments),
+        sc: removeDuplicates(scs),
+        sideDishes: removeDuplicates(sideDishes),
+      });
+    }
+  });
+}

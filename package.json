@@ -1,6 +1,6 @@
 {
   "name": "btb",
-  "version": "1.0.0-RC3",
+  "version": "1.0.0-RC4",
   "description": "BiteTheBot - Smart menu ordering system",
   "main": "index.js",
   "repository": "https://github.com/the-AjK/btb.git",
@@ -37,5 +37,8 @@
     "telegraf": "3.19.0",
     "telegraf-ratelimit": "^2.0.0",
     "validator": "^9.4.1"
+  },
+  "engines": {
+    "node": "^8.11.1"
   }
 }

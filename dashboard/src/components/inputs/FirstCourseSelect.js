@@ -12,6 +12,7 @@ import MultipleSelect from "./MultipleSelect";
 import Grid from "material-ui/Grid";
 import Paper from 'material-ui/Paper';
 import CloseIcon from 'material-ui-icons/Close';
+import CloneIcon from 'material-ui-icons/ControlPointDuplicate';
 
 const styles = theme => ({
     container: {
@@ -25,6 +26,9 @@ const styles = theme => ({
     titleContainer: {
         marginTop: "0",
         marginBottom: "0"
+    },
+    cloneIcon: {
+        cursor: "pointer"
     },
     closeIcon: {
         cursor: "pointer"
@@ -78,11 +82,14 @@ const FirstCourse = observer(
                     >
                         <Grid item xs={12}>
                             <Grid container direction={"row"} >
-                                <Grid item xs={11}>
+                                <Grid item xs={this.props.remove ? 10 : 11}>
                                     <h4 className={classes.title}>First Course</h4>
                                 </Grid>
                                 {this.props.remove && <Grid item xs={1}>
-                                    <CloseIcon className={classes.closeIcon} onClick={this.props.remove} />
+                                    <span title="Remove"><CloseIcon className={classes.closeIcon}  onClick={this.props.remove} /></span>
+                                </Grid>}
+                                {this.props.clone && <Grid item xs={1}>
+                                    <span title="Clone"><CloneIcon className={classes.cloneIcon} title="Clone" onClick={this.props.clone} /></span>
                                 </Grid>}
                             </Grid>
                         </Grid>

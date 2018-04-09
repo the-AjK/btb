@@ -156,7 +156,7 @@ exports.ordersCompleteReminder = function () {
                 if (err) {
                     console.error(err);
                 } else {
-                    let message = "*Daily orders summary*:\n\n" +
+                    let message = "*Daily orders summary*:" +
                         require('./bot').formatOrderComplete(stats);
                     for (let i = 0; i < users.length; i++) {
                         if (!roles.checkUserAccessLevel(users[i].role, accessLevel)) {
