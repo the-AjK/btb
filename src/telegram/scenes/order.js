@@ -15,8 +15,14 @@ const Telegraf = require("telegraf"),
     WizardScene = require('telegraf/scenes/wizard'),
     keyboards = require('../keyboards'),
     ReadWriteLock = require('rwlock'),
+    roles = require("../../roles"),
+    checkUserAccessLevel = roles.checkUserAccessLevel,
+    checkUser = roles.checkUser,
+    userRoles = roles.userRoles,
+    accessLevels = roles.accessLevels,
+    bot = require('../bot'),
     DB = require("../../db"),
-    ACTIONS = require('../bot').ACTIONS;
+    ACTIONS = bot.ACTIONS;
 
 let ordersLock = new ReadWriteLock();
 
@@ -504,6 +510,8 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                             if (err) {
                                 console.error(err)
                                 text = "*Something went wrong!*\nContact the admin for more info.";
+                            } else {
+                                bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
                             }
                             if (ctx.session.lastMessage) {
                                 require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {

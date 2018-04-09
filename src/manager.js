@@ -182,8 +182,10 @@ function _updateUser(req, res) {
         }
         if (!user.telegram.enabled && data.$set && data.$set["telegram.enabled"] == true && data.sendNotification) {
             botNotifications.accountEnabledDisabled(user, true);
+            bot.broadcastMessage("User *" + user.email + "* enabled by *" + req.user.email + "*", accessLevels.root, null, true);
         } else if (user.telegram.enabled && data.$set && data.$set["telegram.enabled"] == false && data.sendNotification) {
             botNotifications.accountEnabledDisabled(user, false);
+            bot.broadcastMessage("User *" + user.email + "* disabled by *" + req.user.email + "*", accessLevels.root, null, true);
         }
         res.sendStatus(200);
     });
@@ -212,6 +214,7 @@ function _deleteUser(req, res) {
             } else if (!user) {
                 return res.sendStatus(404);
             }
+            bot.broadcastMessage("User *" + user.email + "* deleted by *" + req.user.email + "*", accessLevels.root, null, true);
             res.sendStatus(200);
         });
     } else {
@@ -344,6 +347,7 @@ function _addMenu(req, res) {
                         if (moment(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline)))
                             botNotifications.dailyMenu(menu);
                     }
+                    bot.broadcastMessage("Daily Menu uploaded by *" + req.user.email + "*", accessLevels.root, null, true);
                     //update reminder stuff
                     reminder.initDailyReminders();
                     res.status(201).send(menu);
@@ -425,6 +429,7 @@ function _updateMenu(req, res) {
                                     }
                                 }
                             }
+                            bot.broadcastMessage("Daily Menu updated by *" + req.user.email + "*", accessLevels.root, null, true);
                             //update reminder stuff
                             reminder.initDailyReminders();
                             res.sendStatus(200);
