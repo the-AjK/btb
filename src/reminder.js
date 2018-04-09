@@ -45,7 +45,9 @@ function setScheduler(schedulerName, date, action) {
 }
 
 exports.init = () => {
-    console.log("Setup nightly scheduler...");
+
+    console.log("Init reminders...");
+
     //Nightly schedule at 2:30AM
     const nightlySchedule = schedule.scheduleJob({
         hour: 2,
@@ -56,12 +58,25 @@ exports.init = () => {
         initDailyReminders();
     });
 
+    //Admin daily menu reminder at 10.30am from monday to friday
+    const dailyMenuAdminReminderSchedule = schedule.scheduleJob("30 10 * * MON-FRI", function () {
+        DB.getDailyMenu(null, (err, menu) => {
+            if (err) {
+                console.error(err);
+            } else if (!menu) {
+                //The daily menu wasnt uploaded yet, lets notify admins
+                const message = "*Hey you 😬!*\n\nDid you forgot to upload a *new daily menu*?\nHurry up!\n\n[BTB - Dashboard](https://bitethebot.herokuapp.com)";
+                bot.broadcastMessage(message, accessLevels.admin);
+            }
+        });
+    });
+
     //in case of node process restart, lets set the reminders at the init time
     initDailyReminders();
 }
 
 function initDailyReminders() {
-    console.log("initDailyReminders...")
+    console.log("Init daily reminders...")
     DB.getDailyMenu(null, (err, menu) => {
         if (err) {
             console.error(err);
