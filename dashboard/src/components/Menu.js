@@ -71,26 +71,10 @@ const Menu = inject("ctx")(
                     id: props.router.computedMatch.params.id,
                     sendNotifications: true,
                     isSaving: false,
-                    condimentSuggestions: [
-                        { label: 'Mediterranea' },
-                        { label: 'Zucchine e ragù d\'anitra' },
-                        { label: 'Melanzane scamorza e speck' },
-                        { label: 'Pizzoccheri al grano saraceno con sedano rapa ed asiago' },
-                        { label: 'Radicchio treviso e gorgonzola' },
-                        { label: 'cozze pesto e semi di papavero' }
-                    ],
-                    suggestions: [
-                        { label: 'Spaghetti' },
-                        { label: 'Penne' }
-                    ],
-                    secondCourseSuggestions: [
-                        { label: 'Pollo' },
-                        { label: 'Carne' }
-                    ],
-                    sideDishesSuggestions: [
-                        { label: 'Patate' },
-                        { label: 'Insalata' }
-                    ],
+                    condimentSuggestions: props.ctx.stats.suggestions.condiments.map(c => { return { label: c } }),
+                    suggestions: props.ctx.stats.suggestions.fc.map(fc => { return { label: fc } }),
+                    secondCourseSuggestions: props.ctx.stats.suggestions.sc.map(sc => { return { label: sc } }),
+                    sideDishesSuggestions: props.ctx.stats.suggestions.sideDishes.map(sd => { return { label: sd } }),
                     menu: {
                         label: "Autostop daily menu",
                         deadline: moment("11:00", "HH:mm").format("HH:mm"),
@@ -110,6 +94,9 @@ const Menu = inject("ctx")(
                         additionalInfos: "",
                         tables: []
                     }
+                });
+                this.props.ctx.stats.fetch(() => {
+                    this.updateSuggestions();
                 });
                 if (this.id && this.id !== "new") {
                     props.ctx.menus.get(this.id, action((err, menu) => {
@@ -134,6 +121,13 @@ const Menu = inject("ctx")(
                     this.getTables();
                 }
             }
+
+            updateSuggestions = action(() => {
+                this.condimentSuggestions = this.props.ctx.stats.suggestions.condiments.map(c => { return { label: c } });
+                this.suggestions = this.props.ctx.stats.suggestions.fc.map(fc => { return { label: fc } });
+                this.secondCourseSuggestions = this.props.ctx.stats.suggestions.sc.map(sc => { return { label: sc } });
+                this.sideDishesSuggestions = this.props.ctx.stats.suggestions.sideDishes.map(sd => { return { label: sd } });
+            });
 
             getTables = () => {
                 this.props.ctx.tables.fetch(action((err, tables) => {
@@ -211,7 +205,7 @@ const Menu = inject("ctx")(
                             data={this.menu.firstCourse.items[i]}
                             remove={i === 0 ? false : this.removeFirstCourse(i)}
                             onChange={(v, c) => this.handleChangeFirstCourse(i)(v, c)}
-                            clone={()=>this.handleCloneFirstCoursePanel(this.menu.firstCourse.items[i])}
+                            clone={() => this.handleCloneFirstCoursePanel(this.menu.firstCourse.items[i])}
                         />
                     </Grid>));
             }

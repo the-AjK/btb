@@ -13,6 +13,12 @@ export default class Stats {
         extendObservable(this, {
             autorefresh: false,
             users: 0,
+            suggestions: {
+                fc: [],
+                condiments: [],
+                sc: [],
+                sideDishes: []
+            },
             dailyOrders: 0,
             usersPending: 0,
             orders: 0,
@@ -38,7 +44,7 @@ export default class Stats {
 
     setAutoRefresh = action((value) => {
         if (value) {
-            this.autorefreshInterval = setInterval(()=>this.fetch(), 8000);
+            this.autorefreshInterval = setInterval(() => this.fetch(), 8000);
         } else {
             clearInterval(this.autorefreshInterval);
         }
@@ -61,6 +67,12 @@ export default class Stats {
                     this.setField("menus", -1);
                     this.setField("usersPending", -1);
                     this.setField("dailyMenu", {});
+                    this.setField("suggestions", {
+                        fc: [],
+                        condiments: [],
+                        sc: [],
+                        sideDishes: []
+                    });
                 } else if (res && res.ok) {
                     this.setField("users", res.body.users);
                     this.setField("dailyOrders", res.body.dailyOrders);
@@ -69,6 +81,7 @@ export default class Stats {
                     this.setField("menus", res.body.menus);
                     this.setField("usersPending", res.body.usersPending);
                     this.setField("dailyMenu", res.body.dailyMenu);
+                    this.setField("suggestions", res.body.suggestions);
                 } else {
                     this.setField("users", -1);
                     this.setField("dailyOrders", -1);
@@ -77,6 +90,12 @@ export default class Stats {
                     this.setField("usersPending", -1);
                     this.setField("dailyMenu", {});
                     this.setField("ordersStats", {});
+                    this.setField("suggestions", {
+                        fc: [],
+                        condiments: [],
+                        sc: [],
+                        sideDishes: []
+                    });
                     err = "Data not available!";
                     this.setError(err);
                     console.error(err);

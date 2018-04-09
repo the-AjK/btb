@@ -837,15 +837,19 @@ exports.getStats = function (req, res) {
         },
         dailyMenu: (callback) => {
             DB.getDailyMenu(null, callback);
+        },
+        suggestions: (callback) => {
+            DB.getMenuSuggestions(callback);
         }
     }, (err, results) => {
-        stats.users = results.users
-        stats.usersPending = results.usersPending
-        stats.menus = results.menus
-        stats.orders = results.orders
-        stats.ordersStats = results.ordersStats
-        stats.dailyOrders = results.dailyOrders
-        stats.dailyMenu = results.dailyMenu
+        stats.users = results.users;
+        stats.suggestions = results.suggestions;
+        stats.usersPending = results.usersPending;
+        stats.menus = results.menus;
+        stats.orders = results.orders;
+        stats.ordersStats = results.ordersStats;
+        stats.dailyOrders = results.dailyOrders;
+        stats.dailyMenu = results.dailyMenu;
         res.send(stats);
     });
 

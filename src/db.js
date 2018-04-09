@@ -487,3 +487,39 @@ exports.setUserLevel = (userID, level, callback) => {
     level: level
   }, callback);
 };
+
+function removeDuplicates(arr){
+  let unique_array = Array.from(new Set(arr))
+  return unique_array
+}
+
+exports.getMenuSuggestions = (cb) => {
+  Menu.find({
+    deleted: false
+  }, (err, menus) => {
+    if (err) {
+      cb(err);
+    } else {
+      let fcs = [],
+        condiments = [],
+        scs = [],
+        sideDishes = [];
+      for (let i = 0; i < menus.length; i++) {
+        const m = menus[i];
+        for (let j = 0; j < m.firstCourse.items.length; j++) {
+          const fc = m.firstCourse.items[j];
+          fcs.push(fc.value);
+          condiments.concat(fc.condiments);
+        }
+        scs.concat(m.secondCourse.items);
+        sideDishes.concat(m.secondCourse.sideDishes);
+      }
+      cb(null, {
+        fc: removeDuplicates(fcs),
+        condiments: removeDuplicates(condiments),
+        sc: removeDuplicates(scs),
+        sideDishes: removeDuplicates(sideDishes),
+      });
+    }
+  });
+}
