@@ -182,6 +182,15 @@ const Menu = inject("ctx")(
                 this.firstCoursesPanels.push(this.firstCoursesPanels.length);
             });
 
+            handleCloneFirstCoursePanel = action((fc) => {
+                this.menu.firstCourse.items.push({
+                    key: this.firstCoursesPanels.length,
+                    value: fc.value,
+                    condiments: JSON.parse(JSON.stringify(fc.condiments))
+                });
+                this.firstCoursesPanels.push(this.firstCoursesPanels.length);
+            });
+
             //remove a whole first course panel
             removeFirstCourse = key => action(() => {
                 this.firstCoursesPanels.splice(this.firstCoursesPanels.indexOf(key), 1);
@@ -202,6 +211,7 @@ const Menu = inject("ctx")(
                             data={this.menu.firstCourse.items[i]}
                             remove={i === 0 ? false : this.removeFirstCourse(i)}
                             onChange={(v, c) => this.handleChangeFirstCourse(i)(v, c)}
+                            clone={()=>this.handleCloneFirstCoursePanel(this.menu.firstCourse.items[i])}
                         />
                     </Grid>));
             }
