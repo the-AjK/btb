@@ -164,7 +164,7 @@ const Users = inject("ctx")(
 
             handleRole = props => () => {
                 let role = prompt("Enter user role:", props.original.role.title);
-                if (role != "" && role != props.original.role.title) {
+                if (role !== "" && role !== props.original.role.title) {
                     let id = props.original._id,
                         data = { role: role };
                     this.props.ctx.users.update(id, data, (err) => {
@@ -190,7 +190,7 @@ const Users = inject("ctx")(
                 };
 
                 const actions = (props) => {
-                    if (props.original.email != this.props.ctx.auth.user.email) {
+                    if (props.original.email !== this.props.ctx.auth.user.email) {
                         return (
                             <ActionsButtons
                                 //edit={() => { this.props.ctx.history.push('/users/' + props.original._id) }}
@@ -202,7 +202,7 @@ const Users = inject("ctx")(
                     }
                 };
 
-                const { classes, theme } = this.props,
+                const { classes } = this.props,
                     roles = this.props.ctx.roles,
                     columns = [{
                         Header: 'Username',

@@ -5,7 +5,6 @@
  */
 // @flow
 import React from "react";
-import Link from "./Link";
 import { observer, inject } from "mobx-react";
 import PropTypes from "prop-types";
 import { withStyles } from "material-ui/styles";
@@ -29,7 +28,6 @@ import LogoutIcon from "material-ui-icons/Launch"
 import SettingsIcon from "material-ui-icons/Settings"
 import AccountCircle from 'material-ui-icons/AccountCircle';
 import Menu, { MenuItem } from 'material-ui/Menu';
-import { accessLevels, checkUserAccessLevel } from '../utils/Roles';
 import Grid from "material-ui/Grid";
 import moment from "moment";
 

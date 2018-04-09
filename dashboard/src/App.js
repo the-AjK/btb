@@ -18,7 +18,6 @@ import {
 } from "react-router-dom";
 import { MuiThemeProvider, createMuiTheme } from "material-ui/styles";
 import grey from "material-ui/colors/grey";
-import green from "material-ui/colors/green";
 import "typeface-roboto";
 import GlobalStore from "./stores/GlobalStore";
 import Login from "./components/Login";
@@ -61,7 +60,7 @@ const PrivateRoute = ({ component: Component, ...rest }) => (
   <Route
     {...rest}
     render={props => {
-      let id = rest.computedMatch.params.id
+      //let id = rest.computedMatch.params.id
       return services.ctx.auth.isAuth ? (
         <Dashboard {...props} router={{ ...rest }} subComponent={Component} />
       ) : (

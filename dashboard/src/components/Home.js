@@ -51,7 +51,7 @@ const Home = inject("ctx")(
             }
 
             render() {
-                const { classes, theme } = this.props;
+                const { classes } = this.props;
                 const dailyMenuLinkID = this.props.ctx.stats.dailyMenu && this.props.ctx.stats.dailyMenu._id ? this.props.ctx.stats.dailyMenu._id : "new";
                 const tileData = [
                     {

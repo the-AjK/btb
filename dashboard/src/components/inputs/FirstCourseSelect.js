@@ -71,7 +71,7 @@ const FirstCourse = observer(
         })
 
         render() {
-            const { classes, theme } = this.props;
+            const { classes } = this.props;
             return (
                 <Paper className={classes.container}>
                     <Grid
@@ -96,7 +96,7 @@ const FirstCourse = observer(
                         <Grid item xs={12}>
                             <MultipleSelect
                                 placeholder={"First Course"}
-                                selectedItem={this.props.data.value && this.props.data.value != '' ? [this.props.data.value] : []}
+                                selectedItem={this.props.data.value && this.props.data.value !== '' ? [this.props.data.value] : []}
                                 onChange={this.handleItemsChange}
                                 suggestions={this.props.suggestions}
                                 showInput={this.focus}

@@ -68,7 +68,7 @@ const Orders = inject("ctx")(
                     )
                 };
 
-                const { classes, theme } = this.props,
+                const { classes } = this.props,
                     roles = this.props.ctx.roles,
                     columns = [{
                         Header: 'Day',

@@ -10,7 +10,6 @@ import { withStyles } from "material-ui/styles";
 import Button from 'material-ui/Button';
 import AddIcon from 'material-ui-icons/Add';
 import Slide from 'material-ui/transitions/Slide';
-import green from 'material-ui/colors/green';
 
 const styles = theme => ({
     add: {
@@ -25,7 +24,7 @@ const FloatingAddButton = inject("ctx")(
     observer(
         class extends React.Component {
             render() {
-                const { classes, theme } = this.props;
+                const { classes } = this.props;
                 return (
                     <Slide className={classes.add} direction="up" in={true}>
                         <Button onClick={this.props.onClick} variant="fab" color="secondary" aria-label="add">

@@ -10,9 +10,6 @@ import { withStyles } from "material-ui/styles";
 import IconButton from 'material-ui/IconButton';
 import DeleteIcon from 'material-ui-icons/Delete';
 import EditIcon from 'material-ui-icons/ModeEdit';
-import UpIcon from 'material-ui-icons/KeyboardArrowUp';
-import DownIcon from 'material-ui-icons/KeyboardArrowDown';
-import green from 'material-ui/colors/green';
 import blue from 'material-ui/colors/blue';
 
 const styles = theme => ({
@@ -28,7 +25,7 @@ const ActionsButtons = inject("ctx")(
     observer(
         class extends React.Component {
             render() {
-                const { classes, theme } = this.props;
+                const { classes } = this.props;
                 return (
                     <div>
                         {this.props.edit && <IconButton onClick={this.props.edit} className={classes.edit} >

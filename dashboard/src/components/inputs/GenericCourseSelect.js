@@ -49,7 +49,7 @@ const GenericCourseSelect = observer(
         });
 
         render() {
-            const { classes, theme } = this.props;
+            const { classes } = this.props;
             return (
                 <Paper className={classes.container}>
                     <Grid
