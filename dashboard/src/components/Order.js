@@ -16,7 +16,7 @@ const Order = inject("ctx")(
     observer(
         class extends React.Component {
             render() {
-                const { classes, theme } = this.props;
+                //const { classes, theme } = this.props;
                 return (
                     <div>
                         <h2>Order</h2>

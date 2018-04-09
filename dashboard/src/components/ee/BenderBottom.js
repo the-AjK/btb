@@ -56,8 +56,7 @@ const BenderBottom = inject("ctx")(
                 setTimeout(() => this.showHide(false, 500), 1000);
             }
             render() {
-                const { classes, theme } = this.props;
-                
+                const { classes } = this.props;
                 return (
                     <Slide in={this.show} timeout={this.speed} direction={"up"} className={classes.image}>
                         <img

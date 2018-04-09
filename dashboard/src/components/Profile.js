@@ -111,14 +111,14 @@ const Profile = inject("ctx")(
             });
 
             handleChangeField = action((field, event) => {
-                if (field == "password" && event.target.value == "")
+                if (field === "password" && event.target.value === "")
                     this.password2 = "";
-                if (field == "password" && event.target.value != "" && event.target.value.length < 8) {
+                if (field === "password" && event.target.value !== "" && event.target.value.length < 8) {
                     this.errors.password = "Password too short [min 8 chars]";
                 } else {
                     this.errors.password = false;
                 }
-                if (field == "email") {
+                if (field === "email") {
                     let validation = new Validator(
                         { email: event.target.value },
                         { email: "required|email" }
@@ -126,7 +126,7 @@ const Profile = inject("ctx")(
                     validation.passes();
                     this.errors[field] = validation.errors.first(field)
                 }
-                if (field == "username") {
+                if (field === "username") {
                     let validation = new Validator(
                         { username: event.target.value },
                         { username: "required" }
@@ -138,7 +138,7 @@ const Profile = inject("ctx")(
             });
 
             render() {
-                const { classes, theme } = this.props;
+                const { classes } = this.props;
                 return (
                     <Grid
                         className={classes.root}

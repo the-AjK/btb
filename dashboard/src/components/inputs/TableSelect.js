@@ -54,7 +54,7 @@ const TableSelect = observer(
         });
 
         render() {
-            const { classes, theme } = this.props;
+            const { classes } = this.props;
             console.log(this.props.suggestions.map((t)=>{return {label: t.name}}))
             return (
                 <Paper className={classes.container}>

@@ -29,7 +29,7 @@ const About = inject("ctx")(
     observer(
         class extends React.Component {
             render() {
-                const { classes, theme } = this.props;
+                const { classes } = this.props;
                 return (
                     <Grid
                         className={classes.root}

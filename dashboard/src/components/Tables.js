@@ -79,7 +79,7 @@ const Tables = inject("ctx")(
 
             handleName = props => () => {
                 let name = prompt("Enter table name:", props.original.name);
-                if(name != "" && name != props.original.name){
+                if(name !== "" && name !== props.original.name){
                     let id = props.original._id,
                         data = { name: name };
                     this.props.ctx.tables.update(id, data, (err) => {
@@ -92,7 +92,7 @@ const Tables = inject("ctx")(
 
             handleSeats = props => () => {
                 let seats = parseInt(prompt("Enter table seats:", props.original.seats), 10);
-                if(!isNaN(seats) && seats != 0){
+                if(!isNaN(seats) && seats !== 0){
                     let id = props.original._id,
                         data = { seats: seats };
                     this.props.ctx.tables.update(id, data, (err) => {
@@ -122,7 +122,7 @@ const Tables = inject("ctx")(
                     )
                 };
 
-                const { classes, theme } = this.props,
+                const { classes } = this.props,
                     roles = this.props.ctx.roles,
                     columns = [{
                         Header: 'Enabled',

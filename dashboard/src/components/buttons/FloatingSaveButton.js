@@ -10,7 +10,6 @@ import { withStyles } from "material-ui/styles";
 import Button from 'material-ui/Button';
 import SaveIcon from 'material-ui-icons/Save';
 import Slide from 'material-ui/transitions/Slide';
-import green from 'material-ui/colors/green';
 
 const styles = theme => ({
     save: {
@@ -25,7 +24,7 @@ const FloatingSaveButton = inject("ctx")(
     observer(
         class extends React.Component {
             render() {
-                const { classes, theme } = this.props;
+                const { classes } = this.props;
                 return (
                     <Slide className={classes.save} direction="up" in={true}>
                         <Button onClick={this.props.onClick} disabled={this.props.disabled} variant="fab" color="secondary" aria-label="save">
