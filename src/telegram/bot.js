@@ -250,7 +250,6 @@ bot.mention(['@tables', '@table'], (ctx) => {
         if (mention == 'table') {
           //find user table and broadcast the message
           for (let i = 0; i < orders.length; i++) {
-
             if (orders[i].owner._id.equals(ctx.session.user._id)) {
               userHasOrdered = true;
               const userTableName = orders[i].table.name;
@@ -263,8 +262,8 @@ bot.mention(['@tables', '@table'], (ctx) => {
                   counter += 1;
                 }
               }
+              break;
             }
-            break;
           }
           if (!userHasOrdered) {
             userMessage = "You should place an order and choose your table!"
