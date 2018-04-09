@@ -391,9 +391,9 @@ function formatOrderComplete(stats) {
         }
       }
     }
-    if (text == "") {
-      text = "*No orders received*";
-    }
+  }
+  if (text == "") {
+    text = "\n\nNo orders received";
   }
   return text;
 }
