@@ -250,13 +250,13 @@ bot.mention(['@tables', '@table'], (ctx) => {
         if (mention == 'table') {
           //find user table and broadcast the message
           for (let i = 0; i < orders.length; i++) {
-
-            if (orders[i].owner._id.equals(ctx.session.user._id)) {
+            let orderOwner = orders[i].owner._id.toString(),
+              user = ctx.session.user._id.toString();
+            if ( orderOwner === user) {
               userHasOrdered = true;
               const userTableName = orders[i].table.name;
               for (let j = 0; j < orders.length; j++) {
-                if (!orders[j].owner._id.equals(ctx.session.user._id) &&
-                  orders[j].table.name == userTableName) {
+                if (orders[j].table.name == userTableName && orderOwner != user) {
                   bot.telegram.sendMessage(orders[j].owner.telegram.id, message, {
                     parse_mode: "markdown"
                   });
