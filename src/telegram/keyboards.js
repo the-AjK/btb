@@ -6,6 +6,7 @@
 "use strict";
 
 const roles = require("../roles"),
+    moment = require("moment"),
     db = require("../db"),
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels;
