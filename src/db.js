@@ -443,6 +443,26 @@ exports.getTablesStatus = (day, cb) => {
   });
 }
 
+exports.getTableParticipants = (day, tableID, cb) => {
+  getDailyMenu(null, (err, menu) => {
+    if (!err && menu) {
+      Order.find({
+        deleted: false,
+        menu: menu._id,
+        table: tableID
+      }).populate('owner').exec((err, orders) => {
+        if (!err) {
+          cb(null, orders.map(o => o.owner));
+        } else {
+          cb(err || "DB error");
+        }
+      });
+    } else {
+      cb(err || "DB error");
+    }
+  });
+}
+
 exports.getDailyUserOrder = (day, userID, cb) => {
   getDailyMenu(null, (err, menu) => {
     if (!err && menu) {
@@ -488,7 +508,7 @@ exports.setUserLevel = (userID, level, callback) => {
   }, callback);
 };
 
-function removeDuplicates(arr){
+function removeDuplicates(arr) {
   let unique_array = Array.from(new Set(arr))
   return unique_array
 }

@@ -543,7 +543,7 @@ scene.enter((ctx) => {
             ctx.reply(err);
             return ctx.scene.leave();
         } else if (dailyOrder) {
-            ctx.reply(require('../bot').formatOrder(dailyOrder), {
+            ctx.reply(require('../bot').formatOrder(dailyOrder, ctx.session.user), {
                 parse_mode: "markdown"
             });
             return ctx.scene.leave();
