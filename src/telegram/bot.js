@@ -243,7 +243,7 @@ bot.mention(['@tables', '@table'], (ctx) => {
       if (err) {
         ctx.reply(err);
       } else {
-        let message = "[" + ctx.session.user.email + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text,
+        let message = "[" + (ctx.session.user.telegram.first_name || ctx.session.user.email) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text,
           userMessage = "Broadcast service",
           userHasOrdered = false,
           counter = 0;
