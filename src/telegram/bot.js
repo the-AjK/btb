@@ -466,7 +466,7 @@ function broadcastMessage(message, accessLevel, opts, silent) {
             message = "(ADMIN) " + message;
             logText = logText + "ADMIN";
           }
-          logText = logText + "]";
+          logText = logText + "] message: '" + message.substring(0, 50) + "...'";
           console.log(logText);
         }
         if (roles.compareAccessLevel(accessLevel, roles.accessLevels.admin)) {
