@@ -71,9 +71,9 @@ const Orders = inject("ctx")(
                 const { classes } = this.props,
                     roles = this.props.ctx.roles,
                     columns = [{
+                        id: 'day',
                         Header: 'Day',
-                        accessor: 'day',
-                        Cell: props => moment(props.value).format('DD/MM/YY')
+                        accessor: o => { return o.menu ? moment(o.menu.day).format('DD/MM/YY') : "-" }
                     }, {
                         id: 'ownerEmail',
                         Header: 'Owner',

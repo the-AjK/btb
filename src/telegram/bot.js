@@ -243,7 +243,7 @@ bot.mention(['@tables', '@table'], (ctx) => {
       if (err) {
         ctx.reply(err);
       } else {
-        let message = "[" + ctx.session.user.email + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text,
+        let message = "[" + (ctx.session.user.telegram.first_name || ctx.session.user.email) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text,
           userMessage = "Broadcast service",
           userHasOrdered = false,
           counter = 0;
@@ -334,7 +334,7 @@ function formatMenu(menu) {
 }
 exports.formatMenu = formatMenu;
 
-function formatOrder(order) {
+function formatOrder(order, user) {
   let text =
     "\n__Your daily order__:\n*" + moment(order.menu.day).format("MMMM Do YYYY") + "* at *" +
     moment(order.createdAt).format("HH:mm") + "*";
@@ -353,7 +353,30 @@ function formatOrder(order) {
       text = text + "*" + order.secondCourse.sideDishes[i] + "*";
     }
   }
-  text = text + "\n\n__Table__:\n* - " + order.table.name + "*";
+  text = text + "\n\n__List of people at__ *" + order.table.name + "*:";
+  let tableUsers = false;
+  DB.getTableParticipants(null, order.table._id, (err, users) => {
+    if (err) {
+      console.error(err);
+      tableUsers = null;
+    } else {
+      tableUsers = users;
+    }
+  });
+  require('deasync').loopWhile(function () {
+    return tableUsers === false;
+  });
+  if (tableUsers && tableUsers.length) {
+    for (let i = 0; i < tableUsers.length; i++) {
+      let tableUser = tableUsers[i];
+      text = text + "\n - [" + (tableUser.telegram.first_name || tableUser.email) + "](tg://user?id=" + tableUser.telegram.id + ")";
+      if (tableUser._id.equals(user._id)) {
+        text = text + " (*You*)";
+      }
+    }
+  } else {
+    text = text + "\n* - No participants";
+  }
   text = text + "\n\nare you hungry? 🤤";
   return text;
 }
@@ -443,7 +466,7 @@ function broadcastMessage(message, accessLevel, opts, silent) {
             message = "(ADMIN) " + message;
             logText = logText + "ADMIN";
           }
-          logText = logText + "]";
+          logText = logText + "] message: '" + message.substring(0, 50) + "...'";
           console.log(logText);
         }
         if (roles.compareAccessLevel(accessLevel, roles.accessLevels.admin)) {

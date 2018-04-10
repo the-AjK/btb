@@ -417,7 +417,7 @@ function _updateMenu(req, res) {
                                                 console.error(err);
                                             } else {
                                                 for (let i = 0; i < orders.length; i++) {
-                                                    DB.Order.findOneAndRemove(orders[i]._id).exec(() => {
+                                                    DB.Order.findByIdAndRemove(orders[i]._id).exec(() => {
                                                         if (err)
                                                             console.error(err);
                                                     });

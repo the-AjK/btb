@@ -6,6 +6,7 @@
 "use strict";
 
 const roles = require("../roles"),
+    moment = require("moment"),
     db = require("../db"),
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels;
@@ -331,7 +332,7 @@ module.exports = {
         db.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
             if (!err && order) {
                 userHasOrdered = true;
-                dailyDeadlineReached = moment().isAfter(order.menu.deadline);
+                dailyDeadlineReached = moment().isAfter(moment(order.menu.deadline));
             }
             done = true;
         });
