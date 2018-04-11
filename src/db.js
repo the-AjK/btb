@@ -450,13 +450,7 @@ exports.getTableParticipants = (day, tableID, cb) => {
         deleted: false,
         menu: menu._id,
         table: tableID
-      }).populate('owner').exec((err, orders) => {
-        if (!err) {
-          cb(null, orders.map(o => o.owner));
-        } else {
-          cb(err || "DB error");
-        }
-      });
+      }).populate('owner').exec(cb);
     } else {
       cb(err || "DB error");
     }

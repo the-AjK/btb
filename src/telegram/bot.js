@@ -126,7 +126,45 @@ bot.on("callback_query", ctx => {
     ctx.deleteMessage(ctx.session.lastMessage.message_id);
     delete ctx.session.lastMessage;
   }
-  ctx.answerCbQuery("Hmm, this options is not available anymore!");
+  if (ctx.update.callback_query.data == 'statusorders') {
+    if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+      ctx.reply("Admin stuff. Keep out.");
+      return;
+    } else {
+      DB.getDailyOrderStats(null, (err, stats) => {
+        if (err) {
+          ctx.reply(err);
+        } else {
+          ctx.reply("*Orders status*:" + formatOrderComplete(stats), {
+            parse_mode: "markdown"
+          });
+        }
+      });
+    }
+  } else if (ctx.update.callback_query.data == 'statustables') {
+    if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+      ctx.reply("Admin stuff. Keep out.");
+      return;
+    } else {
+      DB.Table.find({
+        enabled: true,
+        deleted: false
+      }).sort({
+        'name': 1
+      }).exec((err, tables) => {
+        if (err) {
+          console.error(err);
+          ctx.reply("DB error");
+        } else {
+          ctx.reply(formatTables(tables, ctx.session.user), {
+            parse_mode: "markdown"
+          });
+        }
+      });
+    }
+  } else {
+    ctx.answerCbQuery("Hmm, this options is not available anymore!");
+  }
 });
 
 function replyWithDelay(ctx, interval, messages, opts) {
@@ -170,22 +208,8 @@ function textManager(ctx) {
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.order) {
     ctx.session.mainCounter = 0;
     ctx.scene.enter('order');
-  } else if (ctx.message.text == keyboards.btb(ctx).cmd.orderStatus) {
-    ctx.session.mainCounter = 0;
-    if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
-      ctx.reply("Admin stuff. Keep out.");
-      return;
-    } else {
-      DB.getDailyOrderStats(null, (err, stats) => {
-        if (err) {
-          ctx.reply(err);
-        } else {
-          ctx.reply("*Orders status*:" + formatOrderComplete(stats), {
-            parse_mode: "markdown"
-          });
-        }
-      })
-    }
+  } else if (keyboards.btb(ctx)[ctx.message.text]) {
+    keyboards.btb(ctx)[ctx.message.text]();
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.settings) {
     ctx.session.mainCounter = 0;
     ctx.scene.enter('settings');
@@ -355,12 +379,12 @@ function formatOrder(order, user) {
   }
   text = text + "\n\n__List of people at__ *" + order.table.name + "*:";
   let tableUsers = false;
-  DB.getTableParticipants(null, order.table._id, (err, users) => {
+  DB.getTableParticipants(null, order.table._id, (err, orders) => {
     if (err) {
       console.error(err);
       tableUsers = null;
     } else {
-      tableUsers = users;
+      tableUsers = orders.map(o => o.owner);
     }
   });
   require('deasync').loopWhile(function () {
@@ -383,11 +407,73 @@ function formatOrder(order, user) {
 exports.formatOrder = formatOrder;
 
 
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function formatTables(tables, user) {
+  let text = "*Tables status:*";
+
+  for (let t = 0; t < tables.length; t++) {
+    let table = tables[t];
+    if (!table.enabled) {
+      continue;
+    }
+    let tableOrders = false;
+    DB.getTableParticipants(null, table._id, (err, orders) => {
+      if (err) {
+        console.error(err);
+        tableOrders = null;
+      } else {
+        tableOrders = orders;
+      }
+    });
+    require('deasync').loopWhile(function () {
+      return tableOrders === false;
+    });
+    text = text + "\n\n*" + capitalizeFirstLetter(table.name) + "*";
+    if (tableOrders && tableOrders.length) {
+      text = text + " (" + tableOrders.length + "/" + table.seats + "):";
+      for (let i = 0; i < tableOrders.length; i++) {
+        let tableUser = tableOrders[i].owner,
+          userOrder = tableOrders[i],
+          username = (tableUser.telegram.first_name || tableUser.email); //.replace(/[^a-zA-Z ]/g, "");
+        text = text + "\n - [" + username + "](tg://user?id=" + tableUser.telegram.id + ")";
+        //text = text + "\n - " + username + "";
+        if (tableUser._id.equals(user._id)) {
+          text = text + " (*You*)";
+        }
+        //add order detail
+        let fc = userOrder.firstCourse,
+          sc = userOrder.secondCourse;
+        if (fc && fc.item) {
+          text = text + " - " + fc.item + " " + (fc.condiment ? (" (_" + fc.condiment + "_)") : "");
+
+        } else if (sc && sc.item) {
+          text = text + " - " + sc.item + " ";
+          for (let j = 0; j < sc.sideDishes.length; j++) {
+            if (j == 0)
+              text = text + "(_";
+            if (j > 0)
+              text = text + ", ";
+            text = text + sc.sideDishes[j];
+          }
+          if (sc.sideDishes.length > 0)
+            text = text + "_)";
+        }
+      }
+    } else {
+      text = text + ":\n - No participants";
+    }
+  }
+  return text;
+}
+
 function formatOrderComplete(stats) {
   let text = "";
 
   for (let table in stats) {
-    text = text + "\n\nTable: *" + table + "*";
+    text = text + "\n\n*" + capitalizeFirstLetter(table) + "*:";
     if (stats[table].firstCourses) {
       for (let fc in stats[table].firstCourses) {
         const order = stats[table].firstCourses[fc];
@@ -487,7 +573,7 @@ function broadcastMessage(message, accessLevel, opts, silent) {
         }
         console.log(logText);
         bot.telegram.sendMessage(user.telegram.id, _message, _options).then(() => {
-          
+
         });
       }
     }
