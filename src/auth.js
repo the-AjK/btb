@@ -116,15 +116,15 @@ exports.login = function (req, res) {
           }
         });
         //notify root users
-        bot.broadcastMessage("User login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, true);
+        bot.broadcastMessage("User login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, null, true);
       } else {
         //user found but wrong password
-        bot.broadcastMessage("User wrong login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, true);
+        bot.broadcastMessage("User wrong login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, null, true);
         res.sendStatus(401);
       }
     } else {
       //user not found!
-      bot.broadcastMessage("Failed login attempt:\n" + email + "\n" + password + "\nip: " + req.clientIp, accessLevels.root, true);
+      bot.broadcastMessage("Failed login attempt:\n" + email + "\n" + password + "\nip: " + req.clientIp, accessLevels.root, null, true);
       res.sendStatus(401);
     }
   });
