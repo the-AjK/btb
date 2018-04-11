@@ -211,7 +211,7 @@ const LoginForm = inject("ctx")(
                       src="/static/images/btb.png"
                     />
                   </Slide>
-                  <form noValidate autoComplete="off">
+                  <form noValidate autoComplete="on">
                     <FormControl
                       className={classes.textField}
                       error={this.form.fields.email.error !== false}
@@ -220,6 +220,7 @@ const LoginForm = inject("ctx")(
                       <TextField
                         id="email"
                         label="Email"
+                        autoComplete="email"
                         error={this.form.fields.email.error !== false}
                         onKeyPress={this.handleKeyPress}
                         onChange={this.handleChange("email")}
@@ -240,7 +241,7 @@ const LoginForm = inject("ctx")(
                         error={this.form.fields.password.error !== false}
                         onChange={this.handleChange("password")}
                         type="password"
-                        autoComplete="new-password"
+                        autoComplete="password"
                         onKeyPress={this.handleKeyPress}
                         margin="normal"
                       />

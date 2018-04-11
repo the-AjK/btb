@@ -259,7 +259,8 @@ const Users = inject("ctx")(
                         id: 'telegramID',
                         Header: 'Telegram ID',
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
-                        accessor: d => d.telegram.id
+                        accessor: d => d.telegram.id,
+                        Cell: props => <a href={"tg://user?id=" + props.value}>{props.value}</a>
                     }, {
                         Header: 'Last login',
                         accessor: 'lastLogin',
