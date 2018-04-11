@@ -509,7 +509,7 @@ exports.broadcastDailyMenu = function () {
 exports.init = function (expressApp) {
   bot.startPolling();
   if (process.env.NODE_ENV === "production") {
-    broadcastMessage("BTB has started!", accessLevels.root);
+    broadcastMessage("BTB has started!", accessLevels.root, null, true);
   }
 }
 
