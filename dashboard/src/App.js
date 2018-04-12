@@ -26,6 +26,7 @@ import Menu from "./components/Menu";
 import Home from "./components/Home";
 import About from "./components/About";
 import Menus from "./components/Menus";
+import Messages from "./components/Messages";
 import Order from "./components/Order";
 import Orders from "./components/Orders";
 import Tables from "./components/Tables";
@@ -34,6 +35,7 @@ import User from "./components/User";
 import Profile from "./components/Profile";
 import NotFound from "./components/NotFound";
 import GenericDialog from "./components/GenericDialog";
+import { accessLevels, checkUserAccessLevel } from "./utils/Roles";
 
 useStrict(true);
 
@@ -56,21 +58,30 @@ const services = {
   ctx: new GlobalStore()
 };
 
-const PrivateRoute = ({ component: Component, ...rest }) => (
+const PrivateRoute = ({ component: Component, accessLevel: AccessLevel, ...rest }) => (
   <Route
     {...rest}
     render={props => {
-      //let id = rest.computedMatch.params.id
-      return services.ctx.auth.isAuth ? (
-        <Dashboard {...props} router={{ ...rest }} subComponent={Component} />
-      ) : (
+      if (!services.ctx.auth.isAuth) {
+        return (
           <Redirect
             to={{
               pathname: "/login",
               state: { from: props.location }
             }}
           />
-        )
+        );
+      } else if (AccessLevel && !checkUserAccessLevel(services.ctx.auth.user.role, AccessLevel)) {
+        return (<Redirect
+          to={{
+            pathname: "/"
+          }}
+        />);
+      } else {
+        return (
+          <Dashboard {...props} router={{ ...rest }} subComponent={Component} />
+        );
+      }
     }
     }
   />
@@ -112,13 +123,14 @@ const BTB = observer(
               <GenericDialog {...this.dialog} handleClose={this.handleDialogClose} />
               <Switch>
                 <Route path="/login" component={Login} />
-                <PrivateRoute path="/tables" component={Tables} />
-                <PrivateRoute path="/order/:id" component={Order} />
-                <PrivateRoute path="/orders" component={Orders} />
-                <PrivateRoute path="/menus/:id" component={Menu} />
-                <PrivateRoute path="/menus" component={Menus} />
-                <PrivateRoute path="/users/:id" component={User} />
-                <PrivateRoute path="/users" component={Users} />
+                <PrivateRoute accessLevel={accessLevels.root} path="/messages" component={Messages} />
+                <PrivateRoute accessLevel={accessLevels.admin} path="/tables" component={Tables} />
+                <PrivateRoute accessLevel={accessLevels.user} path="/order/:id" component={Order} />
+                <PrivateRoute accessLevel={accessLevels.admin} path="/orders" component={Orders} />
+                <PrivateRoute accessLevel={accessLevels.admin} path="/menus/:id" component={Menu} />
+                <PrivateRoute accessLevel={accessLevels.admin} path="/menus" component={Menus} />
+                <PrivateRoute accessLevel={accessLevels.admin} path="/users/:id" component={User} />
+                <PrivateRoute accessLevel={accessLevels.admin} path="/users" component={Users} />
                 <PrivateRoute path="/profile" component={Profile} />
                 <PrivateRoute path="/about" component={About} />
                 <PrivateRoute exact path="/" component={Home} />

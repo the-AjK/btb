@@ -56,7 +56,7 @@ const Menu = inject("ctx")(
             constructor(props) {
                 super(props);
                 extendObservable(this, {
-                    firstCoursesPanels: [0],
+                    firstCoursesPanels: [0, 1],
                     id: props.router.computedMatch.params.id,
                     sendNotifications: true,
                     isSaving: false,
@@ -72,7 +72,11 @@ const Menu = inject("ctx")(
                         firstCourse: {
                             items: [{
                                 key: 0,
-                                value: "",
+                                value: "Insalatona Venezia",
+                                condiments: []
+                            }, {
+                                key: 1,
+                                value: "Insalatona Bologna",
                                 condiments: []
                             }]
                         },

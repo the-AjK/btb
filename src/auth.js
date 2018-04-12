@@ -112,7 +112,7 @@ exports.login = function (req, res) {
           if (err) {
             console.error(err);
           } else {
-            console.log("User stats udpated!");
+            //console.log("User stats udpated!");
           }
         });
         //notify root users

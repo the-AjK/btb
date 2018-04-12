@@ -63,7 +63,7 @@ const Menus = inject("ctx")(
                     return (
                         <ActionsButtons
                             edit={() => { this.props.ctx.history.push('/menus/' + props.original._id) }}
-                            delete={this.handleDelete(props.original._id)}
+                            delete={roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) || props.original.enabled === false ? this.handleDelete(props.original._id) : undefined}
                         />
                     )
                 };
@@ -78,13 +78,13 @@ const Menus = inject("ctx")(
                         Header: 'Enabled',
                         accessor: 'enabled',
                         filterable: false,
-                        Cell: props => { return props.value ? <EnabledIcon className={props.value ? classes.enabled : classes.disabled}/> : <DisabledIcon className={props.value ? classes.enabled : classes.disabled}/> }
+                        Cell: props => { return props.value ? <EnabledIcon className={props.value ? classes.enabled : classes.disabled} /> : <DisabledIcon className={props.value ? classes.enabled : classes.disabled} /> }
                     }, {
                         Header: 'Deleted',
                         accessor: 'deleted',
                         filterable: false,
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
-                        Cell: props => { return props.value ? <EnabledIcon className={!props.value ? classes.enabled : classes.disabled}/> : <DisabledIcon className={!props.value ? classes.enabled : classes.disabled}/> }
+                        Cell: props => { return props.value ? <EnabledIcon className={!props.value ? classes.enabled : classes.disabled} /> : <DisabledIcon className={!props.value ? classes.enabled : classes.disabled} /> }
                     }, {
                         Header: 'Label',
                         accessor: 'label'

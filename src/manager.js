@@ -16,6 +16,7 @@ const schedule = require('node-schedule'),
     reminder = require('./reminder'),
     auth = require('./auth'),
     bot = require("./telegram/bot"),
+    telegramBot = require("./telegram/bot").bot,
     botNotifications = require('./telegram/notifications'),
     DB = require("./db");
 
@@ -878,4 +879,62 @@ exports.getStats = function (req, res) {
         res.send(stats);
     });
 
+}
+
+function sendMessage(user, message, options) {
+    console.log("Broadcasting message to: " + user.telegram.id + "-" + user.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
+    telegramBot.telegram.sendMessage(user.telegram.id, message, options).then(() => {
+        console.log("Message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
+    });
+}
+
+exports.broadcastMessage = (req, res) => {
+    const data = req.body,
+        options = {
+            parse_mode: "markdown",
+            disable_notification: data.silent ? true : undefined
+        };
+    if (!data.message && data.message.trim() == "") {
+        console.error("Broadcast message error: required field 'message'");
+        return res.sendStatus(400);
+    }
+    if (data.hasOrdered == true) {
+        //Broadcast message to users who already placed an order today
+        DB.getDailyOrders(null, (err, orders) => {
+            if (err) {
+                console.error(err);
+                return res.sendStatus(500);
+            }
+            for (let i = 0; i < orders.length; i++) {
+                sendMessage(orders[i].owner, data.message, options);
+            }
+            res.sendStatus(200);
+        });
+    } else {
+        //Broadcast message
+        let query = {
+            "telegram.enabled": true,
+            "telegram.banned": false,
+            "deleted": false
+        };
+        if (data.email != null) {
+            query.email = data.email;
+        }
+        if (data.role && userRoles[data.role]) {
+            query["role.bitMask"] = userRoles[data.role].bitMask
+        }
+        DB.User.find(query, (err, users) => {
+            if (err) {
+                console.error(err);
+                return res.sendStatus(500);
+            } else if (users.length == 0) {
+                res.sendStatus(404);
+            } else {
+                for (let i = 0; i < users.length; i++) {
+                    sendMessage(users[i], data.message, options);
+                }
+                res.sendStatus(200);
+            }
+        });
+    }
 }

@@ -282,6 +282,8 @@ bot.mention(['@tables', '@table'], (ctx) => {
                   orders[j].table.name == userTableName) {
                   bot.telegram.sendMessage(orders[j].owner.telegram.id, message, {
                     parse_mode: "markdown"
+                  }).then(() => {
+                    console.log("Mention table sent to " + orders[j].owner.telegram.id + "-" + orders[j].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
                   });
                   counter += 1;
                 }
@@ -299,6 +301,8 @@ bot.mention(['@tables', '@table'], (ctx) => {
             if (!orders[i].owner._id.equals(ctx.session.user._id)) {
               bot.telegram.sendMessage(orders[i].owner.telegram.id, message, {
                 parse_mode: "markdown"
+              }).then(() => {
+                console.log("Mention tables sent to " + orders[j].owner.telegram.id + "-" + orders[j].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
               });
               counter += 1;
             } else {
@@ -573,7 +577,7 @@ function broadcastMessage(message, accessLevel, opts, silent) {
         }
         console.log(logText);
         bot.telegram.sendMessage(user.telegram.id, _message, _options).then(() => {
-
+          console.log("Message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
         });
       }
     }

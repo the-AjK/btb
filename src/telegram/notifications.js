@@ -44,14 +44,14 @@ exports.dailyMenu = function (menu) {
             "deleted": false,
             "settings.dailyMenu": true
         },
-        message = "🤘 New daily menu is available!\n" + require('./bot').formatMenu(menu)
+        message = "🤘 New daily menu is available!\n" + require('./bot').formatMenu(menu);
 
     DB.User.find(query, (err, users) => {
         if (err) {
             console.error(err);
         } else {
             for (let i = 0; i < users.length; i++) {
-                console.log("broadcasting dailyMenu to: " + users[i].telegram.id);
+                console.log("broadcasting dailyMenu to: " + users[i].telegram.id + "-" + users[i].telegram.first_name);
                 const ctx = {
                     session: {
                         user: users[i]
@@ -63,13 +63,13 @@ exports.dailyMenu = function (menu) {
     });
 }
 
-//Send daily menu update notification for every user who enabled the setting.dailyMenu
+//Send daily menu update notification for every user
 exports.dailyMenuUpdated = function (menu) {
     const query = {
             "telegram.enabled": true,
             "telegram.banned": false,
             "deleted": false,
-            "settings.dailyMenu": true
+            //"settings.dailyMenu": true
         },
         message = "⚠️ Daily menu has been changed and your order has been deleted!\nPlease place your order again.";
 
@@ -79,8 +79,12 @@ exports.dailyMenuUpdated = function (menu) {
         } else {
             for (let i = 0; i < users.length; i++) {
                 DB.getDailyUserOrder(null, users[i]._id, (err, order) => {
-                    if (!err && order) {
-                        console.log("broadcasting dailyMenu update to: " + users[i].telegram.id);
+                    if (err) {
+                        console.error(err);
+                    } else if (!order) {
+                        //user didnt ordered yet, nothing to do.
+                    } else {
+                        console.log("broadcasting dailyMenu update to: " + users[i].telegram.id + "-" + users[i].telegram.first_name);
                         const ctx = {
                             session: {
                                 user: users[i]
@@ -109,8 +113,6 @@ exports.orderReminder = function (deadline) {
         message = message + " (" + moment(deadline).format('HH:mm') + ")";
     }
 
-    console.log("send orderReminder")
-
     DB.User.find(query, (err, users) => {
         if (err) {
             console.error(err);
@@ -118,7 +120,7 @@ exports.orderReminder = function (deadline) {
             for (let i = 0; i < users.length; i++) {
                 DB.getDailyUserOrder(null, users[i]._id, (err, order) => {
                     if (!err && !order) {
-                        console.log("broadcasting orderReminder to: " + users[i].telegram.id);
+                        console.log("broadcasting orderReminder to: " + users[i].telegram.id + "-" + users[i].telegram.first_name);
                         const ctx = {
                             session: {
                                 user: users[i]
@@ -142,10 +144,10 @@ exports.ordersCompleteReminder = function () {
     const query = {
         "telegram.enabled": true,
         "telegram.banned": false,
-        "deleted": false
+        "deleted": false,
+        "settings.adminReminders": true
     };
 
-    console.log("send ordersCompleteReminder")
     const accessLevel = accessLevels.admin;
 
     DB.User.find(query, (err, users) => {
