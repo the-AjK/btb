@@ -573,7 +573,7 @@ function broadcastMessage(message, accessLevel, opts, silent) {
         }
         console.log(logText);
         bot.telegram.sendMessage(user.telegram.id, _message, _options).then(() => {
-
+          console.log("Message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
         });
       }
     }
