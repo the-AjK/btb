@@ -191,10 +191,13 @@ const Users = inject("ctx")(
 
                 const actions = (props) => {
                     if (props.original.email !== this.props.ctx.auth.user.email) {
+                        let roles = this.props.ctx.roles,
+                            userCannotBeDeleted = (!roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && roles.checkUser(props.original.role, roles.userRoles.root)) ||
+                                (this.props.ctx.auth.user.email === props.original.email) || (roles.checkUser(this.props.ctx.auth.user.role, roles.userRoles.admin) && roles.checkUser(props.original.role, roles.userRoles.admin));
                         return (
                             <ActionsButtons
                                 //edit={() => { this.props.ctx.history.push('/users/' + props.original._id) }}
-                                delete={this.handleDelete(props.original)}
+                                delete={!userCannotBeDeleted ? this.handleDelete(props.original) : undefined}
                             />
                         )
                     } else {
