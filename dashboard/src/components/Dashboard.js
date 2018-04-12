@@ -24,6 +24,7 @@ import UsersIcon from "material-ui-icons/Group";
 import TablesIcon from "material-ui-icons/Widgets";
 import ProfileIcon from "material-ui-icons/Person";
 import AboutIcon from "material-ui-icons/Info";
+import MessageIcon from "material-ui-icons/Message";
 import LogoutIcon from "material-ui-icons/Launch"
 import SettingsIcon from "material-ui-icons/Settings"
 import AccountCircle from 'material-ui-icons/AccountCircle';
@@ -127,6 +128,11 @@ const Dashboard = inject("ctx")(
 
       handleAbout = () => {
         this.props.ctx.history.push('/about');
+        this.setState({ anchorEl: null });
+      };
+
+      handleMessages = () => {
+        this.props.ctx.history.push('/messages');
         this.setState({ anchorEl: null });
       };
 
@@ -252,6 +258,10 @@ const Dashboard = inject("ctx")(
                   >
                     <MenuItem className={classes.profileMenuItem} onClick={this.handleProfile}><ProfileIcon className={classes.profileMenuIcon} /> Profile</MenuItem>
                     <MenuItem className={classes.profileMenuItem} onClick={this.handleAbout}><AboutIcon className={classes.profileMenuIcon} /> About</MenuItem>
+                    {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && <div>
+                      <Divider />
+                      <MenuItem className={classes.profileMenuItem} onClick={this.handleMessages}><MessageIcon className={classes.profileMenuIcon} /> Messages</MenuItem>
+                    </div>}
                     <Divider />
                     <MenuItem className={classes.profileMenuItem} onClick={this.handleLogout} ><LogoutIcon className={classes.profileMenuIcon} /> Logout</MenuItem>
                   </Menu>

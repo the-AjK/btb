@@ -55,6 +55,16 @@ export default class API {
     );
   }
 
+  broadcastMessage(data, cb) {
+    this.server.http({
+        method: "POST",
+        endpoint: this.base_path + "/broadcast"
+      },
+      data,
+      cb
+    );
+  }
+
   //generi resource functions
   _getResources(path, resourceID, cb) {
     this.server.http({

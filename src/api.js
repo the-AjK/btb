@@ -35,8 +35,9 @@ const loginLimiter = new RateLimit({
 api.post("/login", loginLimiter, auth.login);
 api.get("/logout", loginLimiter, auth.checkAuthUser, auth.logout);
 
-api.post("/profile", apiLimiter, auth.checkAuthAdmin, auth.updateProfile);
-api.get("/stats", apiLimiter, auth.checkAuthAdmin, manager.getStats);
+api.post("/profile", apiLimiter, auth.checkAuthUser, auth.updateProfile);
+api.get("/stats", apiLimiter, auth.checkAuthUser, manager.getStats);
+api.post("/broadcast", apiLimiter, auth.checkAuthAdmin, manager.broadcastMessage);
 
 function generateResourceAPIStack(resource) {
 	api.get("/" + resource + "/:id?", apiLimiter, auth.checkAuthAdmin, manager[resource].get);
@@ -46,9 +47,13 @@ function generateResourceAPIStack(resource) {
 }
 
 generateResourceAPIStack('users');
-generateResourceAPIStack('menus');
 generateResourceAPIStack('orders');
 generateResourceAPIStack('tables');
+
+api.get("/menus/:id?", apiLimiter, auth.checkAuthUser, manager.menus.get);
+api.post("/menus", apiLimiter, auth.checkAuthUser, manager.menus.add);
+api.put("/menus/:id", apiLimiter, auth.checkAuthUser, manager.menus.update);
+api.delete("/menus/:id", apiLimiter, auth.checkAuthUser, manager.menus.delete);
 
 api.get("/coffee", apiLimiter, function (req, res) {
 	//I'm a teapot
