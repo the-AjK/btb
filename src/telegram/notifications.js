@@ -142,7 +142,8 @@ exports.ordersCompleteReminder = function () {
     const query = {
         "telegram.enabled": true,
         "telegram.banned": false,
-        "deleted": false
+        "deleted": false,
+        "settings.adminReminders": true
     };
 
     console.log("send ordersCompleteReminder")
