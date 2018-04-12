@@ -63,13 +63,13 @@ exports.dailyMenu = function (menu) {
     });
 }
 
-//Send daily menu update notification for every user who enabled the setting.dailyMenu
+//Send daily menu update notification for every user
 exports.dailyMenuUpdated = function (menu) {
     const query = {
             "telegram.enabled": true,
             "telegram.banned": false,
             "deleted": false,
-            "settings.dailyMenu": true
+            //"settings.dailyMenu": true
         },
         message = "⚠️ Daily menu has been changed and your order has been deleted!\nPlease place your order again.";
 
