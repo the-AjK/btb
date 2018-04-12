@@ -881,9 +881,9 @@ exports.getStats = function (req, res) {
 
 }
 
-function sendMessage(user, message) {
+function sendMessage(user, message, options) {
     console.log("Broadcasting message to: " + user.telegram.id + "-" + user.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
-    telegramBot.telegram.sendMessage(user.telegram.id, data.message, options).then(() => {
+    telegramBot.telegram.sendMessage(user.telegram.id, message, options).then(() => {
         console.log("Message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
     });
 }
@@ -896,42 +896,44 @@ exports.broadcastMessage = (req, res) => {
         };
     if (!data.message && data.message.trim() == "") {
         console.error("Broadcast message error: required field 'message'");
-        return res.status(400);
+        return res.sendStatus(400);
     }
     if (data.hasOrdered == true) {
         //Broadcast message to users who already placed an order today
         DB.getDailyOrders(null, (err, orders) => {
             if (err) {
                 console.error(err);
-                return res.status(500);
+                return res.sendStatus(500);
             }
             for (let i = 0; i < orders.length; i++) {
-                sendMessage(orders[i].owner, data.message);
+                sendMessage(orders[i].owner, data.message, options);
             }
-            res.status(200);
+            res.sendStatus(200);
         });
     } else {
         //Broadcast message
         let query = {
-            "_id": data.id,
             "telegram.enabled": true,
             "telegram.banned": false,
             "deleted": false
         };
+        if (data.email != null) {
+            query.email = data.email;
+        }
         if (data.role && userRoles[data.role]) {
             query["role.bitMask"] = userRoles[data.role].bitMask
         }
         DB.User.find(query, (err, users) => {
             if (err) {
                 console.error(err);
-                return res.status(500);
+                return res.sendStatus(500);
             } else if (users.length == 0) {
-                res.status(404);
+                res.sendStatus(404);
             } else {
                 for (let i = 0; i < users.length; i++) {
-                    sendMessage(users[i], data.message);
+                    sendMessage(users[i], data.message, options);
                 }
-                res.status(200);
+                res.sendStatus(200);
             }
         });
     }

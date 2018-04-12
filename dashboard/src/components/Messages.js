@@ -8,9 +8,12 @@ import React from "react";
 import { observer, inject } from "mobx-react";
 import { extendObservable, action } from "mobx";
 import { withStyles } from "material-ui/styles";
-import FloatingSaveButton from "./buttons/FloatingSaveButton";
+import FloatingButton from "./buttons/FloatingButton";
 import Grid from "material-ui/Grid";
 import TextField from 'material-ui/TextField';
+import API from "./../utils/API";
+import { MenuItem } from 'material-ui/Menu';
+import Select from 'material-ui/Select';
 
 const styles = theme => ({
     root: {
@@ -25,15 +28,20 @@ const Messages = inject("ctx")(
             constructor(props) {
                 super(props);
                 extendObservable(this, {
-                    message: ""                    
+                    data: {
+                        email: null,
+                        message: ""
+                    }
                 });
+                this.api = new API();
+                this.props.ctx.users.fetch();
             }
 
             showAlert = (title, description, onClose) => {
                 this.props.ctx.dialog.set({
                     open: true,
                     onClose: (response) => {
-                        if(onClose)
+                        if (onClose)
                             onClose(response);
                     },
                     showCancel: false,
@@ -43,12 +51,12 @@ const Messages = inject("ctx")(
             }
 
             send = () => {
-                this.props.ctx.auth.updateProfile(this.username, this.email, this.password, (err) => {
+                this.api.broadcastMessage(this.data, (err) => {
                     if (err) {
                         this.showAlert("Error", err);
                     } else {
-                        this.showAlert("Success", "Message has been broadcasted!", ()=>{
-                           
+                        this.showAlert("Success", "Message has been broadcasted!", () => {
+
                         });
                     }
                 });
@@ -69,7 +77,11 @@ const Messages = inject("ctx")(
             }
 
             handleChangeField = action((field, event) => {
-                this[field] = event.target.value
+                if (field === "email" && event.target.value === "None") {
+                    this.data.email = null;
+                } else {
+                    this.data[field] = event.target.value
+                }
             });
 
             render() {
@@ -82,7 +94,7 @@ const Messages = inject("ctx")(
                         justify={"center"}
                         alignItems={"stretch"}
                     >
-                        <FloatingSaveButton disabled={this.props.ctx.auth.isLoading} onClick={this.handleSend} />
+                        <FloatingButton icon={"Send"} disabled={this.props.ctx.auth.isLoading} onClick={this.handleSend} />
                         <Grid item xs={12} md={6}>
                             <Grid
                                 className={classes.root}
@@ -92,12 +104,19 @@ const Messages = inject("ctx")(
                             >
                                 <Grid item xs={12}>
                                     <h2>Broadcast message</h2>
+                                    <Select
+                                        value={this.data.email}
+                                        onChange={(e) => { this.handleChangeField("email", e) }}
+                                    >
+                                        <MenuItem value={null}>None</MenuItem>
+                                        {this.props.ctx.users.users && this.props.ctx.users.users.map(user => { return (<MenuItem value={user.email}>{user.email}</MenuItem>) })}
+                                    </Select>
                                 </Grid>
                                 <Grid item xs={12}>
                                     <TextField
                                         id="message"
                                         label="Message"
-                                        value={this.message}
+                                        value={this.data.message}
                                         placeholder="Message"
                                         onChange={(e) => { this.handleChangeField("message", e) }}
                                         multiline
