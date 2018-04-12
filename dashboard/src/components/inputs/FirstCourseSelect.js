@@ -78,7 +78,7 @@ const FirstCourse = observer(
                         container
                         direction={"row"}
                         onMouseOver={this.setFocus}
-                        onMouseOut={this.clearFocus}
+                        //onMouseOut={this.clearFocus}
                     >
                         <Grid item xs={12}>
                             <Grid container direction={"row"} >
