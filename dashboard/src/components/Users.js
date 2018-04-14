@@ -221,7 +221,7 @@ const Users = inject("ctx")(
                         Cell: props => {
                             const userCannotBeEdit = (!roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && roles.checkUser(props.original.role, roles.userRoles.root)) ||
                                 (this.props.ctx.auth.user.email === props.original.email) || (roles.checkUser(this.props.ctx.auth.user.role, roles.userRoles.admin) && roles.checkUser(props.original.role, roles.userRoles.admin));
-                            
+
                             return (<Button disabled={userCannotBeEdit} className={props.value ? classes.enabled : classes.disabled} onClick={this.handleTelegram(props)}>{props.value ? "Enabled" : "Disabled"}</Button>)
                         }
                     }, {
@@ -244,6 +244,10 @@ const Users = inject("ctx")(
                         accessor: 'deleted',
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
                         Cell: props => <span className='enabled'>{props.value ? "OK" : "-"}</span>
+                    }, {
+                        Header: 'Level',
+                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
+                        accessor: 'level'
                     }, {
                         id: 'orderReminder',
                         Header: 'OrderReminder',

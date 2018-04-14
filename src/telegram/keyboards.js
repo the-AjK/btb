@@ -46,7 +46,7 @@ module.exports = {
         }, {
             text: cmd.order
         }]);
-        if (ctx && ctx.session.user && roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || ctx.session.user.level > 0)) {
             keyboard.push([{
                 text: cmd.status
             }]);

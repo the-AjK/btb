@@ -51,7 +51,6 @@ const UserSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    unique: false,
     trim: true,
     lowercase: true
   },
@@ -131,6 +130,11 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}).index({
+  email: 1
+}, {
+  unique: true,
+  partialFilterExpression: { 'deleted': { $eq: false }}
 });
 
 const BeerSchema = new mongoose.Schema({
@@ -198,6 +202,11 @@ const MenuSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}).index({
+  day: 1
+}, {
+  unique: true,
+  partialFilterExpression: { 'deleted': { $eq: false }}
 });
 
 const OrderSchema = new mongoose.Schema({
@@ -236,6 +245,12 @@ const OrderSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}).index({
+  owner: 1,
+  menu: 1
+}, {
+  unique: true,
+  partialFilterExpression: { 'deleted': { $eq: false }}
 });
 
 const TableSchema = new mongoose.Schema({
@@ -445,14 +460,17 @@ exports.getTablesStatus = (day, cb) => {
 
 exports.getTableParticipants = (day, tableID, cb) => {
   getDailyMenu(null, (err, menu) => {
-    if (!err && menu) {
+    if (err) {
+      console.error(err);
+      cb(err);
+    } else if (!menu) {
+      cb("Daily menu not available yet")
+    } else {
       Order.find({
         deleted: false,
         menu: menu._id,
         table: tableID
       }).populate('owner').exec(cb);
-    } else {
-      cb(err || "DB error");
     }
   });
 }

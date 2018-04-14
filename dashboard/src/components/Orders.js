@@ -71,24 +71,28 @@ const Orders = inject("ctx")(
                 const { classes } = this.props,
                     roles = this.props.ctx.roles,
                     columns = [{
-                        id: 'day',
+                        id: 'menu.day',
                         Header: 'Day',
+                        filterable: false,
                         accessor: o => { return o.menu ? moment(o.menu.day).format('DD/MM/YY') : "-" }
                     }, {
-                        id: 'ownerEmail',
+                        id: 'owner.email',
+                        sortable: false,
                         Header: 'Owner',
+                        filterable: false,
                         accessor: d => { return d.owner ? d.owner.email : '-' }
                     }, {
-                        id: 'firstCourse',
+                        id: 'firstCourse.item',
                         Header: 'First course',
                         accessor: d => { return d.firstCourse ? d.firstCourse.item : '-' }
                     }, {
-                        id: 'secondCourse',
+                        id: 'secondCourse.item',
                         Header: 'Second course',
                         accessor: d => { return d.secondCourse ? d.secondCourse.item : '-' }
                     }, {
-                        id: 'tableName',
+                        id: 'table.name',
                         Header: 'Table',
+                        filterable: false,
                         accessor: d => { return d.table ? d.table.name : '-' }
                     }, {
                         Header: 'Deleted',
@@ -119,7 +123,7 @@ const Orders = inject("ctx")(
                         accessor: 'item',
                         Header: 'Items',
                     }, {
-                        id: 'ownerEmail',
+                        id: 'owner.email',
                         Header: 'Owner',
                         Aggregated: row => {
                             return "-";
@@ -181,6 +185,7 @@ const Orders = inject("ctx")(
                         </Grid>
                         <Grid item xs={12}>
                             <Table
+                                serverSidePagination={true}
                                 title="Orders"
                                 filters={true}
                                 errorDataText={"Error"}

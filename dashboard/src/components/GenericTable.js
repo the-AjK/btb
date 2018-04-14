@@ -15,7 +15,6 @@ import { CircularProgress } from 'material-ui/Progress';
 import WarningIcon from 'material-ui-icons/Warning';
 import FilterList from 'material-ui-icons/FilterList';
 import FullList from 'material-ui-icons/FormatAlignJustify';
-import InfoIcon from 'material-ui-icons/Info';
 import SyncIcon from 'material-ui-icons/Sync';
 import Grid from "material-ui/Grid";
 
@@ -57,6 +56,17 @@ const Table = inject("ctx")(
             handleEnableFilters = action(() => {
                 this.filters_enabled = !this.filters_enabled;
             });
+
+            fetchData = (state, instance) => {
+                if (this.props.store.setPagination)
+                    this.props.store.setPagination({
+                        pageSize: state.pageSize,
+                        page: state.page,
+                        sorted: state.sorted,
+                        filtered: state.filtered
+                    });
+                this.props.store.fetch();
+            };
 
             render() {
 
@@ -116,8 +126,6 @@ const Table = inject("ctx")(
                     }
                 }
 
-
-
                 return (
                     <Grid container direction={"column"} justify={"flex-start"} alignItems={"flex-start"}>
                         <Grid item className={classes.titleBar}>
@@ -143,45 +151,42 @@ const Table = inject("ctx")(
                                     <h4>Loading data... please wait</h4>
                                 </Grid>
                             </Grid> :
-                            (this.props.data.length > 0 ?
-                                <Fade in={true} timeout={500}>
-                                    <Grid container direction={"row"} justify={"flex-start"} alignItems={"flex-start"}>
-                                        <Grid item xs={12}>
-                                            {!this.props.checkbox && <ReactTable
-                                                {...options}
-                                                getTdProps={tdProps}
-                                                getTrProps={trProps}
-                                                getTheadProps={fixAligment}
-                                                getTheadGroupProps={fixAligment}
-                                                filterable={this.filters_enabled}
-                                                data={this.props.data}
-                                                columns={this.props.columns}
-                                                showPagination={this.props.showPagination || false}
-                                                showPaginationBottom={true}
-                                                showPageSizeOptions={true}
-                                                pageSizeOptions={[5, 10, 20, 50, 100]}
-                                                defaultPageSize={5}
-                                            />}
-                                            {this.props.checkbox && <CheckboxTable
-                                                {...options}
-                                                {...checkboxProps}
-                                                getTdProps={tdProps}
-                                                getTrProps={trProps}
-                                                getTheadProps={fixAligment}
-                                                getTheadGroupProps={fixAligment}
-                                                filterable={this.filters_enabled}
-                                                data={this.props.data}
-                                                columns={this.props.columns}
-                                            />}
-                                        </Grid>
-                                    </Grid>
-                                </Fade> :
-                                <Grid container direction={"row"} justify={"center"} alignItems={"flex-start"}>
+                            <Fade in={true} timeout={500}>
+                                <Grid container direction={"row"} justify={"flex-start"} alignItems={"flex-start"}>
                                     <Grid item xs={12}>
-                                        <h4><InfoIcon style={{ marginBottom: "-0.3em" }} /> {(this.props.store.error ? this.props.errorDataText : this.props.emptyDataText)}</h4>
+                                        {!this.props.checkbox && <ReactTable
+                                            {...options}
+                                            manual={this.props.serverSidePagination}
+                                            pages={this.props.serverSidePagination ? this.props.store.pages : undefined}
+                                            loading={this.props.store.isLoading}
+                                            onFetchData={this.props.serverSidePagination ? this.fetchData : undefined}
+                                            getTdProps={tdProps}
+                                            getTrProps={trProps}
+                                            getTheadProps={fixAligment}
+                                            getTheadGroupProps={fixAligment}
+                                            filterable={this.filters_enabled}
+                                            data={this.props.data}
+                                            columns={this.props.columns}
+                                            showPagination={this.props.showPagination || false}
+                                            showPaginationBottom={true}
+                                            showPageSizeOptions={true}
+                                            pageSizeOptions={[5, 10, 20, 50, 100]}
+                                            defaultPageSize={5}
+                                        />}
+                                        {this.props.checkbox && <CheckboxTable
+                                            {...options}
+                                            {...checkboxProps}
+                                            getTdProps={tdProps}
+                                            getTrProps={trProps}
+                                            getTheadProps={fixAligment}
+                                            getTheadGroupProps={fixAligment}
+                                            filterable={this.filters_enabled}
+                                            data={this.props.data}
+                                            columns={this.props.columns}
+                                        />}
                                     </Grid>
                                 </Grid>
-                            )
+                            </Fade>
                         }
                     </Grid>
                 )

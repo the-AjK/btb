@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.0.0-RC7](https://github.com/the-AjK/btb/tree/1.0.0-RC7) (2018-04-14)
+[Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC6...1.0.0-RC7)
+
+### Changes
+- Orders server side pagination
+
+### Bugfixes
+- Various bugfixes
+
 ## [1.0.0-RC6](https://github.com/the-AjK/btb/tree/1.0.0-RC6) (2018-04-13)
 [Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC5...1.0.0-RC6)
 

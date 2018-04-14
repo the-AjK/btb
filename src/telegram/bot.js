@@ -63,7 +63,6 @@ bot.use(stage.middleware());
 // Authorization middleware
 bot.use((ctx, next) => {
 
-  ctx.session.beers = ctx.session.beers || 0;
   ctx.session.counter = ctx.session.counter || 0;
   ctx.session.counter++;
   ctx.session.user = null;
@@ -127,7 +126,7 @@ bot.on("callback_query", ctx => {
     delete ctx.session.lastMessage;
   }
   if (ctx.update.callback_query.data == 'statusorders') {
-    if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+    if (ctx.session.user.level == 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -142,7 +141,7 @@ bot.on("callback_query", ctx => {
       });
     }
   } else if (ctx.update.callback_query.data == 'statustables') {
-    if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+    if (ctx.session.user.level == 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -423,10 +422,11 @@ function formatTables(tables, user) {
     if (!table.enabled) {
       continue;
     }
-    let tableOrders = false;
+    let tableOrders = false,
+      error = "";
     DB.getTableParticipants(null, table._id, (err, orders) => {
       if (err) {
-        console.error(err);
+        error = err;
         tableOrders = null;
       } else {
         tableOrders = orders;
@@ -435,6 +435,8 @@ function formatTables(tables, user) {
     require('deasync').loopWhile(function () {
       return tableOrders === false;
     });
+    if(tableOrders === null)
+      return error;
     text = text + "\n\n*" + capitalizeFirstLetter(table.name) + "*";
     if (tableOrders && tableOrders.length) {
       text = text + " (" + tableOrders.length + "/" + table.seats + "):";

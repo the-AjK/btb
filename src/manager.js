@@ -30,6 +30,7 @@ function _getUsers(req, res) {
             enabled: 1,
             deleted: 1,
             role: 1,
+            level: 1,
             loginCounter: 1,
             settings: 1,
             beerCounter: 1,
@@ -40,7 +41,10 @@ function _getUsers(req, res) {
         },
         options = {
             offset: req.query.offset || undefined,
-            limit: req.query.limit || 50
+            limit: req.query.limit || 100,
+            sort: {
+                updatedAt: -1
+            }
         };
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root user limitations
@@ -252,7 +256,10 @@ function _getMenus(req, res) {
         },
         options = {
             offset: req.query.offset || undefined,
-            limit: req.query.limit || 50
+            limit: req.query.limit || 100,
+            sort: {
+                updatedAt: -1
+            }
         };
     //TODO add filter query
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
@@ -498,6 +505,59 @@ function _deleteMenu(req, res) {
     }
 }
 
+function getPaginationOptions(req) {
+    let options = {
+        limit: 100,
+        sort: {
+            updatedAt: -1
+        }
+    };
+    if (req.query.pageSize && parseInt(req.query.pageSize) != isNaN) {
+        options.limit = parseInt(req.query.pageSize);
+    }
+    if (req.query.sorted) {
+        try {
+            let sort = JSON.parse(req.query.sorted);
+            if (Array.isArray(sort)) {
+                options.sort = {}
+                for (let i = 0; i < sort.length; i++) {
+                    options.sort[sort[i].id] = sort[i].desc ? 1 : -1
+                }
+            }
+        } catch (ex) {
+            console.error(ex);
+        }
+    }
+    if (req.query.pageSize && req.query.page) {
+        let pageSize = parseInt(req.query.pageSize),
+            page = parseInt(req.query.page);
+        if (pageSize != isNaN && page != isNaN && pageSize >= 0 && page >= 0)
+            options.skip = req.query.pageSize * req.query.page;
+    }
+    console.log(options)
+    return options;
+}
+
+function getPaginationQuery(req) {
+    let query = {};
+    if (req.query.filtered) {
+        try {
+            let filter = JSON.parse(req.query.filtered);
+            if (Array.isArray(filter)) {
+                for (let i = 0; i < filter.length; i++) {
+                    query[filter[i].id] = {
+                        "$regex": filter[i].value,
+                        "$options": "i"
+                    }
+                }
+            }
+        } catch (ex) {
+            console.error(ex);
+        }
+    }
+    return query;
+}
+
 //Orders stuff
 function _getOrders(req, res) {
     const id = req.params.id,
@@ -511,26 +571,35 @@ function _getOrders(req, res) {
             createdAt: 1,
             updatedAt: 1
         },
-        options = {
-            offset: req.query.offset || undefined,
-            limit: req.query.limit || 50
-        };
-    //TODO add filter query
+        options = getPaginationOptions(req);
+
+    Object.assign(query, getPaginationQuery(req));
+
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root user limitations
         select.deleted = -1;
         query.deleted = false;
     }
     if (!id) {
-        DB.Order.find(query, select, options).populate('table').populate({
-            path: 'owner',
-            select: 'username email _id'
-        }).populate('menu').exec((err, orders) => {
+        DB.Order.count(query, (err, totalOrders) => {
             if (err) {
                 console.error(err);
                 return res.sendStatus(500);
+            } else {
+                DB.Order.find(query, select, options).populate('table').populate({
+                    path: 'owner',
+                    select: 'username email _id'
+                }).populate('menu').exec((err, orders) => {
+                    if (err) {
+                        console.error(err);
+                        return res.sendStatus(500);
+                    }
+                    res.json({
+                        data: orders,
+                        total: totalOrders
+                    });
+                });
             }
-            res.json(orders);
         });
     } else {
         query._id = id;
@@ -647,7 +716,10 @@ function _getTables(req, res) {
         },
         options = {
             offset: req.query.offset || undefined,
-            limit: req.query.limit || 50
+            limit: req.query.limit || 100,
+            sort: {
+                updatedAt: -1
+            }
         };
     //TODO add filter query
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
