@@ -6,7 +6,7 @@
 // @flow
 import { extendObservable, action } from "mobx";
 import API from "./../utils/API";
-import queryString from "query-string";
+import queryString from "./../utils/queryString/index.js";
 
 export default class Orders {
     constructor() {
