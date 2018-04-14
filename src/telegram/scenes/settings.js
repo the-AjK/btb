@@ -287,7 +287,7 @@ function setRootReminders(ctx, status) {
 
 function generateAbout(ctx) {
     let version = packageJSON.version,
-        about = "*BiteTheBot* v" + version + "\n\n" +
+        about = "*BiteTheBot* [v" + version + "](https://github.com/the-AjK/btb/blob/" + version + "/CHANGELOG.md)\n\n" +
         "made with ❤️ by [Alberto Garbui](tg://user?id=7050263) aka JK\n" +
         "(alberto.garbui@gmail.com)\n" +
         "\n" +
@@ -297,6 +297,6 @@ function generateAbout(ctx) {
         "\nYou can use *@ tables* to broadcast a message to all the people who already made an order." +
         "\n\n*Do you like BTB?*\n[Give me a real beer](https://www.paypal.me/AlbertoGarbui)" +
         "\n\n*Are you a developer?*\n[Pull Requests are welcome!](https://github.com/the-AjK/btb/pulls)\n\n" +
-        "*License*:\n[BSD-3](https://github.com/the-AjK/btb/blob/master/LICENSE)";
+        "*License*:\n[BSD-3](https://github.com/the-AjK/btb/blob/" + version + "/LICENSE)";
     return about;
 }
