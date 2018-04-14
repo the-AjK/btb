@@ -251,10 +251,18 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                         release();
                         return leave(ctx)
                     } else if (tables[ctx.session.order.table].used >= tables[ctx.session.order.table].total) {
-                        let tableName = tables[ctx.session.order.table].name;
-                        ctx.reply("Somebody was faster than you!\n*" + tableName + "* is full. Try again.", {
-                            parse_mode: "markdown"
-                        });
+                        let tableName = tables[ctx.session.order.table].name,
+                            text = "Somebody was faster than you!\n*" + tableName + "* is full. Try again.";
+                        if (ctx.session.lastMessage) {
+                            require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
+                                parse_mode: "markdown"
+                            });
+                            delete ctx.session.lastMessage;
+                        } else {
+                            ctx.reply(text, {
+                                parse_mode: "markdown"
+                            });
+                        }
                         release();
                         return ctx.scene.enter('firstCourseWizard');
                     } else {
@@ -264,6 +272,8 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                             if (err) {
                                 console.error(err)
                                 text = "*Something went wrong!*\nContact the admin for more info.";
+                            } else if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                                bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
                             }
                             if (ctx.session.lastMessage) {
                                 require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
@@ -497,10 +507,18 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                         release();
                         return leave(ctx)
                     } else if (tables[ctx.session.order.table].used >= tables[ctx.session.order.table].total) {
-                        let tableName = tables[ctx.session.order.table].name;
-                        ctx.reply("Somebody was faster than you!\n*" + tableName + "* is full. Try again.", {
-                            parse_mode: "markdown"
-                        });
+                        let tableName = tables[ctx.session.order.table].name,
+                            text = "Somebody was faster than you!\n*" + tableName + "* is full. Try again.";
+                        if (ctx.session.lastMessage) {
+                            require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
+                                parse_mode: "markdown"
+                            });
+                            delete ctx.session.lastMessage;
+                        } else {
+                            ctx.reply(text, {
+                                parse_mode: "markdown"
+                            });
+                        }
                         release();
                         return ctx.scene.enter('secondCourseWizard');
                     } else {
