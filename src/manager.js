@@ -521,7 +521,7 @@ function getPaginationOptions(req) {
             if (Array.isArray(sort)) {
                 options.sort = {}
                 for (let i = 0; i < sort.length; i++) {
-                    options.sort[sort[i].id] = sort[i].desc ? 1 : -1
+                    options.sort[sort[i].id] = sort[i].desc ? -1 : 1
                 }
             }
         } catch (ex) {
@@ -559,6 +559,7 @@ function getPaginationQuery(req) {
 
 //Orders stuff
 function _getOrders(req, res) {
+    console.log(req.query)
     const id = req.params.id,
         query = {},
         select = {
