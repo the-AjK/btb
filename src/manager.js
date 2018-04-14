@@ -534,7 +534,6 @@ function getPaginationOptions(req) {
         if (pageSize != isNaN && page != isNaN && pageSize >= 0 && page >= 0)
             options.skip = req.query.pageSize * req.query.page;
     }
-    console.log(options)
     return options;
 }
 
