@@ -74,6 +74,7 @@ const Orders = inject("ctx")(
                         id: 'menu.day',
                         Header: 'Day',
                         filterable: false,
+                        sortable: false,
                         accessor: o => { return o.menu ? moment(o.menu.day).format('DD/MM/YY') : "-" }
                     }, {
                         id: 'owner.email',
@@ -93,6 +94,7 @@ const Orders = inject("ctx")(
                         id: 'table.name',
                         Header: 'Table',
                         filterable: false,
+                        sortable: false,
                         accessor: d => { return d.table ? d.table.name : '-' }
                     }, {
                         Header: 'Deleted',
