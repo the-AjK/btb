@@ -422,10 +422,11 @@ function formatTables(tables, user) {
     if (!table.enabled) {
       continue;
     }
-    let tableOrders = false;
+    let tableOrders = false,
+      error = "";
     DB.getTableParticipants(null, table._id, (err, orders) => {
       if (err) {
-        console.error(err);
+        error = err;
         tableOrders = null;
       } else {
         tableOrders = orders;
@@ -434,6 +435,8 @@ function formatTables(tables, user) {
     require('deasync').loopWhile(function () {
       return tableOrders === false;
     });
+    if(tableOrders === null)
+      return error;
     text = text + "\n\n*" + capitalizeFirstLetter(table.name) + "*";
     if (tableOrders && tableOrders.length) {
       text = text + " (" + tableOrders.length + "/" + table.seats + "):";

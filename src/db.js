@@ -445,14 +445,17 @@ exports.getTablesStatus = (day, cb) => {
 
 exports.getTableParticipants = (day, tableID, cb) => {
   getDailyMenu(null, (err, menu) => {
-    if (!err && menu) {
+    if (err) {
+      console.error(err);
+      cb(err);
+    } else if (!menu) {
+      cb("Daily menu not available yet")
+    } else {
       Order.find({
         deleted: false,
         menu: menu._id,
         table: tableID
       }).populate('owner').exec(cb);
-    } else {
-      cb(err || "DB error");
     }
   });
 }
