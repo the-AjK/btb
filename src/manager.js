@@ -30,6 +30,7 @@ function _getUsers(req, res) {
             enabled: 1,
             deleted: 1,
             role: 1,
+            level: 1,
             loginCounter: 1,
             settings: 1,
             beerCounter: 1,
