@@ -63,7 +63,6 @@ bot.use(stage.middleware());
 // Authorization middleware
 bot.use((ctx, next) => {
 
-  ctx.session.beers = ctx.session.beers || 0;
   ctx.session.counter = ctx.session.counter || 0;
   ctx.session.counter++;
   ctx.session.user = null;
@@ -127,7 +126,7 @@ bot.on("callback_query", ctx => {
     delete ctx.session.lastMessage;
   }
   if (ctx.update.callback_query.data == 'statusorders') {
-    if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+    if (ctx.session.user.level == 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -142,7 +141,7 @@ bot.on("callback_query", ctx => {
       });
     }
   } else if (ctx.update.callback_query.data == 'statustables') {
-    if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+    if (ctx.session.user.level == 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
