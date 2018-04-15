@@ -216,6 +216,8 @@ function textManager(ctx) {
     //Unknow message handler
     ctx.session.mainCounter++;
 
+    console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text);
+
     // answer politely
     let msg = ["Hey *" + ctx.from.first_name + "*, how can I help you?"];
 
@@ -259,6 +261,7 @@ function parseMention(ctx) {
 
 //Mention handler to broadcast by table
 bot.mention(['@tables', '@table'], (ctx) => {
+  console.log("From: " + ctx.session.user.email + " Mention: " + ctx.message.text);
   const mentions = parseMention(ctx);
   for (let idx in mentions) {
     const mention = mentions[idx];
