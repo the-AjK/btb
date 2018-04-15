@@ -133,11 +133,18 @@ function deleteDailyOrder(ctx) {
 
 function addBeer(ctx) {
     if (beerLock != null) {
-        ctx.reply("Wait wait, I can get one beer at time!\n*" + beerLock + "* was faster than you!", {
-            parse_mode: "markdown"
-        });
+        if (beerLock.username != ctx.session.user.username) {
+            ctx.reply("Wait wait, I can get one beer at time!\nI'm still drinking the [" + beerLock.username + "](tg://user?id=" + beerLock.telegram.id + ")'s one!", {
+                parse_mode: "markdown"
+            });
+        } else {
+            ctx.reply("Wait wait, I can get one beer at time!", {
+                parse_mode: "markdown"
+            });
+        }
     } else {
-        beerLock = ctx.session.user.username;
+        beerLock = ctx.session.user;
+        console.log("Beer lock for: " + beerLock.email);
         const type = ctx.update.callback_query.data,
             newBeer = new DB.Beer({
                 owner: ctx.session.user._id,
@@ -156,18 +163,16 @@ function addBeer(ctx) {
                 bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
             }
             setTimeout(() => {
-                if (type == 'pint') {
-                    ctx.reply("Thank you bro!")
-                } else {
-                    ctx.reply("Thanks, but next time give me a pint!")
-                };
-                beerLock = null;
-
+                ctx.reply("Thank you bro!")
+                setTimeout(() => {
+                    beerLock = null;
+                    console.log("Beer unlocked")
+                }, 60000 * 30);
                 //lets check the total beers
                 DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
                     if (!err) {
                         const beersLevelMap = {
-                            10: 1,
+                            15: 1,
                             50: 2,
                             200: 3,
                             500: 4,
@@ -179,6 +184,9 @@ function addBeer(ctx) {
                                     console.error(err);
                                 } else {
                                     ctx.reply("⭐️ Level UP! ( " + beers.length + " beers 🍻 )");
+                                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                                        bot.broadcastMessage("User level up: *" + ctx.session.user.email + "* ( " + beers.length + " beers)", accessLevels.root, null, true);
+                                    }
                                 }
                             });
                     } else {

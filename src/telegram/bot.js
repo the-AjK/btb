@@ -9,6 +9,7 @@ const Telegraf = require("telegraf"),
   session = require("telegraf/session"),
   Stage = require('telegraf/stage'),
   rateLimit = require("telegraf-ratelimit"),
+  googleTTS = require('google-tts-api'),
   moment = require("moment"),
   delay = require("delay"),
   ReadWriteLock = require("rwlock"),
@@ -216,6 +217,8 @@ function textManager(ctx) {
     //Unknow message handler
     ctx.session.mainCounter++;
 
+    console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text);
+
     // answer politely
     let msg = ["Hey *" + ctx.from.first_name + "*, how can I help you?"];
 
@@ -259,6 +262,7 @@ function parseMention(ctx) {
 
 //Mention handler to broadcast by table
 bot.mention(['@tables', '@table'], (ctx) => {
+  console.log("From: " + ctx.session.user.email + " Mention: " + ctx.message.text);
   const mentions = parseMention(ctx);
   for (let idx in mentions) {
     const mention = mentions[idx];
@@ -324,9 +328,31 @@ bot.mention(['@tables', '@table'], (ctx) => {
 bot.on("text", textManager);
 
 // Handle unsupported types
-bot.on(['audio', 'document', 'video', 'voice', 'sticker', 'photo'], (ctx) => {
+bot.on(['document', 'video', 'sticker', 'photo'], (ctx) => {
   //bad answer
-  replyDiscussion(ctx, bender.getRandomTagQuote(["ass"]));
+  console.log("Unsupported message type from: " + ctx.session.user.email);
+  ctx.replyWithSticker({
+    source: require('fs').createReadStream(__dirname + "/img/0" + getRandomInt(1, 10) + ".webp")
+  }).then(() => {
+    replyDiscussion(ctx, bender.getRandomTagQuote(["ass"]));
+  });
+});
+
+function sendTTSVoice(ctx, text, options) {
+  googleTTS(text, 'en-US', 1.5)
+    .then(function (url) {
+      bot.telegram.sendVoice(ctx.chat.id, {
+        url: url,
+        filename: "BTB voice"
+      });
+    }).catch(function (err) {
+      console.error(err.stack);
+    });
+}
+
+bot.on(['audio', 'voice'], (ctx) => {
+  ctx.replyWithChatAction(ACTIONS.RECORD_AUDIO);
+  sendTTSVoice(ctx, "Hey " + ctx.session.user.telegram.first_name + ", bite my metal shiny ass!");
 });
 
 function formatMenu(menu) {
@@ -435,7 +461,7 @@ function formatTables(tables, user) {
     require('deasync').loopWhile(function () {
       return tableOrders === false;
     });
-    if(tableOrders === null)
+    if (tableOrders === null)
       return error;
     text = text + "\n\n*" + capitalizeFirstLetter(table.name) + "*";
     if (tableOrders && tableOrders.length) {
