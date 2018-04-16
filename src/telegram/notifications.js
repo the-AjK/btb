@@ -57,12 +57,8 @@ exports.dailyMenu = function (menu) {
                         user: users[i]
                     }
                 };
-                bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts).then((err) => {
-                    if (err) {
-                        console.error(err);
-                    } else {
-                        console.log("dailyMenu sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
-                    }
+                bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts).then((m) => {
+                    console.log("dailyMenu sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
                 });
             }
         }
@@ -96,12 +92,8 @@ exports.dailyMenuUpdated = function (menu) {
                                 user: users[i]
                             }
                         };
-                        bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts).then((err) => {
-                            if (err) {
-                                console.error(err);
-                            } else {
-                                console.log("dailyMenuUpdate sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
-                            }
+                        bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts).then((m) => {
+                            console.log("dailyMenuUpdate sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
                         });
                     }
                 });
@@ -138,12 +130,8 @@ exports.orderReminder = function (deadline) {
                                 user: users[i]
                             }
                         };
-                        bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts).then((err) => {
-                            if (err) {
-                                console.error(err);
-                            } else {
-                                console.log("orderReminder sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
-                            }
+                        bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts).then((m) => {
+                            console.log("orderReminder sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
                         });
                     }
                 });
@@ -191,12 +179,8 @@ exports.ordersCompleteReminder = function () {
                             }
                             logText = logText + "]";
                             console.log(logText);
-                            bot.telegram.sendMessage(users[i].telegram.id, message, _options).then((err) => {
-                                if (err) {
-                                    console.error(err);
-                                } else {
-                                    console.log("orderCompleteReminder sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
-                                }
+                            bot.telegram.sendMessage(users[i].telegram.id, message, _options).then((m) => {
+                                console.log("orderCompleteReminder sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
                             });
                         }
                     }
