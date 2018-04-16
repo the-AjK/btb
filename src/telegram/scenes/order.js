@@ -244,6 +244,23 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
         } else if (ctx.update.callback_query && ctx.update.callback_query.data == 'confirm') {
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
             ordersLock.writeLock('order', function (release) {
+                //Deadline check
+                if (!moment().isBefore(moment(ctx.session.dailyMenu.deadline))) {
+                    let text = "*Time is up!*\nYou can't place any order after the deadline (" + moment(ctx.session.dailyMenu.deadline).format("HH:mm") + ")";
+                    if (ctx.session.lastMessage) {
+                        require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
+                            parse_mode: "markdown"
+                        });
+                        delete ctx.session.lastMessage;
+                    } else {
+                        ctx.reply(text, {
+                            parse_mode: "markdown"
+                        });
+                    }
+                    release();
+                    leave(ctx);
+                    return;
+                }
                 DB.getTablesStatus(null, (err, tables) => {
                     if (err) {
                         console.error(err);
@@ -500,6 +517,23 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
         } else if (ctx.update.callback_query && ctx.update.callback_query.data == 'confirm') {
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
             ordersLock.writeLock('order', function (release) {
+                //Deadline check
+                if (!moment().isBefore(moment(ctx.session.dailyMenu.deadline))) {
+                    let text = "*Time is up!*\nYou can't place any order after the deadline (" + moment(ctx.session.dailyMenu.deadline).format("HH:mm") + ")";
+                    if (ctx.session.lastMessage) {
+                        require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
+                            parse_mode: "markdown"
+                        });
+                        delete ctx.session.lastMessage;
+                    } else {
+                        ctx.reply(text, {
+                            parse_mode: "markdown"
+                        });
+                    }
+                    release();
+                    leave(ctx);
+                    return;
+                }
                 DB.getTablesStatus(null, (err, tables) => {
                     if (err) {
                         console.error(err);
