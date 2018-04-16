@@ -213,6 +213,14 @@ function textManager(ctx) {
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.settings) {
     ctx.session.mainCounter = 0;
     ctx.scene.enter('settings');
+  } else if (ctx.message.text.indexOf("coffee") >= 0 || ctx.message.text.indexOf("☕️") >= 0) {
+    //418 I'M A TEAPOT
+    console.log("Got a coffee from: " + ctx.session.user.email);
+    ctx.replyWithSticker({
+      source: require('fs').createReadStream(__dirname + "/img/coffee.gif")
+    }).then(() => {
+      replyDiscussion(ctx, ["Status code: 418", "I'm a teapot"], keyboards.btb(ctx).opts);
+    });
   } else {
     //Unknow message handler
     ctx.session.mainCounter++;
@@ -236,7 +244,7 @@ function textManager(ctx) {
       ctx.replyWithSticker({
         source: require('fs').createReadStream(__dirname + "/img/0" + getRandomInt(1, 10) + ".webp")
       }).then(() => {
-        replyDiscussion(ctx, msg, keyboards.btb(ctx).opts)
+        replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
       });
     }
   }
