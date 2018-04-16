@@ -215,11 +215,15 @@ function textManager(ctx) {
     ctx.scene.enter('settings');
   } else if (ctx.message.text.indexOf("coffee") >= 0 || ctx.message.text.indexOf("☕️") >= 0) {
     //418 I'M A TEAPOT
+    ctx.replyWithChatAction(ACTIONS.LOCATION_DATA);
     console.log("Got a coffee from: " + ctx.session.user.email);
+    if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
+      broadcastMessage("Got a coffee from: " + ctx.session.user.email, accessLevels.root, null, true);
+    }
     ctx.replyWithSticker({
       source: require('fs').createReadStream(__dirname + "/img/coffee.gif")
     }).then(() => {
-      replyDiscussion(ctx, ["Status code: 418", "I'm a teapot"], keyboards.btb(ctx).opts);
+      replyDiscussion(ctx, ["Status code: *418*", "I'm a teapot", "BTB refuses to brew coffee"], keyboards.btb(ctx).opts);
     });
   } else {
     //Unknow message handler
@@ -338,7 +342,11 @@ bot.on("text", textManager);
 // Handle unsupported types
 bot.on(['document', 'video', 'sticker', 'photo'], (ctx) => {
   //bad answer
+  ctx.replyWithChatAction(ACTIONS.GENERAL_FILES);
   console.log("Unsupported message type from: " + ctx.session.user.email);
+  if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
+    broadcastMessage("Unsupported message type from: " + ctx.session.user.email, accessLevels.root, null, true);
+  }
   ctx.replyWithSticker({
     source: require('fs').createReadStream(__dirname + "/img/0" + getRandomInt(1, 10) + ".webp")
   }).then(() => {
@@ -360,6 +368,9 @@ function sendTTSVoice(ctx, text, options) {
 
 bot.on(['audio', 'voice'], (ctx) => {
   ctx.replyWithChatAction(ACTIONS.RECORD_AUDIO);
+  if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
+    broadcastMessage("Got voice from: " + ctx.session.user.email, accessLevels.root, null, true);
+  }
   sendTTSVoice(ctx, "Hey " + ctx.session.user.telegram.first_name + ", bite my metal shiny ass!");
 });
 
