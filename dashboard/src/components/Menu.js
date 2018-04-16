@@ -97,7 +97,7 @@ const Menu = inject("ctx")(
                             alert(err)
                         } else {
                             for (let i = 0; i < menu.firstCourse.items.length; i++) {
-                                if (i > 0)
+                                if (i > 1)
                                     this.firstCoursesPanels.push(i)
                                 menu.firstCourse.items[i].key = i;
                             }
