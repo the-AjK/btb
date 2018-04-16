@@ -107,7 +107,6 @@ const Menu = inject("ctx")(
                             menu.day = moment(menu.day).format("YYYY-MM-DD");
                             this.menu = menu;
                             //this.getTables();
-                            //this.forceUpdate();
                         }
                     }));
                 } else {
@@ -212,13 +211,11 @@ const Menu = inject("ctx")(
             })
 
             handleSecondCourse = action((i) => {
-                this.menu.secondCourse.items = i;
-                this.forceUpdate();
+                this.menu.secondCourse.items = i;;
             });
 
             handleSideDishes = action((s) => {
                 this.menu.secondCourse.sideDishes = s;
-                this.forceUpdate();
             });
 
             handleChangeField = action((field, event) => {
@@ -314,7 +311,7 @@ const Menu = inject("ctx")(
                             this.showAlert("Error", err);
                         } else if (res) {
                             this.props.ctx.history.push("/menus/" + res._id)
-                            this.forceUpdate();
+                            this.id = res._id;
                             this.showAlert("Success", "Menu created!");
                         }
                         this.isSaving = false;

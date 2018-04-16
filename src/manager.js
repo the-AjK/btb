@@ -299,7 +299,7 @@ function _getMenus(req, res) {
 function checkDailyMenu(data, cb) {
     const today = moment(data.day).startOf("day"),
         tomorrow = moment(today).add(1, "days"),
-        toyota = {
+        query = {
             deleted: false,
             _id: {
                 $ne: data._id
@@ -309,7 +309,7 @@ function checkDailyMenu(data, cb) {
                 $lt: tomorrow.toDate()
             }
         };
-    DB.Menu.findOne(toyota, (err, res) => {
+    DB.Menu.findOne(query, (err, res) => {
         if (err) {
             console.error(err);
         } else {
@@ -402,6 +402,7 @@ function _updateMenu(req, res) {
             new: true
         };
 
+    data._id = req.params.id;
     data.updatedAt = moment().format();
 
     if (!menuIsValid(data)) {
