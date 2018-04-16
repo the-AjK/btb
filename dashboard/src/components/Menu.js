@@ -235,19 +235,51 @@ const Menu = inject("ctx")(
                 this.menu.tables = tables;
             });
 
-            handleSave = () => {
-                //TODO check data
-                this.props.ctx.dialog.set({
-                    open: true,
-                    showCancel: true,
-                    onClose: (response) => {
-                        if (response) {
-                            this.save()
+            menuIsValid = (cb) => {
+                if (!this.menu.day) {
+                    cb("Menu date is required")
+                    return false;
+                }
+                if (this.menu.firstCourse && this.menu.firstCourse.items) {
+                    for (let i = 0; i < this.menu.firstCourse.items.length; i++) {
+                        let fc = this.menu.firstCourse.items[i];
+                        if (fc.value === undefined || fc.value.trim() === "") {
+                            cb("Invalid menu firstCourse item");
+                            return false;
                         }
-                    },
-                    title: "Save",
-                    description: "Are you sure to save the changes?"
-                })
+                        for (let j = 0; j < fc.condiments.length; j++) {
+                            let condiment = fc.condiments[j];
+                            if (condiment === undefined || condiment.trim() === "") {
+                                cb("Invalid menu firstCourse item condiment");
+                                return false;
+                            }
+                        }
+                    }
+                } else {
+                    cb("Invalid menu firstCourse");
+                    return false;
+                }
+                cb();
+            }
+
+            handleSave = () => {
+                this.menuIsValid((err) => {
+                    if (err) {
+                        this.showAlert("Error", err);
+                    } else {
+                        this.props.ctx.dialog.set({
+                            open: true,
+                            showCancel: true,
+                            onClose: (response) => {
+                                if (response) {
+                                    this.save()
+                                }
+                            },
+                            title: "Save",
+                            description: "Are you sure to save the changes?"
+                        });
+                    }
+                });
             }
 
             showAlert = (title, description) => {

@@ -318,6 +318,33 @@ function checkDailyMenu(data, cb) {
     });
 }
 
+function menuIsValid(menu) {
+    if (!menu.day) {
+        console.error("Menu date is required")
+        return false;
+    }
+    if (menu.firstCourse && menu.firstCourse.items) {
+        for (let i = 0; i < menu.firstCourse.items.length; i++) {
+            let fc = menu.firstCourse.items[i];
+            if (fc.value == undefined || fc.value.trim() == "") {
+                console.error("Invalid menu firstCourse item");
+                return false;
+            }
+            for (let j = 0; j < fc.condiments.length; j++) {
+                let condiment = fc.condiments[j];
+                if (condiment == undefined || condiment.trim() == "") {
+                    console.error("Invalid menu firstCourse item condiment");
+                    return false;
+                }
+            }
+        }
+    } else {
+        console.error("Invalid menu firstCourse");
+        return false;
+    }
+    return true;
+}
+
 function _addMenu(req, res) {
     let data = req.body;
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
@@ -334,8 +361,8 @@ function _addMenu(req, res) {
 
     data.createdAt = moment().format();
 
-    if (!data.day) {
-        res.status(400).send("Menu date is required");
+    if (!menuIsValid(data)) {
+        res.sendStatus(400);
     } else {
         if (data.deadline) {
             let deadline = moment(data.deadline, "HH:mm");
@@ -343,6 +370,7 @@ function _addMenu(req, res) {
         }
         checkDailyMenu(data, (dailymenu) => {
             if (dailymenu) {
+                console.log("Daily menu already present")
                 res.status(400).send("Daily menu already present");
             } else {
                 const newMenu = new DB.Menu(data);
@@ -376,8 +404,8 @@ function _updateMenu(req, res) {
 
     data.updatedAt = moment().format();
 
-    if (!data.day) {
-        res.status(400).send("Menu date is required");
+    if (!menuIsValid(data)) {
+        res.sendStatus(400);
     } else {
         if (data.deadline) {
             let deadline = moment(data.deadline, "HH:mm");
