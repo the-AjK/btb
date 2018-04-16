@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.0.0-RC8](https://github.com/the-AjK/btb/tree/1.0.0-RC8) (2018-04-16)
+[Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC7...1.0.0-RC8)
+
+### Changes
+- Added menu validation
+- Added menu create/update warnings
+
+### Bugfixes
+- Menu create/update error
+- Various bugfixes
+
 ## [1.0.0-RC7](https://github.com/the-AjK/btb/tree/1.0.0-RC7) (2018-04-14)
 [Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC6...1.0.0-RC7)
 
