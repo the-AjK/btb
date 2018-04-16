@@ -28,9 +28,9 @@ const GenericDialog = observer(
                 >
                     <DialogTitle id="dialog-title">{this.props.title || "BTB"}</DialogTitle>
                     <DialogContent>
-                        <DialogContentText id="dialog-description">
-                            {this.props.description}
-                        </DialogContentText>
+                        {this.props.description && this.props.description.split("\n").map((i, k) => {
+                            return <DialogContentText key={k}>{i}</DialogContentText>;
+                        })}
                         {this.props.extraContent}
                         {this.props.checkBox &&
                             <FormGroup>
