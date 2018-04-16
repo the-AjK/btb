@@ -299,7 +299,7 @@ function _getMenus(req, res) {
 function checkDailyMenu(data, cb) {
     const today = moment(data.day).startOf("day"),
         tomorrow = moment(today).add(1, "days"),
-        toyota = {
+        query = {
             deleted: false,
             _id: {
                 $ne: data._id
@@ -309,13 +309,40 @@ function checkDailyMenu(data, cb) {
                 $lt: tomorrow.toDate()
             }
         };
-    DB.Menu.findOne(toyota, (err, res) => {
+    DB.Menu.findOne(query, (err, res) => {
         if (err) {
             console.error(err);
         } else {
             cb(res)
         }
     });
+}
+
+function menuIsValid(menu) {
+    if (!menu.day) {
+        console.error("Menu date is required")
+        return false;
+    }
+    if (menu.firstCourse && menu.firstCourse.items) {
+        for (let i = 0; i < menu.firstCourse.items.length; i++) {
+            let fc = menu.firstCourse.items[i];
+            if (fc.value == undefined || fc.value.trim() == "") {
+                console.error("Invalid menu firstCourse item");
+                return false;
+            }
+            for (let j = 0; j < fc.condiments.length; j++) {
+                let condiment = fc.condiments[j];
+                if (condiment == undefined || condiment.trim() == "") {
+                    console.error("Invalid menu firstCourse item condiment");
+                    return false;
+                }
+            }
+        }
+    } else {
+        console.error("Invalid menu firstCourse");
+        return false;
+    }
+    return true;
 }
 
 function _addMenu(req, res) {
@@ -334,8 +361,8 @@ function _addMenu(req, res) {
 
     data.createdAt = moment().format();
 
-    if (!data.day) {
-        res.status(400).send("Menu date is required");
+    if (!menuIsValid(data)) {
+        res.sendStatus(400);
     } else {
         if (data.deadline) {
             let deadline = moment(data.deadline, "HH:mm");
@@ -343,6 +370,7 @@ function _addMenu(req, res) {
         }
         checkDailyMenu(data, (dailymenu) => {
             if (dailymenu) {
+                console.log("Daily menu already present")
                 res.status(400).send("Daily menu already present");
             } else {
                 const newMenu = new DB.Menu(data);
@@ -374,10 +402,11 @@ function _updateMenu(req, res) {
             new: true
         };
 
+    data._id = req.params.id;
     data.updatedAt = moment().format();
 
-    if (!data.day) {
-        res.status(400).send("Menu date is required");
+    if (!menuIsValid(data)) {
+        res.sendStatus(400);
     } else {
         if (data.deadline) {
             let deadline = moment(data.deadline, "HH:mm");

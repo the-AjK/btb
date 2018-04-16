@@ -97,7 +97,7 @@ const Menu = inject("ctx")(
                             alert(err)
                         } else {
                             for (let i = 0; i < menu.firstCourse.items.length; i++) {
-                                if (i > 0)
+                                if (i > 1)
                                     this.firstCoursesPanels.push(i)
                                 menu.firstCourse.items[i].key = i;
                             }
@@ -107,7 +107,6 @@ const Menu = inject("ctx")(
                             menu.day = moment(menu.day).format("YYYY-MM-DD");
                             this.menu = menu;
                             //this.getTables();
-                            //this.forceUpdate();
                         }
                     }));
                 } else {
@@ -212,13 +211,11 @@ const Menu = inject("ctx")(
             })
 
             handleSecondCourse = action((i) => {
-                this.menu.secondCourse.items = i;
-                this.forceUpdate();
+                this.menu.secondCourse.items = i;;
             });
 
             handleSideDishes = action((s) => {
                 this.menu.secondCourse.sideDishes = s;
-                this.forceUpdate();
             });
 
             handleChangeField = action((field, event) => {
@@ -235,19 +232,65 @@ const Menu = inject("ctx")(
                 this.menu.tables = tables;
             });
 
-            handleSave = () => {
-                //TODO check data
-                this.props.ctx.dialog.set({
-                    open: true,
-                    showCancel: true,
-                    onClose: (response) => {
-                        if (response) {
-                            this.save()
+            menuIsValid = (cb) => {
+                if (!this.menu.day) {
+                    cb("Menu date is required")
+                    return false;
+                }
+                if (this.menu.firstCourse && this.menu.firstCourse.items) {
+                    for (let i = 0; i < this.menu.firstCourse.items.length; i++) {
+                        let fc = this.menu.firstCourse.items[i];
+                        if (fc.value === undefined || fc.value.trim() === "") {
+                            cb("Invalid menu firstCourse item");
+                            return false;
                         }
-                    },
-                    title: "Save",
-                    description: "Are you sure to save the changes?"
-                })
+                        for (let j = 0; j < fc.condiments.length; j++) {
+                            let condiment = fc.condiments[j];
+                            if (condiment === undefined || condiment.trim() === "") {
+                                cb("Invalid menu firstCourse item condiment");
+                                return false;
+                            }
+                        }
+                    }
+                } else {
+                    cb("Invalid menu firstCourse");
+                    return false;
+                }
+                cb();
+            }
+
+            handleSave = () => {
+                let message = "Are you sure to save the changes?",
+                    warnings = "";
+                if (this.menu.secondCourse.items.length === 0) {
+                    warnings += "\n - Second courses list is empty!";
+                }
+                if (this.menu.secondCourse.sideDishes.length === 0) {
+                    warnings += "\n - Side dishes list is empty!";
+                }
+                if (this.menu.enabled === false) {
+                    warnings += "\n - Menu is not enabled, users won't be notified";
+                }
+                if (warnings !== "") {
+                    message += "\n\nWarnings:\n" + warnings;
+                }
+                this.menuIsValid((err) => {
+                    if (err) {
+                        this.showAlert("Error", err);
+                    } else {
+                        this.props.ctx.dialog.set({
+                            open: true,
+                            showCancel: true,
+                            onClose: (response) => {
+                                if (response) {
+                                    this.save()
+                                }
+                            },
+                            title: "Save",
+                            description: message
+                        });
+                    }
+                });
             }
 
             showAlert = (title, description) => {
@@ -282,7 +325,7 @@ const Menu = inject("ctx")(
                             this.showAlert("Error", err);
                         } else if (res) {
                             this.props.ctx.history.push("/menus/" + res._id)
-                            this.forceUpdate();
+                            this.id = res._id;
                             this.showAlert("Success", "Menu created!");
                         }
                         this.isSaving = false;

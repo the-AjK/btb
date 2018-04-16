@@ -164,7 +164,7 @@ const Users = inject("ctx")(
 
             handleRole = props => () => {
                 let role = prompt("Enter user role:", props.original.role.title);
-                if (role !== "" && role !== props.original.role.title) {
+                if (role && role !== "" && role !== props.original.role.title) {
                     let id = props.original._id,
                         data = { role: role };
                     this.props.ctx.users.update(id, data, (err) => {

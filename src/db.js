@@ -134,7 +134,11 @@ const UserSchema = new mongoose.Schema({
   email: 1
 }, {
   unique: true,
-  partialFilterExpression: { 'deleted': { $eq: false }}
+  partialFilterExpression: {
+    'deleted': {
+      $eq: false
+    }
+  }
 });
 
 const BeerSchema = new mongoose.Schema({
@@ -172,14 +176,29 @@ const MenuSchema = new mongoose.Schema({
     required: true
   },
   firstCourse: {
-    items: [{
-      value: String,
-      condiments: [String]
-    }]
+    items: {
+      type: [{
+        value: {
+          type: String,
+          required: true
+        },
+        condiments: {
+          type: [String],
+          default: []
+        }
+      }],
+      default: []
+    }
   },
   secondCourse: {
-    items: [String],
-    sideDishes: [String]
+    items: {
+      type: [String],
+      default: []
+    },
+    sideDishes: {
+      type: [String],
+      default: []
+    }
   },
   additionalInfos: String,
   day: {
@@ -206,7 +225,11 @@ const MenuSchema = new mongoose.Schema({
   day: 1
 }, {
   unique: true,
-  partialFilterExpression: { 'deleted': { $eq: false }}
+  partialFilterExpression: {
+    'deleted': {
+      $eq: false
+    }
+  }
 });
 
 const OrderSchema = new mongoose.Schema({
@@ -250,7 +273,11 @@ const OrderSchema = new mongoose.Schema({
   menu: 1
 }, {
   unique: true,
-  partialFilterExpression: { 'deleted': { $eq: false }}
+  partialFilterExpression: {
+    'deleted': {
+      $eq: false
+    }
+  }
 });
 
 const TableSchema = new mongoose.Schema({
