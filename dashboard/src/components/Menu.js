@@ -260,6 +260,20 @@ const Menu = inject("ctx")(
             }
 
             handleSave = () => {
+                let message = "Are you sure to save the changes?",
+                    warnings = "";
+                if (this.menu.secondCourse.items.length === 0) {
+                    warnings += "\n - Second courses list is empty!";
+                }
+                if (this.menu.secondCourse.sideDishes.length === 0) {
+                    warnings += "\n - Side dishes list is empty!";
+                }
+                if (this.menu.enabled === false) {
+                    warnings += "\n - Menu is not enabled, users won't be notified";
+                }
+                if (warnings !== "") {
+                    message += "\n\nWarnings:\n" + warnings;
+                }
                 this.menuIsValid((err) => {
                     if (err) {
                         this.showAlert("Error", err);
@@ -273,7 +287,7 @@ const Menu = inject("ctx")(
                                 }
                             },
                             title: "Save",
-                            description: "Are you sure to save the changes?"
+                            description: message
                         });
                     }
                 });
