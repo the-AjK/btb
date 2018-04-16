@@ -305,7 +305,7 @@ bot.mention(['@tables', '@table'], (ctx) => {
           if (!userHasOrdered) {
             userMessage = "You should place an order and choose your table!"
           } else if (counter == 0) {
-            userMessage = "Ehm, you are the only one in your table..."
+            userMessage = "Ehm, you are the only one in your table...\nForever alone? 🐒"
           }
         } else if (mention == 'tables') {
           for (let i = 0; i < orders.length; i++) {
