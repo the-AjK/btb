@@ -87,8 +87,8 @@ const DownshiftMultiple = observer(
                 //this.setState({
                 //    selectedItem: selectedItem.slice(0, selectedItem.length - 1),
                 //});
-            } else if (inputValue.length && keycode(event) === 'enter') {
-                this.handleChange(inputValue);
+            } else if (inputValue.trim().length && keycode(event) === 'enter') {
+                this.handleChange(inputValue.trim());
             }
         };
 
@@ -155,6 +155,7 @@ const DownshiftMultiple = observer(
                                                 onDelete={this.handleDelete(item)}
                                             />
                                         )),*/
+                                        className: classes.input,
                                         onChange: this.handleInputChange,
                                         onKeyDown: this.handleKeyDown,
                                         placeholder: this.props.placeholder || '',
@@ -207,6 +208,9 @@ const styles = theme => ({
     inputRoot: {
         flexWrap: 'wrap',
     },
+    input: {
+        paddingTop: "1em"
+    }
 });
 
 const MultipleSelect = observer(
