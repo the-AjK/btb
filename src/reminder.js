@@ -101,7 +101,7 @@ function initDailyReminders() {
             if (!moment.utc(menu.updatedAt).isSame(moment(), 'day')) {
                 //The dailyMenu was updated in the past days, so lets remind the users that
                 //its available today
-                setScheduler("dailyMenu", moment(menu.deadline).subtract(60, 'minutes'), () => {
+                setScheduler("dailyMenu", moment(menu.deadline).subtract(90, 'minutes'), () => {
                     //send daily menu notification
                     botNotifications.dailyMenu(menu);
                 });
