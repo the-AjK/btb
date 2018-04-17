@@ -167,16 +167,17 @@ function addBeer(ctx) {
                 setTimeout(() => {
                     beerLock = null;
                     console.log("Beer unlocked")
-                }, 60000 * 30);
+                }, 60000 * 60);
                 //lets check the total beers
                 DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
                     if (!err) {
                         const beersLevelMap = {
-                            15: 1,
-                            50: 2,
-                            200: 3,
-                            500: 4,
-                            1000: 5
+                            5: 1,
+                            15: 2,
+                            50: 3,
+                            200: 4,
+                            500: 5,
+                            1000: 6
                         };
                         if (beersLevelMap[beers.length])
                             DB.setUserLevel(ctx.session.user._id, beersLevelMap[beers.length], (err) => {

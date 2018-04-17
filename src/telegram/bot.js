@@ -57,6 +57,7 @@ stage.register(require('./scenes/order').firstCourse)
 stage.register(require('./scenes/order').secondCourse)
 stage.register(require('./scenes/settings').scene)
 stage.register(require('./scenes/register').scene)
+stage.register(require('./scenes/orderRating').scene)
 
 bot.use(session());
 bot.use(stage.middleware());
@@ -127,7 +128,7 @@ bot.on("callback_query", ctx => {
     delete ctx.session.lastMessage;
   }
   if (ctx.update.callback_query.data == 'statusorders') {
-    if (ctx.session.user.level == 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+    if (ctx.session.user.level < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -142,7 +143,7 @@ bot.on("callback_query", ctx => {
       });
     }
   } else if (ctx.update.callback_query.data == 'statustables') {
-    if (ctx.session.user.level == 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+    if (ctx.session.user.level < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -449,7 +450,10 @@ function formatOrder(order, user) {
   } else {
     text = text + "\n* - No participants";
   }
-  text = text + "\n\nare you hungry? 🤤";
+  if (moment().isBefore(moment("13:00", "HH:mm")))
+    text = text + "\n\nare you hungry? 🤤";
+  if (order.rating)
+    text += "\n\nYour rating was: *" + order.rating + "* stars! ⭐️";
   return text;
 }
 exports.formatOrder = formatOrder;

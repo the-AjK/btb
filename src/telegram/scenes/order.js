@@ -588,6 +588,8 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
 )
 exports.secondCourse = secondCourseWizard;
 
+const ratingDeadline = require('./orderRating').ratingDeadline;
+
 const scene = new Scene('order')
 scene.enter((ctx) => {
     DB.getDailyUserOrder(null, ctx.session.user.id, (err, dailyOrder) => {
@@ -597,8 +599,28 @@ scene.enter((ctx) => {
         } else if (dailyOrder) {
             ctx.reply(require('../bot').formatOrder(dailyOrder, ctx.session.user), {
                 parse_mode: "markdown"
+            }).then(() => {
+                if (moment().isAfter(moment(ratingDeadline, "HH:mm")) && ctx.session.user && ctx.session.user.level > 0 && dailyOrder.rating == undefined) {
+                    //users with level > 0 can rate their orders after 13:00
+                    ctx.reply("Did you enjoy your lunch?", {
+                        parse_mode: "markdown",
+                        force_reply: true,
+                        reply_markup: JSON.stringify({
+                            inline_keyboard: [
+                                [{
+                                    text: 'Rate it!',
+                                    callback_data: 'rateit'
+                                }]
+                            ]
+                        })
+                    }).then((msg) => {
+                        //lets save the message to delete it afterward
+                        ctx.session.lastMessage = msg;
+                    });
+                } else {
+                    ctx.scene.leave();
+                }
             });
-            return ctx.scene.leave();
         } else {
             DB.getDailyMenu(null, (err, dailyMenu) => {
                 if (err) {
@@ -669,6 +691,9 @@ scene.on("callback_query", ctx => {
     ctx.deleteMessage(ctx.message_id);
     delete ctx.session.lastMessage;
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
+    if (ctx.update.callback_query.data == 'rateit') {
+        ctx.scene.enter("orderRating");
+    }
 });
 
 exports.scene = scene;

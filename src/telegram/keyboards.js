@@ -46,7 +46,7 @@ module.exports = {
         }, {
             text: cmd.order
         }]);
-        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || ctx.session.user.level > 0)) {
+        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || ctx.session.user.level > 1)) {
             keyboard.push([{
                 text: cmd.status
             }]);
@@ -123,6 +123,54 @@ module.exports = {
             cmd: cmd
         };
 
+        return obj;
+    },
+    orderRating: function (ctx) {
+        let inline_keyboard = [
+                [{
+                    text: '-',
+                    callback_data: 'remove'
+                }, {
+                    text: '+',
+                    callback_data: 'add'
+                }],
+                [{
+                    text: 'Rate It!',
+                    callback_data: 'rateit'
+                }],
+                [{
+                    text: 'Cancel',
+                    callback_data: 'cancel'
+                }]
+            ],
+            key_add = {
+                text: '+++',
+                callback_data: 'add'
+            },
+            key_remove = {
+                text: '---',
+                callback_data: 'remove'
+            };
+        if (ctx.session.rating == 1) {
+            inline_keyboard[0] = [key_add];
+        } else if (ctx.session.rating == 10) {
+            inline_keyboard[0] = [key_remove];
+        } else {
+            inline_keyboard[0] = [key_remove, key_add];
+        }
+        let obj = {
+            opts: {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    inline_keyboard: inline_keyboard
+                })
+            },
+            text: "*Rate your lunch!*\n0 - Low (Glicinet was much better)\n...\n10 - High (It was Super!)\n\n" + ctx.session.rating + " stars! "
+        };
+        for (let i = 0; i < ctx.session.rating; i++) {
+            obj.text += "⭐️"
+        }
         return obj;
     },
     reminders: function (ctx) {

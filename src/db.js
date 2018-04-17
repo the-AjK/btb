@@ -260,6 +260,11 @@ const OrderSchema = new mongoose.Schema({
     item: String,
     sideDishes: [String]
   },
+  rating: {
+    type: Number,
+    min: 0,
+    max: 10
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -374,6 +379,10 @@ function sortSideDishesAndJoin(sd) {
 }
 
 function _decodeOrders(orders) {
+  //lets sort the orders by table name
+  orders.sort(function(a, b) {
+    return a.table.name.localeCompare(b.table.name)
+  });
   let orderStats = {};
   for (let i = 0; i < orders.length; i++) {
     let order = orders[i],
