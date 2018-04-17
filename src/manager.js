@@ -588,7 +588,6 @@ function getPaginationQuery(req) {
 
 //Orders stuff
 function _getOrders(req, res) {
-    console.log(req.query)
     const id = req.params.id,
         query = {},
         select = {
