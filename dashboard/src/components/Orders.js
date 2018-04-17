@@ -103,6 +103,11 @@ const Orders = inject("ctx")(
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
                         Cell: props => { return props.value ? <EnabledIcon className={!props.value ? classes.enabled : classes.disabled} /> : <DisabledIcon className={!props.value ? classes.enabled : classes.disabled} /> }
                     }, {
+                        Header: 'Rating',
+                        accessor: 'rating',
+                        filterable: false,
+                        sortable: true
+                    }, {
                         Header: 'Created at',
                         accessor: 'createdAt',
                         filterable: false,

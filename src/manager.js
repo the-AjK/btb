@@ -594,6 +594,7 @@ function _getOrders(req, res) {
             owner: 1,
             deleted: 1,
             table: 1,
+            rating: 1,
             firstCourse: 1,
             secondCourse: 1,
             createdAt: 1,
