@@ -111,6 +111,7 @@ const Orders = inject("ctx")(
                         Header: 'Updated at',
                         accessor: 'updatedAt',
                         filterable: false,
+                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
                         Cell: props => { return <span title={moment(props.value).format('DD/MM/YY HH:mm:ss')}>{moment(props.value).from(moment())}</span> }
                     }, {
                         Header: 'Actions',
