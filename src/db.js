@@ -374,6 +374,10 @@ function sortSideDishesAndJoin(sd) {
 }
 
 function _decodeOrders(orders) {
+  //lets sort the orders by table name
+  orders.sort(function(a, b) {
+    return a.table.name.localeCompare(b.table.name)
+  });
   let orderStats = {};
   for (let i = 0; i < orders.length; i++) {
     let order = orders[i],
