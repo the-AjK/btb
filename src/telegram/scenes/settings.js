@@ -167,7 +167,7 @@ function addBeer(ctx) {
                 setTimeout(() => {
                     beerLock = null;
                     console.log("Beer unlocked")
-                }, 60000 * 30);
+                }, 60000 * 60);
                 //lets check the total beers
                 DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
                     if (!err) {
