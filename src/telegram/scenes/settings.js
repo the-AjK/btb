@@ -142,6 +142,9 @@ function addBeer(ctx) {
                 parse_mode: "markdown"
             });
         }
+        if (!checkUser(ctx.session.user.role, userRoles.root)) {
+            bot.broadcastMessage("Locked beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
+        }
     } else {
         beerLock = ctx.session.user;
         console.log("Beer lock for: " + beerLock.email);
