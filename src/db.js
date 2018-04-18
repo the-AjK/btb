@@ -606,18 +606,15 @@ exports.getNotOrderUsers = (day, cb) => {
         if (!err && menu) {
           Order.find({
             deleted: false,
-            owner: {
-              "$in": users.map(u => u._id)
-            },
             menu: menu._id
           }).exec((err, orders) => {
             if (err) {
               console.error(err);
               cb(err);
             } else {
-              const orderUsersID = orders.map(o => o.owner);
+              const orderUsersID = orders.map(o => o.owner.toString());
               cb(null, users.filter(u => {
-                return orderUsersID.indexOf(u._id) < 0;
+                return orderUsersID.indexOf(u._id.toString()) < 0;
               }));
             }
           });
