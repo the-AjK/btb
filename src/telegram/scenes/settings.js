@@ -141,46 +141,29 @@ scene.on("callback_query", ctx => {
 exports.scene = scene;
 
 function deleteDailyOrder(ctx) {
-    const today = moment().startOf("day"),
-        tomorrow = moment(today).add(1, "days"),
-        query = {
-            deleted: false,
-            enabled: true,
-            day: {
-                $gte: today.toDate(),
-                $lt: tomorrow.toDate()
-            },
-
-        };
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-    DB.Menu.findOne(query, (err, menu) => {
-        if (!err && menu) {
-            if (moment().isAfter(menu.deadline)) {
+    DB.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
+        if (err) {
+            console.error(err);
+            ctx.reply("Cannot delete the daily order");
+        } else if (!order) {
+            ctx.reply("You didn't placed any order yet! c'mon...");
+        } else {
+            if (moment().isAfter(order.menu.deadline)) {
                 ctx.reply("AAHahahAH too late! 😂\n\nRemoving the daily order is no longer possible when the deadline is reached.");
                 return;
             }
-            DB.Order.findOneAndRemove({
-                deleted: false,
-                owner: ctx.session.user._id,
-                menu: menu._id
-            }).exec((err, order) => {
-                if (!err && order) {
+            DB.Order.findByIdAndRemove(order._id, (err, deletedOrder) => {
+                if (!err && deletedOrder) {
                     ctx.reply("Your daily order has been deleted!");
                     if (!checkUser(ctx.session.user.role, userRoles.root)) {
                         bot.broadcastMessage("Order deleted by *" + ctx.session.user.email + "* ", accessLevels.root, null, true);
                     }
-                } else if (!order) {
-                    ctx.reply("You didn't placed any order yet! c'mon...");
                 } else {
                     console.error(err || "DB error");
                     ctx.reply("DB error!");
                 }
-            })
-        } else if (!menu) {
-            ctx.reply("You didn't placed any order yet!");
-        } else {
-            console.error(err || "DB error");
-            ctx.reply("DB error!");
+            });
         }
     });
 }
