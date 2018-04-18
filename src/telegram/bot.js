@@ -270,10 +270,14 @@ function parseMention(ctx) {
 
 //Mention handler to broadcast by table
 bot.mention(['@tables', '@table'], (ctx) => {
-  console.log("From: " + ctx.session.user.email + " Mention: " + ctx.message.text);
+  console.log("From: " + ctx.session.user.email + " Mention: '" + ctx.message.text + "'");
   const mentions = parseMention(ctx);
   for (let idx in mentions) {
     const mention = mentions[idx];
+    if (ctx.message.text.replace("@" + mention, "").trim() == "") {
+      ctx.reply("You should write something more!\n(Example: '@" + mention + " ciao!')");
+      break;
+    }
     DB.getDailyOrders(null, (err, orders) => {
       if (err) {
         ctx.reply(err);
@@ -282,7 +286,23 @@ bot.mention(['@tables', '@table'], (ctx) => {
           userMessage = "Broadcast service",
           userHasOrdered = false,
           counter = 0;
-        if (mention == 'table') {
+        if (mention.indexOf("tables") >= 0) {
+          for (let i = 0; i < orders.length; i++) {
+            if (!orders[i].owner._id.equals(ctx.session.user._id)) {
+              bot.telegram.sendMessage(orders[i].owner.telegram.id, message, {
+                parse_mode: "markdown"
+              }).then(() => {
+                console.log("Mention tables sent to " + orders[j].owner.telegram.id + "-" + orders[j].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
+              });
+              counter += 1;
+            } else {
+              userHasOrdered = true;
+            }
+          }
+          if (counter == 0) {
+            userMessage = "Seems like people are not hungry anymore!"
+          }
+        } else if (mention.indexOf("table") >= 0) {
           //find user table and broadcast the message
           for (let i = 0; i < orders.length; i++) {
             if (orders[i].owner._id.equals(ctx.session.user._id)) {
@@ -306,22 +326,6 @@ bot.mention(['@tables', '@table'], (ctx) => {
             userMessage = "You should place an order and choose your table!"
           } else if (counter == 0) {
             userMessage = "Ehm, you are the only one in your table...\nForever alone? 🐒"
-          }
-        } else if (mention == 'tables') {
-          for (let i = 0; i < orders.length; i++) {
-            if (!orders[i].owner._id.equals(ctx.session.user._id)) {
-              bot.telegram.sendMessage(orders[i].owner.telegram.id, message, {
-                parse_mode: "markdown"
-              }).then(() => {
-                console.log("Mention tables sent to " + orders[j].owner.telegram.id + "-" + orders[j].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
-              });
-              counter += 1;
-            } else {
-              userHasOrdered = true;
-            }
-          }
-          if (counter == 0) {
-            userMessage = "Seems like people are not hungry anymore!"
           }
         }
         if (counter > 0) {
