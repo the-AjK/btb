@@ -219,9 +219,6 @@ function addBeer(ctx) {
             //TODO send beer image
             ctx.reply("Oh yeah, let me drink it...");
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-            if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
-            }
             setTimeout(() => {
                 ctx.reply("Thank you bro!");
                 //lets check the total beers
@@ -235,7 +232,7 @@ function addBeer(ctx) {
                             500: 5,
                             1000: 6
                         };
-                        if (beersLevelMap[beers.length])
+                        if (beersLevelMap[beers.length]) {
                             DB.setUserLevel(ctx.session.user._id, beersLevelMap[beers.length], (err) => {
                                 if (err) {
                                     console.error(err);
@@ -246,6 +243,11 @@ function addBeer(ctx) {
                                     }
                                 }
                             });
+                        } else {
+                            if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                                bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + beers.length + ")", accessLevels.root, null, true);
+                            }
+                        }
                     } else {
                         console.error(err);
                     }
