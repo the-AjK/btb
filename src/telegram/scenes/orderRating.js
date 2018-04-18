@@ -117,6 +117,9 @@ function setOrderRating(ctx) {
                     require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
                         parse_mode: "markdown"
                     });
+                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                        bot.broadcastMessage("New order rating: *" + ctx.session.user.email + "* ( " + ctx.session.rating + " stars )", accessLevels.root, null, true);
+                    }
                 }
             });
             return;
