@@ -18,6 +18,7 @@ const Telegraf = require("telegraf"),
   DB = require("../db"),
   auth = require("../auth"),
   mail = require("../mail"),
+  utils = require("../utils"),
   roles = require("../roles"),
   userRoles = roles.userRoles,
   accessLevels = roles.accessLevels;
@@ -247,19 +248,13 @@ function textManager(ctx) {
       });
     } else {
       ctx.replyWithSticker({
-        source: require('fs').createReadStream(__dirname + "/img/0" + getRandomInt(1, 10) + ".webp")
+        source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
       }).then(() => {
         replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
       });
     }
   }
 };
-
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min)) + min; //Il max è escluso e il min è incluso
-}
 
 function parseMention(ctx) {
   //ctx.message.entities = [ { offset: 0, length: 7, type: 'mention' } ]
@@ -349,7 +344,7 @@ bot.on(['document', 'video', 'sticker', 'photo'], (ctx) => {
     broadcastMessage("Unsupported message type from: " + ctx.session.user.email, accessLevels.root, null, true);
   }
   ctx.replyWithSticker({
-    source: require('fs').createReadStream(__dirname + "/img/0" + getRandomInt(1, 10) + ".webp")
+    source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
   }).then(() => {
     replyDiscussion(ctx, bender.getRandomTagQuote(["ass"]));
   });
