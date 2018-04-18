@@ -19,7 +19,7 @@ const Telegraf = require("telegraf"),
     ACTIONS = bot.ACTIONS;
 
 const scene = new Scene('orderRating'),
-    ratingDeadline = "13:00";
+    ratingDeadline = "14:00";
 
 exports.ratingDeadline = ratingDeadline;
 
@@ -106,7 +106,8 @@ function setOrderRating(ctx) {
             ctx.reply("You can't rate your order yet! Please wait")
         } else {
             DB.Order.findByIdAndUpdate(order._id, {
-                rating: ctx.session.rating
+                rating: ctx.session.rating,
+                updatedAt: moment().format()
             }, (err, order) => {
                 if (err) {
                     console.error(err);
@@ -116,6 +117,9 @@ function setOrderRating(ctx) {
                     require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
                         parse_mode: "markdown"
                     });
+                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                        bot.broadcastMessage("New order rating: *" + ctx.session.user.email + "* ( " + ctx.session.rating + " stars )", accessLevels.root, null, true);
+                    }
                 }
             });
             return;

@@ -36,7 +36,7 @@ exports.accountEnabledDisabled = function (user, status) {
     bot.telegram.sendMessage(user.telegram.id, msg, opts);
 }
 
-//Send daily menu notification for every user who enabled the setting.dailyMenu
+//Send daily menu notification for every user who enabled the setting.dailyMenu and didnt place an order yet
 exports.dailyMenu = function (menu) {
     const query = {
             "telegram.enabled": true,
@@ -51,14 +51,19 @@ exports.dailyMenu = function (menu) {
             console.error(err);
         } else {
             for (let i = 0; i < users.length; i++) {
-                console.log("broadcasting dailyMenu to: " + users[i].telegram.id + "-" + users[i].telegram.first_name);
-                const ctx = {
-                    session: {
-                        user: users[i]
+                DB.getDailyUserOrder(null, users[i]._id, (err, order) => {
+                    if (!err && !order) {
+                        //Broadcast only if the user didn't place an order yet
+                        console.log("broadcasting dailyMenu to: " + users[i].telegram.id + "-" + users[i].telegram.first_name);
+                        const ctx = {
+                            session: {
+                                user: users[i]
+                            }
+                        };
+                        bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts).then((m) => {
+                            console.log("dailyMenu sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
+                        });
                     }
-                };
-                bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts).then((m) => {
-                    console.log("dailyMenu sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
                 });
             }
         }

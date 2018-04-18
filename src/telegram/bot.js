@@ -18,6 +18,7 @@ const Telegraf = require("telegraf"),
   DB = require("../db"),
   auth = require("../auth"),
   mail = require("../mail"),
+  utils = require("../utils"),
   roles = require("../roles"),
   userRoles = roles.userRoles,
   accessLevels = roles.accessLevels;
@@ -143,7 +144,7 @@ bot.on("callback_query", ctx => {
       });
     }
   } else if (ctx.update.callback_query.data == 'statustables') {
-    if (ctx.session.user.level < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+    if (ctx.session.user.level < 2) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -158,6 +159,22 @@ bot.on("callback_query", ctx => {
           ctx.reply("DB error");
         } else {
           ctx.reply(formatTables(tables, ctx.session.user), {
+            parse_mode: "markdown"
+          });
+        }
+      });
+    }
+  } else if (ctx.update.callback_query.data == 'userswithoutorder') {
+    if (ctx.session.user.level < 2) {
+      ctx.reply("Admin stuff. Keep out.");
+      return;
+    } else {
+      DB.getNotOrderUsers(null, (err, users) => {
+        if (err) {
+          console.error(err);
+          ctx.reply("DB error");
+        } else {
+          ctx.reply(formatUsersWithoutOrder(users, ctx.session.user), {
             parse_mode: "markdown"
           });
         }
@@ -247,19 +264,13 @@ function textManager(ctx) {
       });
     } else {
       ctx.replyWithSticker({
-        source: require('fs').createReadStream(__dirname + "/img/0" + getRandomInt(1, 10) + ".webp")
+        source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
       }).then(() => {
         replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
       });
     }
   }
 };
-
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min)) + min; //Il max è escluso e il min è incluso
-}
 
 function parseMention(ctx) {
   //ctx.message.entities = [ { offset: 0, length: 7, type: 'mention' } ]
@@ -275,10 +286,14 @@ function parseMention(ctx) {
 
 //Mention handler to broadcast by table
 bot.mention(['@tables', '@table'], (ctx) => {
-  console.log("From: " + ctx.session.user.email + " Mention: " + ctx.message.text);
+  console.log("From: " + ctx.session.user.email + " Mention: '" + ctx.message.text + "'");
   const mentions = parseMention(ctx);
   for (let idx in mentions) {
     const mention = mentions[idx];
+    if (ctx.message.text.replace("@" + mention, "").trim() == "") {
+      ctx.reply("You should write something more!\n(Example: '@" + mention + " ciao!')");
+      break;
+    }
     DB.getDailyOrders(null, (err, orders) => {
       if (err) {
         ctx.reply(err);
@@ -287,7 +302,23 @@ bot.mention(['@tables', '@table'], (ctx) => {
           userMessage = "Broadcast service",
           userHasOrdered = false,
           counter = 0;
-        if (mention == 'table') {
+        if (mention.indexOf("tables") >= 0) {
+          for (let i = 0; i < orders.length; i++) {
+            if (!orders[i].owner._id.equals(ctx.session.user._id)) {
+              bot.telegram.sendMessage(orders[i].owner.telegram.id, message, {
+                parse_mode: "markdown"
+              }).then(() => {
+                console.log("Mention tables sent to " + orders[j].owner.telegram.id + "-" + orders[j].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
+              });
+              counter += 1;
+            } else {
+              userHasOrdered = true;
+            }
+          }
+          if (counter == 0) {
+            userMessage = "Seems like people are not hungry anymore!"
+          }
+        } else if (mention.indexOf("table") >= 0) {
           //find user table and broadcast the message
           for (let i = 0; i < orders.length; i++) {
             if (orders[i].owner._id.equals(ctx.session.user._id)) {
@@ -312,22 +343,6 @@ bot.mention(['@tables', '@table'], (ctx) => {
           } else if (counter == 0) {
             userMessage = "Ehm, you are the only one in your table...\nForever alone? 🐒"
           }
-        } else if (mention == 'tables') {
-          for (let i = 0; i < orders.length; i++) {
-            if (!orders[i].owner._id.equals(ctx.session.user._id)) {
-              bot.telegram.sendMessage(orders[i].owner.telegram.id, message, {
-                parse_mode: "markdown"
-              }).then(() => {
-                console.log("Mention tables sent to " + orders[j].owner.telegram.id + "-" + orders[j].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
-              });
-              counter += 1;
-            } else {
-              userHasOrdered = true;
-            }
-          }
-          if (counter == 0) {
-            userMessage = "Seems like people are not hungry anymore!"
-          }
         }
         if (counter > 0) {
           userMessage = "Message broadcasted to " + counter + " users."
@@ -349,7 +364,7 @@ bot.on(['document', 'video', 'sticker', 'photo'], (ctx) => {
     broadcastMessage("Unsupported message type from: " + ctx.session.user.email, accessLevels.root, null, true);
   }
   ctx.replyWithSticker({
-    source: require('fs').createReadStream(__dirname + "/img/0" + getRandomInt(1, 10) + ".webp")
+    source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
   }).then(() => {
     replyDiscussion(ctx, bender.getRandomTagQuote(["ass"]));
   });
@@ -406,6 +421,19 @@ function formatMenu(menu) {
   return text;
 }
 exports.formatMenu = formatMenu;
+
+function formatUsersWithoutOrder(users, user) {
+  let text = "Users who didn't place an order:\n";
+  for (let i = 0; i < users.length; i++) {
+    let u = users[i];
+    text = text + "\n - [" + (u.telegram.first_name || u.email) + "](tg://user?id=" + u.telegram.id + ")";
+    if (u._id.equals(user._id)) {
+      text = text + " (*You*)";
+    }
+  }
+  return text;
+}
+exports.formatUsersWithoutOrder = formatUsersWithoutOrder;
 
 function formatOrder(order, user) {
   let text =

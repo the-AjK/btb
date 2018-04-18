@@ -5,12 +5,13 @@
  */
 "use strict";
 
-const mongoose = require("mongoose");
-const moment = require("moment");
-const roles = require("./roles");
-const userRoles = roles.userRoles;
-const accessLevels = roles.accessLevels;
-const db = mongoose.connection;
+const mongoose = require("mongoose"),
+  moment = require("moment"),
+  async = require("async"),
+  roles = require("./roles"),
+  userRoles = roles.userRoles,
+  accessLevels = roles.accessLevels,
+  db = mongoose.connection;
 
 exports.init = function (cb) {
   mongoose.connect(process.env.MONGODB_URI);
@@ -380,7 +381,7 @@ function sortSideDishesAndJoin(sd) {
 
 function _decodeOrders(orders) {
   //lets sort the orders by table name
-  orders.sort(function(a, b) {
+  orders.sort(function (a, b) {
     return a.table.name.localeCompare(b.table.name)
   });
   let orderStats = {};
@@ -547,7 +548,7 @@ exports.getUserBeers = (userID, type, callback) => {
   };
   if (type)
     query.type = type;
-  Beer.find(query).populate('tables').exec(callback);
+  Beer.find(query).exec(callback);
 };
 
 exports.setUserLevel = (userID, level, callback) => {
@@ -591,3 +592,42 @@ exports.getMenuSuggestions = (cb) => {
     }
   });
 }
+
+exports.getNotOrderUsers = (day, cb) => {
+  const query = {
+    "deleted": false
+  };
+  User.find(query, (err, users) => {
+    if (err) {
+      console.error(err);
+      cb(err)
+    } else {
+      getDailyMenu(day, (err, menu) => {
+        if (!err && menu) {
+          Order.find({
+            deleted: false,
+            owner: {
+              "$in": users.map(u => u._id)
+            },
+            menu: menu._id
+          }).exec((err, orders) => {
+            if (err) {
+              console.error(err);
+              cb(err);
+            } else {
+              const orderUsersID = orders.map(o => o.owner);
+              cb(null, users.filter(u => {
+                return orderUsersID.indexOf(u._id) < 0;
+              }));
+            }
+          });
+        } else if (!menu) {
+          cb("Daily menu not available yet");
+        } else {
+          console.error(err);
+          cb(err || "DB error");
+        }
+      });
+    }
+  });
+};

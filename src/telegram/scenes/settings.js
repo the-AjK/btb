@@ -6,10 +6,12 @@
 "use strict";
 
 const Telegraf = require("telegraf"),
+    schedule = require('node-schedule'),
     moment = require('moment'),
     Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     packageJSON = require('../../../package.json'),
+    utils = require("../../utils"),
     roles = require("../../roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
@@ -19,7 +21,59 @@ const Telegraf = require("telegraf"),
     DB = require("../../db"),
     ACTIONS = bot.ACTIONS;
 
-let beerLock = null;
+let beerLock = null,
+    beerLockTimeout = 60000 * 60, //1h
+    autoDrinkRange = 60000 * 30, //30mins
+    drinkingSchedule;
+
+function drinkBeer(user) {
+    beerLock = user;
+    console.log("Beer lock for: " + beerLock.email);
+    setTimeout(() => {
+        beerLock = null;
+        console.log("Beer unlocked")
+    }, beerLockTimeout);
+}
+
+function setDrinkingSchedule(minimumToWait) {
+    //clear schedule
+    if (drinkingSchedule && drinkingSchedule.cancel) {
+        drinkingSchedule.cancel();
+    }
+    //calculate the next drink time
+    const m = Math.round(utils.getRandomInt(minimumToWait, minimumToWait + autoDrinkRange) / 60000),
+        drink = moment().add(m, 'minutes');
+    console.log("Next drinking time in " + m + " minutes.");
+    drinkingSchedule = schedule.scheduleJob({
+        date: drink.date(),
+        month: drink.month(),
+        year: drink.year(),
+        hour: drink.hours(),
+        minute: drink.minutes(),
+        second: 0
+    }, function () {
+        autoDrink();
+    });
+}
+
+function autoDrink() {
+    if (beerLock) {
+        console.log("Cannot auto drink");
+        //bot.broadcastMessage("I wish to drink but I can't", accessLevels.root, null, true);
+        setDrinkingSchedule(beerLockTimeout);
+    } else {
+        drinkBeer({
+            email: "btb@btb.com",
+            username: "BiteTheBot"
+        });
+        //bot.broadcastMessage("I'm drinking!", accessLevels.root, null, true);
+        const halfhour = 60000 * 30;
+        setDrinkingSchedule(beerLockTimeout + halfhour);
+    }
+}
+
+//randomly set beerLock during the day, acting like the bot is drinking time to time
+setDrinkingSchedule(60000 * 30);
 
 const scene = new Scene('settings')
 scene.enter((ctx) => ctx.reply(keyboards.settings(ctx).text, keyboards.settings(ctx).opts))
@@ -87,53 +141,40 @@ scene.on("callback_query", ctx => {
 exports.scene = scene;
 
 function deleteDailyOrder(ctx) {
-    const today = moment().startOf("day"),
-        tomorrow = moment(today).add(1, "days"),
-        query = {
-            deleted: false,
-            enabled: true,
-            day: {
-                $gte: today.toDate(),
-                $lt: tomorrow.toDate()
-            },
-
-        };
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-    DB.Menu.findOne(query, (err, menu) => {
-        if (!err && menu) {
-            if (moment().isAfter(menu.deadline)) {
+    DB.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
+        if (err) {
+            console.error(err);
+            ctx.reply("Cannot delete the daily order");
+        } else if (!order) {
+            ctx.reply("You didn't placed any order yet! c'mon...");
+        } else {
+            if (moment().isAfter(order.menu.deadline)) {
                 ctx.reply("AAHahahAH too late! 😂\n\nRemoving the daily order is no longer possible when the deadline is reached.");
                 return;
             }
-            DB.Order.findOneAndRemove({
-                deleted: false,
-                owner: ctx.session.user._id,
-                menu: menu._id
-            }).exec((err, order) => {
-                if (!err && order) {
+            DB.Order.findByIdAndRemove(order._id, (err, deletedOrder) => {
+                if (!err && deletedOrder) {
                     ctx.reply("Your daily order has been deleted!");
                     if (!checkUser(ctx.session.user.role, userRoles.root)) {
                         bot.broadcastMessage("Order deleted by *" + ctx.session.user.email + "* ", accessLevels.root, null, true);
                     }
-                } else if (!order) {
-                    ctx.reply("You didn't placed any order yet! c'mon...");
                 } else {
                     console.error(err || "DB error");
                     ctx.reply("DB error!");
                 }
-            })
-        } else if (!menu) {
-            ctx.reply("You didn't placed any order yet!");
-        } else {
-            console.error(err || "DB error");
-            ctx.reply("DB error!");
+            });
         }
     });
 }
 
 function addBeer(ctx) {
     if (beerLock != null) {
-        if (beerLock.username != ctx.session.user.username) {
+        if (beerLock.username == "BiteTheBot") {
+            ctx.reply("Wait wait, I'm drinking my own beer!\nI can get one beer at time!", {
+                parse_mode: "markdown"
+            });
+        } else if (beerLock.username != ctx.session.user.username) {
             ctx.reply("Wait wait, I can get one beer at time!\nI'm still drinking the [" + beerLock.username + "](tg://user?id=" + beerLock.telegram.id + ")'s one!", {
                 parse_mode: "markdown"
             });
@@ -146,8 +187,7 @@ function addBeer(ctx) {
             bot.broadcastMessage("Locked beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
         }
     } else {
-        beerLock = ctx.session.user;
-        console.log("Beer lock for: " + beerLock.email);
+        drinkBeer(ctx.session.user);
         const type = ctx.update.callback_query.data,
             newBeer = new DB.Beer({
                 owner: ctx.session.user._id,
@@ -162,15 +202,8 @@ function addBeer(ctx) {
             //TODO send beer image
             ctx.reply("Oh yeah, let me drink it...");
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-            if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
-            }
             setTimeout(() => {
-                ctx.reply("Thank you bro!")
-                setTimeout(() => {
-                    beerLock = null;
-                    console.log("Beer unlocked")
-                }, 60000 * 60);
+                ctx.reply("Thank you bro!");
                 //lets check the total beers
                 DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
                     if (!err) {
@@ -182,7 +215,7 @@ function addBeer(ctx) {
                             500: 5,
                             1000: 6
                         };
-                        if (beersLevelMap[beers.length])
+                        if (beersLevelMap[beers.length]) {
                             DB.setUserLevel(ctx.session.user._id, beersLevelMap[beers.length], (err) => {
                                 if (err) {
                                     console.error(err);
@@ -193,6 +226,11 @@ function addBeer(ctx) {
                                     }
                                 }
                             });
+                        } else {
+                            if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                                bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + beers.length + ")", accessLevels.root, null, true);
+                            }
+                        }
                     } else {
                         console.error(err);
                     }
@@ -305,8 +343,8 @@ function generateAbout(ctx) {
         "\n" +
         "_A special thanks goes to my girlfriend Giulia for the support and for choosing the name BiteTheBot._" +
         "\n\n*Tips&Tricks*:" +
-        "\nOnce you have placed an order you can use mentions like *@ table* to broadcast a message to all the people in your table." +
-        "\nYou can use *@ tables* to broadcast a message to all the people who already made an order." +
+        "\nOnce you have placed an order you can use mentions like `@table` to broadcast a message to all the people in your table." +
+        "\nYou can use `@tables` to broadcast a message to all the people who already made an order." +
         "\n\n*Do you like BTB?*\n[Give me a real beer](https://www.paypal.me/AlbertoGarbui)" +
         "\n\n*Are you a developer?*\n[Pull Requests are welcome!](https://github.com/the-AjK/btb/pulls)\n\n" +
         "*License*:\n[BSD-3](https://github.com/the-AjK/btb/blob/" + version + "/LICENSE)";
