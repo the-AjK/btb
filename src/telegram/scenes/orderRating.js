@@ -19,7 +19,7 @@ const Telegraf = require("telegraf"),
     ACTIONS = bot.ACTIONS;
 
 const scene = new Scene('orderRating'),
-    ratingDeadline = "13:00";
+    ratingDeadline = "14:00";
 
 exports.ratingDeadline = ratingDeadline;
 
