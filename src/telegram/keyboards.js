@@ -70,15 +70,20 @@ module.exports = {
         obj[cmd.status] = () => {
             let inline_keyboard = [
                     [{
-                        text: 'Tables',
-                        callback_data: 'statustables'
-                    }, {
                         text: 'Orders',
                         callback_data: 'statusorders'
                     }]
                 ],
                 text = "Daily status:";
-
+            if (ctx && ctx.session.user && ctx.session.user.level > 1) {
+                inline_keyboard.push([{
+                    text: 'Tables',
+                    callback_data: 'statustables'
+                }, {
+                    text: 'Users',
+                    callback_data: 'userswithoutorder'
+                }]);
+            }
             ctx.reply(text, {
                 parse_mode: "markdown",
                 force_reply: true,

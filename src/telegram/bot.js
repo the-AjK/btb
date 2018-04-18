@@ -144,7 +144,7 @@ bot.on("callback_query", ctx => {
       });
     }
   } else if (ctx.update.callback_query.data == 'statustables') {
-    if (ctx.session.user.level < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+    if (ctx.session.user.level < 2) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -159,6 +159,22 @@ bot.on("callback_query", ctx => {
           ctx.reply("DB error");
         } else {
           ctx.reply(formatTables(tables, ctx.session.user), {
+            parse_mode: "markdown"
+          });
+        }
+      });
+    }
+  } else if (ctx.update.callback_query.data == 'userswithoutorder') {
+    if (ctx.session.user.level < 2) {
+      ctx.reply("Admin stuff. Keep out.");
+      return;
+    } else {
+      DB.getNotOrderUsers(null, (err, users) => {
+        if (err) {
+          console.error(err);
+          ctx.reply("DB error");
+        } else {
+          ctx.reply(formatUsersWithoutOrder(users, ctx.session.user), {
             parse_mode: "markdown"
           });
         }
@@ -405,6 +421,19 @@ function formatMenu(menu) {
   return text;
 }
 exports.formatMenu = formatMenu;
+
+function formatUsersWithoutOrder(users, user) {
+  let text = "Users who didn't place an order:\n";
+  for (let i = 0; i < users.length; i++) {
+    let u = users[i];
+    text = text + "\n - [" + (u.telegram.first_name || u.email) + "](tg://user?id=" + u.telegram.id + ")";
+    if (u._id.equals(user._id)) {
+      text = text + " (*You*)";
+    }
+  }
+  return text;
+}
+exports.formatUsersWithoutOrder = formatUsersWithoutOrder;
 
 function formatOrder(order, user) {
   let text =

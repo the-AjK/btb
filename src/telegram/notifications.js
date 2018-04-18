@@ -36,7 +36,7 @@ exports.accountEnabledDisabled = function (user, status) {
     bot.telegram.sendMessage(user.telegram.id, msg, opts);
 }
 
-//Send daily menu notification for every user who enabled the setting.dailyMenu and didnt placed an order yet
+//Send daily menu notification for every user who enabled the setting.dailyMenu and didnt place an order yet
 exports.dailyMenu = function (menu) {
     const query = {
             "telegram.enabled": true,
@@ -53,7 +53,7 @@ exports.dailyMenu = function (menu) {
             for (let i = 0; i < users.length; i++) {
                 DB.getDailyUserOrder(null, users[i]._id, (err, order) => {
                     if (!err && !order) {
-                        //Broadcast only if the user didn't placed an order yet
+                        //Broadcast only if the user didn't place an order yet
                         console.log("broadcasting dailyMenu to: " + users[i].telegram.id + "-" + users[i].telegram.first_name);
                         const ctx = {
                             session: {
