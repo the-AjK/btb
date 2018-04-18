@@ -171,8 +171,7 @@ bot.on("callback_query", ctx => {
     } else {
       DB.getNotOrderUsers(null, (err, users) => {
         if (err) {
-          console.error(err);
-          ctx.reply("DB error");
+          ctx.reply(err);
         } else {
           ctx.reply(formatUsersWithoutOrder(users, ctx.session.user), {
             parse_mode: "markdown"
