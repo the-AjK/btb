@@ -6,10 +6,12 @@
 "use strict";
 
 const Telegraf = require("telegraf"),
+    schedule = require('node-schedule'),
     moment = require('moment'),
     Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     packageJSON = require('../../../package.json'),
+    utils = require("../../utils"),
     roles = require("../../roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
@@ -19,7 +21,59 @@ const Telegraf = require("telegraf"),
     DB = require("../../db"),
     ACTIONS = bot.ACTIONS;
 
-let beerLock = null;
+let beerLock = null,
+    beerLockTimeout = 60000 * 60, //1h
+    autoDrinkRange = 60000 * 30, //30mins
+    drinkingSchedule;
+
+function drinkBeer(user) {
+    beerLock = user;
+    console.log("Beer lock for: " + beerLock.email);
+    setTimeout(() => {
+        beerLock = null;
+        console.log("Beer unlocked")
+    }, beerLockTimeout);
+}
+
+function setDrinkingSchedule(minimumToWait) {
+    //clear schedule
+    if (drinkingSchedule && drinkingSchedule.cancel) {
+        drinkingSchedule.cancel();
+    }
+    //calculate the next drink time
+    const m = Math.round(utils.getRandomInt(minimumToWait, minimumToWait + autoDrinkRange) / 60000),
+        drink = moment().add(m, 'minutes');
+    console.log("Next drinking time in " + m + " minutes.");
+    drinkingSchedule = schedule.scheduleJob({
+        date: drink.date(),
+        month: drink.month(),
+        year: drink.year(),
+        hour: drink.hours(),
+        minute: drink.minutes(),
+        second: 0
+    }, function () {
+        autoDrink();
+    });
+}
+
+function autoDrink() {
+    if (beerLock) {
+        console.log("Cannot auto drink");
+        //bot.broadcastMessage("I wish to drink but I can't", accessLevels.root, null, true);
+        setDrinkingSchedule(beerLockTimeout);
+    } else {
+        drinkBeer({
+            email: "btb@btb.com",
+            username: "BiteTheBot"
+        });
+        //bot.broadcastMessage("I'm drinking!", accessLevels.root, null, true);
+        const halfhour = 60000 * 30;
+        setDrinkingSchedule(beerLockTimeout + halfhour);
+    }
+}
+
+//randomly set beerLock during the day, acting like the bot is drinking time to time
+setDrinkingSchedule(60000 * 30);
 
 const scene = new Scene('settings')
 scene.enter((ctx) => ctx.reply(keyboards.settings(ctx).text, keyboards.settings(ctx).opts))
@@ -133,7 +187,11 @@ function deleteDailyOrder(ctx) {
 
 function addBeer(ctx) {
     if (beerLock != null) {
-        if (beerLock.username != ctx.session.user.username) {
+        if (beerLock.username == "BiteTheBot") {
+            ctx.reply("Wait wait, I'm drinking my own beer!\nI can get one beer at time!", {
+                parse_mode: "markdown"
+            });
+        } else if (beerLock.username != ctx.session.user.username) {
             ctx.reply("Wait wait, I can get one beer at time!\nI'm still drinking the [" + beerLock.username + "](tg://user?id=" + beerLock.telegram.id + ")'s one!", {
                 parse_mode: "markdown"
             });
@@ -146,8 +204,7 @@ function addBeer(ctx) {
             bot.broadcastMessage("Locked beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
         }
     } else {
-        beerLock = ctx.session.user;
-        console.log("Beer lock for: " + beerLock.email);
+        drinkBeer(ctx.session.user);
         const type = ctx.update.callback_query.data,
             newBeer = new DB.Beer({
                 owner: ctx.session.user._id,
@@ -166,11 +223,7 @@ function addBeer(ctx) {
                 bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
             }
             setTimeout(() => {
-                ctx.reply("Thank you bro!")
-                setTimeout(() => {
-                    beerLock = null;
-                    console.log("Beer unlocked")
-                }, 60000 * 60);
+                ctx.reply("Thank you bro!");
                 //lets check the total beers
                 DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
                     if (!err) {
