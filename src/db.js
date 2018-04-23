@@ -112,6 +112,10 @@ const UserSchema = new mongoose.Schema({
       type: Boolean,
       default: true
     },
+    adminOrdersCompleteMail: {
+      type: Boolean,
+      default: false
+    },
     rootReminders: {
       type: Boolean,
       default: true
