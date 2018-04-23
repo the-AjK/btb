@@ -15,6 +15,12 @@ export default class Menus {
         this.api = new API();
         extendObservable(this, {
             menus: null,
+            suggestions: {
+                fc: [],
+                condiments: [],
+                sc: [],
+                sideDishes: []
+            },
             isLoading: false,
             error: null
         });
@@ -30,6 +36,24 @@ export default class Menus {
 
     setError = value => {
         this.setField('error', value);
+    }
+
+    getSuggestions(cb) {
+        this.api.suggestions.get((err, res) => {
+            if (err) {
+                err = err.response ? err.response.text : err;
+                console.error(err);
+                this.setError(err);
+            } else if (res && res.ok) {
+                this.suggestions = res.body;
+            } else {
+                err = "Data not available!";
+                this.setError(err);
+                console.error(err);
+            }
+            if (cb)
+                cb(err, this.suggestions);
+        });
     }
 
     add(data, cb) {

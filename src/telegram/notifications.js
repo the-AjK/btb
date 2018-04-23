@@ -8,6 +8,8 @@
 const moment = require('moment'),
     bot = require('./bot').bot,
     DB = require("../db"),
+    levels = require("../levels"),
+    mail = require("../mail"),
     roles = require("../roles"),
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
@@ -169,8 +171,38 @@ exports.ordersCompleteReminder = function () {
                 if (err) {
                     console.error(err);
                 } else {
-                    let message = "*Daily orders summary*:" +
-                        require('./bot').formatOrderComplete(stats);
+                    let message = require('./bot').formatOrderComplete(stats);
+
+                    // Last order lost 1 point
+                    DB.getDailyOrders(null, (err, orders) => {
+                        if (err) {
+                            console.error(err);
+                        } else if (orders.length) {
+                            levels.removePoints(orders[orders.length - 1].owner._id, 1, (err, points) => {
+                                if (err) {
+                                    console.error(err);
+                                }
+                            });
+                        }
+                    });
+
+                    //Send mail
+                    const adminMailUsers = users.filter(u => {
+                        return roles.checkUserAccessLevel(users[i].role, accessLevel) && u.settings.adminOrdersCompleteMail == true;
+                    });
+                    if (adminMailUsers.length >= 0) {
+                        mail.sendOrdersCompleteMail(adminMailUsers.map(u => u.email), message, (err, info) => {
+                            if (err) {
+                                console.error(err);
+                            } else {
+                                if (info.rejected.length > 0)
+                                    console.warn("ordersCompleteMail fail: " + JSON.stringify(info.rejected));
+                                console.info("ordersCompleteMail sent to: " + JSON.stringify(info.accepted))
+                            }
+                        });
+                    }
+
+                    //Send telegram notifications
                     for (let i = 0; i < users.length; i++) {
                         if (!roles.checkUserAccessLevel(users[i].role, accessLevel)) {
                             continue;
@@ -184,8 +216,8 @@ exports.ordersCompleteReminder = function () {
                             }
                             logText = logText + "]";
                             console.log(logText);
-                            bot.telegram.sendMessage(users[i].telegram.id, message, _options).then((m) => {
-                                console.log("orderCompleteReminder sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
+                            bot.telegram.sendMessage(users[i].telegram.id, "*Daily orders summary*:" + message, _options).then((m) => {
+                                console.log("ordersCompleteReminder sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
                             });
                         }
                     }

@@ -4,7 +4,13 @@
  * @author Alberto Garbui aka JK, https://github.com/the-AjK
  */
 "use strict";
-const nodemailer = require('nodemailer');
+const nodemailer = require('nodemailer'),
+    PassThrough = require('stream').PassThrough,
+    showdown = require('showdown'),
+    remark = require('remark'),
+    strip = require('strip-markdown'),
+    moment = require('moment'),
+    PDFDocument = require('pdfkit');
 
 const transporter = nodemailer.createTransport({
     service: process.env.MAIL_SERVICE || "Gmail",
@@ -14,23 +20,15 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-exports.sendMail = (to, subject) => {
-
-    let message = {
-        to: to,
-        subject: 'BiteTheBot - noReply',
-        //text: 'Plaintext version of the message',
-        html: '<p>HTML version of the message</p>'
-    };
-
+const _sendMail = (message, cb) => {
     transporter.sendMail(message, (err, info) => {
         if (err) {
             console.error(err);
         } else {
-            if(info.accepted.length > 0){
+            if (info.accepted.length > 0) {
                 //Message sent
 
-            }else{
+            } else {
                 console.warn(info)
             }
             /*info.messageId most transports should return the final Message-Id value used with this property
@@ -43,4 +41,42 @@ exports.sendMail = (to, subject) => {
 
         }
     });
+}
+
+exports.sendOrdersCompleteMail = (to, message, cb) => {
+
+    const title = "Daily orders " + moment().format("DD/MM/YYYY");
+
+    const doc = new PDFDocument,
+        converter = new showdown.Converter({
+            simpleLineBreaks: true
+        }),
+        docstream = new PassThrough(),
+        stream = doc.pipe(docstream)
+        .on('finish', () => {
+            transporter.sendMail({
+                to: to,
+                subject: title,
+                html: converter.makeHtml("##BiteTheBot\n###" + title +  message),
+                attachments: [{
+                    content: docstream,
+                    contentType: 'application/pdf',
+                    filename: "BTB_orders_" + moment().format("YYYY_MM_DD") + ".pdf",
+                }]
+            }, cb);
+        });
+
+    //Remove the markdown to generate a clean PDF
+    remark()
+        .use(strip)
+        .process("BiteTheBot - " + title + "\n" + message, function (err, file) {
+            if (err) {
+                console.error(err);
+            } else {
+                doc.fontSize(15)
+                    .text(String(file), 100, 100);
+                doc.end();
+            }
+        });
+
 }

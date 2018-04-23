@@ -93,7 +93,7 @@ const UserSchema = new mongoose.Schema({
       default: userRoles.user.title
     }
   },
-  level: {
+  points: {
     type: Number,
     min: 0,
     default: 0
@@ -111,6 +111,10 @@ const UserSchema = new mongoose.Schema({
     adminReminders: {
       type: Boolean,
       default: true
+    },
+    adminOrdersCompleteMail: {
+      type: Boolean,
+      default: false
     },
     rootReminders: {
       type: Boolean,
@@ -551,12 +555,6 @@ exports.getUserBeers = (userID, type, callback) => {
   Beer.find(query).exec(callback);
 };
 
-exports.setUserLevel = (userID, level, callback) => {
-  User.findByIdAndUpdate(userID, {
-    level: level
-  }, callback);
-};
-
 function removeDuplicates(arr) {
   let unique_array = Array.from(new Set(arr))
   return unique_array
@@ -595,9 +593,15 @@ exports.getMenuSuggestions = (cb) => {
 
 exports.getNotOrderUsers = (day, cb) => {
   const query = {
-    "deleted": false
-  };
-  User.find(query, (err, users) => {
+      "deleted": false
+    },
+    select = {
+      _id: 1,
+      username: 1,
+      email: 1,
+      telegram: 1
+    };
+  User.find(query, select, (err, users) => {
     if (err) {
       console.error(err);
       cb(err)

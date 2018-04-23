@@ -8,6 +8,7 @@
 const roles = require("../roles"),
     moment = require("moment"),
     db = require("../db"),
+    levels = require('../levels'),
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels;
 
@@ -46,7 +47,7 @@ module.exports = {
         }, {
             text: cmd.order
         }]);
-        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || ctx.session.user.level > 1)) {
+        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || levels.getLevel(ctx.session.user.points) > 1)) {
             keyboard.push([{
                 text: cmd.status
             }]);
@@ -75,7 +76,7 @@ module.exports = {
                     }]
                 ],
                 text = "Daily status:";
-            if (ctx && ctx.session.user && ctx.session.user.level > 1) {
+            if (ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) {
                 inline_keyboard.push([{
                     text: 'Tables',
                     callback_data: 'statustables'
@@ -482,10 +483,6 @@ module.exports = {
                     }, {
                         text: 'Half Pint',
                         callback_data: 'halfPint'
-                    }],
-                    [{
-                        text: 'Cancel',
-                        callback_data: 'cancel'
                     }]
                 ],
                 text = "Send me a beer!";

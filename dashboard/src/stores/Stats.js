@@ -13,12 +13,7 @@ export default class Stats {
         extendObservable(this, {
             autorefresh: false,
             users: 0,
-            suggestions: {
-                fc: [],
-                condiments: [],
-                sc: [],
-                sideDishes: []
-            },
+            usersWithoutOrder: [],
             dailyOrders: 0,
             usersPending: 0,
             orders: 0,
@@ -67,12 +62,7 @@ export default class Stats {
                     this.setField("menus", -1);
                     this.setField("usersPending", -1);
                     this.setField("dailyMenu", {});
-                    this.setField("suggestions", {
-                        fc: [],
-                        condiments: [],
-                        sc: [],
-                        sideDishes: []
-                    });
+                    this.setField("usersWithoutOrder", []);
                 } else if (res && res.ok) {
                     this.setField("users", res.body.users);
                     this.setField("dailyOrders", res.body.dailyOrders);
@@ -81,7 +71,7 @@ export default class Stats {
                     this.setField("menus", res.body.menus);
                     this.setField("usersPending", res.body.usersPending);
                     this.setField("dailyMenu", res.body.dailyMenu);
-                    this.setField("suggestions", res.body.suggestions);
+                    this.setField("usersWithoutOrder", res.body.usersWithoutOrder);
                 } else {
                     this.setField("users", -1);
                     this.setField("dailyOrders", -1);
@@ -90,12 +80,7 @@ export default class Stats {
                     this.setField("usersPending", -1);
                     this.setField("dailyMenu", {});
                     this.setField("ordersStats", {});
-                    this.setField("suggestions", {
-                        fc: [],
-                        condiments: [],
-                        sc: [],
-                        sideDishes: []
-                    });
+                    this.setField("usersWithoutOrder", []);
                     err = "Data not available!";
                     this.setError(err);
                     console.error(err);

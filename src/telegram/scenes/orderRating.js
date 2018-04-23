@@ -120,6 +120,11 @@ function setOrderRating(ctx) {
                     if (!checkUser(ctx.session.user.role, userRoles.root)) {
                         bot.broadcastMessage("New order rating: *" + ctx.session.user.email + "* ( " + ctx.session.rating + " stars )", accessLevels.root, null, true);
                     }
+                    levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                    });
                 }
             });
             return;

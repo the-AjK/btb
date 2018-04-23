@@ -18,6 +18,7 @@ const schedule = require('node-schedule'),
     bot = require("./telegram/bot"),
     telegramBot = require("./telegram/bot").bot,
     botNotifications = require('./telegram/notifications'),
+    levels = require('./levels'),
     DB = require("./db");
 
 function _getUsers(req, res) {
@@ -30,7 +31,7 @@ function _getUsers(req, res) {
             enabled: 1,
             deleted: 1,
             role: 1,
-            level: 1,
+            points: 1,
             loginCounter: 1,
             settings: 1,
             beerCounter: 1,
@@ -922,6 +923,14 @@ exports.getStats = function (req, res) {
                 deleted: false
             }, callback)
         },
+        usersWithoutOrder: (callback) => {
+            DB.getNotOrderUsers(null, (err, users)=>{
+                if(err){
+                    return callback(null, []);
+                }
+                callback(null, users);
+            });
+        },
         ordersStats: (callback) => {
             DB.getDailyOrderStats(null, (err, stats) => {
                 if (err) {
@@ -951,27 +960,13 @@ exports.getStats = function (req, res) {
                     callback(null, res);
                 }
             });
-        },
-        suggestions: (callback) => {
-            DB.getMenuSuggestions((err, res) => {
-                if (err) {
-                    callback(null, {
-                        fc: [],
-                        condiments: [],
-                        sc: [],
-                        sideDishes: []
-                    });
-                } else {
-                    callback(null, res);
-                }
-            });
         }
     }, (err, results) => {
         if (err)
             console.error(err);
         stats.users = results.users;
-        stats.suggestions = results.suggestions;
         stats.usersPending = results.usersPending;
+        stats.usersWithoutOrder = results.usersWithoutOrder;
         stats.menus = results.menus;
         stats.orders = results.orders;
         stats.ordersStats = results.ordersStats;
@@ -979,7 +974,17 @@ exports.getStats = function (req, res) {
         stats.dailyMenu = results.dailyMenu;
         res.send(stats);
     });
+}
 
+exports.getSuggestions = (req, res) => {
+    DB.getMenuSuggestions((err, suggestions) => {
+        if (err) {
+            console.error(err);
+            res.sendStatus(500);
+        } else {
+            res.json(suggestions);
+        }
+    });
 }
 
 function sendMessage(user, message, options) {

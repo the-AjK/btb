@@ -68,10 +68,10 @@ const Home = inject("ctx")(
                         value: this.props.ctx.stats.menus,
                     }, {
                         img: "/static/images/home_dancing.webp",
-                        title: 'Daily Orders',
+                        title: 'Orders',
                         cols: 1,
                         action: () => { this.props.ctx.history.push("/orders") },
-                        value: this.props.ctx.stats.dailyOrders,
+                        value: this.props.ctx.stats.dailyOrders + " (" + this.props.ctx.stats.orders + ")",
                     }, {
                         img: "/static/images/home_smoke.gif",
                         title: 'Active Users',

@@ -140,4 +140,16 @@ export default class API {
     }
   }
 
+  suggestions = {
+    get: (cb) => {
+      this.server.http({
+          method: "GET",
+          endpoint: this.base_path + "/suggestions" 
+        },
+        null,
+        cb
+      );
+    }
+  }
+
 }
