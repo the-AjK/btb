@@ -18,6 +18,7 @@ const Telegraf = require("telegraf"),
   DB = require("../db"),
   auth = require("../auth"),
   utils = require("../utils"),
+  levels = require("../levels"),
   roles = require("../roles"),
   userRoles = roles.userRoles,
   accessLevels = roles.accessLevels,
@@ -132,7 +133,7 @@ bot.on("callback_query", ctx => {
     delete ctx.session.lastMessage;
   }
   if (ctx.update.callback_query.data == 'statusorders') {
-    if (ctx.session.user.level < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+    if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -147,7 +148,7 @@ bot.on("callback_query", ctx => {
       });
     }
   } else if (ctx.update.callback_query.data == 'statustables') {
-    if (ctx.session.user.level < 2) {
+    if (levels.getLevel(ctx.session.user.points) < 2) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -168,7 +169,7 @@ bot.on("callback_query", ctx => {
       });
     }
   } else if (ctx.update.callback_query.data == 'userswithoutorder') {
-    if (ctx.session.user.level < 2) {
+    if (levels.getLevel(ctx.session.user.points) < 2) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -256,27 +257,32 @@ function textManager(ctx) {
       //if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
       //  decodeWit(ctx, response);
       //} else {
-        //unrecognized by wit.ai
-        // answer politely
-        let msg = ["Hey *" + ctx.from.first_name + "*, how can I help you?"];
+      //unrecognized by wit.ai
+      // answer politely
+      let msg = ["Hey *" + ctx.from.first_name + "*, how can I help you?"];
 
-        if (ctx.session.mainCounter > 2) {
-          //random answer when the user continue writing 
-          msg = bender.getRandomTagQuote(["hi", "fuck", "ass"]);
-          //reset session counter to start answer politely again
-          ctx.session.mainCounter = 0;
-          ctx.replyWithSticker({
-            source: require('fs').createReadStream(__dirname + "/img/11.webp")
-          }).then(() => {
-            replyDiscussion(ctx, msg);
-          });
-        } else {
-          ctx.replyWithSticker({
-            source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
-          }).then(() => {
-            replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
-          });
-        }
+      if (ctx.session.mainCounter > 2) {
+        //random answer when the user continue writing 
+        msg = bender.getRandomTagQuote(["hi", "fuck", "ass"]);
+        //reset session counter to start answer politely again
+        ctx.session.mainCounter = 0;
+        ctx.replyWithSticker({
+          source: require('fs').createReadStream(__dirname + "/img/11.webp")
+        }).then(() => {
+          replyDiscussion(ctx, msg);
+        });
+        levels.removePoints(ctx.session.user._id, 1, (err, points) => {
+          if (err) {
+            console.error(err);
+          }
+        });
+      } else {
+        ctx.replyWithSticker({
+          source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
+        }).then(() => {
+          replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+        });
+      }
       //}
     });
   }

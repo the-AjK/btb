@@ -17,6 +17,7 @@ const Telegraf = require("telegraf"),
     checkUser = roles.checkUser,
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
+    levels = require('../../levels'),
     bot = require('../bot'),
     DB = require("../../db"),
     ACTIONS = bot.ACTIONS;
@@ -156,6 +157,11 @@ function deleteDailyOrder(ctx) {
             DB.Order.findByIdAndRemove(order._id, (err, deletedOrder) => {
                 if (!err && deletedOrder) {
                     ctx.reply("Your daily order has been deleted!");
+                    levels.removePoints(ctx.session.user._id, 1, (err, points) => {
+                        if(err){
+                            console.error(err);
+                        }
+                    });
                     if (!checkUser(ctx.session.user.role, userRoles.root)) {
                         bot.broadcastMessage("Order deleted by *" + ctx.session.user.email + "* ", accessLevels.root, null, true);
                     }
@@ -207,30 +213,14 @@ function addBeer(ctx) {
                 //lets check the total beers
                 DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
                     if (!err) {
-                        const beersLevelMap = {
-                            5: 1,
-                            15: 2,
-                            50: 3,
-                            200: 4,
-                            500: 5,
-                            1000: 6
-                        };
-                        if (beersLevelMap[beers.length]) {
-                            DB.setUserLevel(ctx.session.user._id, beersLevelMap[beers.length], (err) => {
-                                if (err) {
-                                    console.error(err);
-                                } else {
-                                    ctx.reply("⭐️ Level UP! ( " + beers.length + " beers 🍻 )");
-                                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                                        bot.broadcastMessage("User level up: *" + ctx.session.user.email + "* ( " + beers.length + " beers)", accessLevels.root, null, true);
-                                    }
-                                }
-                            });
-                        } else {
-                            if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                                bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + beers.length + ")", accessLevels.root, null, true);
+                        levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                            if(err){
+                                console.error(err);
                             }
-                        }
+                            if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                                bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
+                            }
+                        });
                     } else {
                         console.error(err);
                     }

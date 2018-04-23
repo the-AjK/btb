@@ -93,7 +93,7 @@ const UserSchema = new mongoose.Schema({
       default: userRoles.user.title
     }
   },
-  level: {
+  points: {
     type: Number,
     min: 0,
     default: 0
@@ -553,12 +553,6 @@ exports.getUserBeers = (userID, type, callback) => {
   if (type)
     query.type = type;
   Beer.find(query).exec(callback);
-};
-
-exports.setUserLevel = (userID, level, callback) => {
-  User.findByIdAndUpdate(userID, {
-    level: level
-  }, callback);
 };
 
 function removeDuplicates(arr) {

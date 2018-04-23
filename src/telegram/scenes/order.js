@@ -21,6 +21,7 @@ const Telegraf = require("telegraf"),
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
     bot = require('../bot'),
+    levels = require("../../levels"),
     DB = require("../../db"),
     ACTIONS = bot.ACTIONS;
 
@@ -298,8 +299,24 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                                 });
                                 delete ctx.session.lastMessage;
                             }
-                            release();
-                            leave(ctx)
+                            if (!err) {
+                                DB.getDailyOrdersCount(null, (err, count) => {
+                                    if (err) {
+                                        console.error(err);
+                                    } else if (count == 1) {
+                                        levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                                            if (err) {
+                                                console.error(err);
+                                            }
+                                        });
+                                    }
+                                    release();
+                                    leave(ctx);
+                                });
+                            } else {
+                                release();
+                                leave(ctx);
+                            }
                         });
                     }
                 });
@@ -571,8 +588,24 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                                 });
                                 delete ctx.session.lastMessage;
                             }
-                            release();
-                            leave(ctx)
+                            if (!err) {
+                                DB.getDailyOrdersCount(null, (err, count) => {
+                                    if (err) {
+                                        console.error(err);
+                                    } else if (count == 1) {
+                                        levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                                            if (err) {
+                                                console.error(err);
+                                            }
+                                        });
+                                    }
+                                    release();
+                                    leave(ctx);
+                                });
+                            } else {
+                                release();
+                                leave(ctx);
+                            }
                         });
                     }
                 });

@@ -8,6 +8,7 @@
 const moment = require('moment'),
     bot = require('./bot').bot,
     DB = require("../db"),
+    levels = require("../levels"),
     mail = require("../mail"),
     roles = require("../roles"),
     userRoles = roles.userRoles,
@@ -171,6 +172,19 @@ exports.ordersCompleteReminder = function () {
                     console.error(err);
                 } else {
                     let message = require('./bot').formatOrderComplete(stats);
+
+                    // Last order lost 1 point
+                    DB.getDailyOrders(null, (err, orders) => {
+                        if (err) {
+                            console.error(err);
+                        } else if (orders.length) {
+                            levels.removePoints(orders[orders.length - 1].owner._id, 1, (err, points) => {
+                                if (err) {
+                                    console.error(err);
+                                }
+                            });
+                        }
+                    });
 
                     //Send mail
                     const adminMailUsers = users.filter(u => {

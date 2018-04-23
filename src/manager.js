@@ -18,6 +18,7 @@ const schedule = require('node-schedule'),
     bot = require("./telegram/bot"),
     telegramBot = require("./telegram/bot").bot,
     botNotifications = require('./telegram/notifications'),
+    levels = require('./levels'),
     DB = require("./db");
 
 function _getUsers(req, res) {
@@ -30,7 +31,7 @@ function _getUsers(req, res) {
             enabled: 1,
             deleted: 1,
             role: 1,
-            level: 1,
+            points: 1,
             loginCounter: 1,
             settings: 1,
             beerCounter: 1,
