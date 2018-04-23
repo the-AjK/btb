@@ -16,6 +16,7 @@ const passport = require("passport"),
   roles = require("./roles"),
   checkUserAccessLevel = roles.checkUserAccessLevel,
   accessLevels = roles.accessLevels,
+  userRoles = roles.userRoles,
   DB = require("./db");
 
 const JWTOptions = {
@@ -116,7 +117,9 @@ exports.login = function (req, res) {
           }
         });
         //notify root users
-        bot.broadcastMessage("User login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, null, true);
+        if (!roles.checkUser(user.role, userRoles.root)) {
+          bot.broadcastMessage("User login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, null, true);
+        }
       } else {
         //user found but wrong password
         bot.broadcastMessage("User wrong login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, null, true);
