@@ -595,9 +595,15 @@ exports.getMenuSuggestions = (cb) => {
 
 exports.getNotOrderUsers = (day, cb) => {
   const query = {
-    "deleted": false
-  };
-  User.find(query, (err, users) => {
+      "deleted": false
+    },
+    select = {
+      _id: 1,
+      username: 1,
+      email: 1,
+      telegram: 1
+    };
+  User.find(query, select, (err, users) => {
     if (err) {
       console.error(err);
       cb(err)

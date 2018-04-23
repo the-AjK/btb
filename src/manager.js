@@ -922,6 +922,14 @@ exports.getStats = function (req, res) {
                 deleted: false
             }, callback)
         },
+        usersWithoutOrder: (callback) => {
+            DB.getNotOrderUsers(null, (err, users)=>{
+                if(err){
+                    return callback(null, []);
+                }
+                callback(null, users);
+            });
+        },
         ordersStats: (callback) => {
             DB.getDailyOrderStats(null, (err, stats) => {
                 if (err) {
@@ -957,6 +965,7 @@ exports.getStats = function (req, res) {
             console.error(err);
         stats.users = results.users;
         stats.usersPending = results.usersPending;
+        stats.usersWithoutOrder = results.usersWithoutOrder;
         stats.menus = results.menus;
         stats.orders = results.orders;
         stats.ordersStats = results.ordersStats;
