@@ -482,10 +482,6 @@ module.exports = {
                     }, {
                         text: 'Half Pint',
                         callback_data: 'halfPint'
-                    }],
-                    [{
-                        text: 'Cancel',
-                        callback_data: 'cancel'
                     }]
                 ],
                 text = "Send me a beer!";
