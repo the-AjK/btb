@@ -158,7 +158,7 @@ function deleteDailyOrder(ctx) {
                 if (!err && deletedOrder) {
                     ctx.reply("Your daily order has been deleted!");
                     levels.removePoints(ctx.session.user._id, 1, (err, points) => {
-                        if(err){
+                        if (err) {
                             console.error(err);
                         }
                     });
@@ -210,19 +210,12 @@ function addBeer(ctx) {
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
             setTimeout(() => {
                 ctx.reply("Thank you bro!");
-                //lets check the total beers
-                DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
-                    if (!err) {
-                        levels.addPoints(ctx.session.user._id, 1, (err, points) => {
-                            if(err){
-                                console.error(err);
-                            }
-                            if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                                bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
-                            }
-                        });
-                    } else {
+                levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                    if (err) {
                         console.error(err);
+                    }
+                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                        bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
                     }
                 });
             }, type == 'pint' ? 3000 : 2000)
