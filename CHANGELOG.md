@@ -1,5 +1,15 @@
 # Change Log
 
+## [1.0.0-RC11](https://github.com/the-AjK/btb/tree/1.0.0-RC11) (2018-04-24)
+
+[Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC10...1.0.0-RC11)
+
+### Changes
+
+- User levels/points
+- Wit.ai
+- OrderComplete mail PDF notification
+
 ## [1.0.0-RC10](https://github.com/the-AjK/btb/tree/1.0.0-RC10) (2018-04-19)
 
 [Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC9...1.0.0-RC10)
