@@ -60,10 +60,10 @@ const Menu = inject("ctx")(
                     id: props.router.computedMatch.params.id,
                     sendNotifications: true,
                     isSaving: false,
-                    condimentSuggestions: props.ctx.stats.suggestions.condiments.map(c => { return { label: c } }),
-                    suggestions: props.ctx.stats.suggestions.fc.map(fc => { return { label: fc } }),
-                    secondCourseSuggestions: props.ctx.stats.suggestions.sc.map(sc => { return { label: sc } }),
-                    sideDishesSuggestions: props.ctx.stats.suggestions.sideDishes.map(sd => { return { label: sd } }),
+                    condimentSuggestions: props.ctx.menus.suggestions.condiments.map(c => { return { label: c } }),
+                    suggestions: props.ctx.menus.suggestions.fc.map(fc => { return { label: fc } }),
+                    secondCourseSuggestions: props.ctx.menus.suggestions.sc.map(sc => { return { label: sc } }),
+                    sideDishesSuggestions: props.ctx.menus.suggestions.sideDishes.map(sd => { return { label: sd } }),
                     menu: {
                         label: "Autostop daily menu",
                         deadline: moment("11:00", "HH:mm").format("HH:mm"),
@@ -88,7 +88,7 @@ const Menu = inject("ctx")(
                         tables: []
                     }
                 });
-                this.props.ctx.stats.fetch(() => {
+                this.props.ctx.menus.getSuggestions(() => {
                     this.updateSuggestions();
                 });
                 if (this.id && this.id !== "new") {
@@ -115,10 +115,10 @@ const Menu = inject("ctx")(
             }
 
             updateSuggestions = action(() => {
-                this.condimentSuggestions = this.props.ctx.stats.suggestions.condiments.map(c => { return { label: c } });
-                this.suggestions = this.props.ctx.stats.suggestions.fc.map(fc => { return { label: fc } });
-                this.secondCourseSuggestions = this.props.ctx.stats.suggestions.sc.map(sc => { return { label: sc } });
-                this.sideDishesSuggestions = this.props.ctx.stats.suggestions.sideDishes.map(sd => { return { label: sd } });
+                this.condimentSuggestions = this.props.ctx.menus.suggestions.condiments.map(c => { return { label: c } });
+                this.suggestions = this.props.ctx.menus.suggestions.fc.map(fc => { return { label: fc } });
+                this.secondCourseSuggestions = this.props.ctx.menus.suggestions.sc.map(sc => { return { label: sc } });
+                this.sideDishesSuggestions = this.props.ctx.menus.suggestions.sideDishes.map(sd => { return { label: sd } });
             });
 
             getTables = () => {
