@@ -66,7 +66,7 @@ exports.removePoints = function (userID, points, cb) {
                             console.log("removePoints message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
                         });*/
                         if (!checkUser(user.role, userRoles.root)) {
-                            bot.broadcastMessage("User: *" + ctx.session.user.email + "* lost " + points + " points (" + user.points + ")", accessLevels.root, null, true);
+                            bot.broadcastMessage("User: *" + user.email + "* lost " + points + " points (" + user.points + ")", accessLevels.root, null, true);
                         }
                         cb(null, user.points);
                     }
@@ -84,23 +84,23 @@ exports.addPoints = function (userID, points, cb) {
         } else {
             const initialPoints = user.points;
             user.points = initialPoints + points;
-            user.save((err) => {
+            user.save((err, _user) => {
                 if (err) {
                     return cb(err);
                 }
                 let message = "🏅 Congratulations!\n\nYou got *" + points + "* point" + (points > 1 ? "s" : "") + "!";
-                if (getLevel(user.points) > getLevel(initialPoints)) {
+                if (getLevel(_user.points) > getLevel(initialPoints)) {
                     let message = "⭐️ Level Up! You got *" + points + "* point" + (points > 1 ? "s" : "") + "!";
                 }
-                /*require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
+                require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
                     parse_mode: "markdown"
                 }).then(() => {
                     console.log("addPoints message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
-                });*/
+                });
                 if (!checkUser(user.role, userRoles.root)) {
-                    bot.broadcastMessage("User: *" + ctx.session.user.email + "* got " + points + " points (" + user.points + ")", accessLevels.root, null, true);
+                    bot.broadcastMessage("User: *" + user.email + "* got " + points + " points (" + _user.points + ")", accessLevels.root, null, true);
                 }
-                cb(null, user.points);
+                cb(null, _user.points);
             });
         }
     });
