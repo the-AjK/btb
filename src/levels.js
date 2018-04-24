@@ -66,7 +66,7 @@ exports.removePoints = function (userID, points, cb) {
                             console.log("removePoints message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
                         });*/
                         if (!checkUser(user.role, userRoles.root)) {
-                            bot.broadcastMessage("User: *" + ctx.session.user.email + "* lost " + points + " points (" + user.points + ")", accessLevels.root, null, true);
+                            bot.broadcastMessage("User: *" + user.email + "* lost " + points + " points (" + user.points + ")", accessLevels.root, null, true);
                         }
                         cb(null, user.points);
                     }
@@ -98,7 +98,7 @@ exports.addPoints = function (userID, points, cb) {
                     console.log("addPoints message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
                 });
                 if (!checkUser(user.role, userRoles.root)) {
-                    bot.broadcastMessage("User: *" + ctx.session.user.email + "* got " + points + " points (" + _user.points + ")", accessLevels.root, null, true);
+                    bot.broadcastMessage("User: *" + user.email + "* got " + points + " points (" + _user.points + ")", accessLevels.root, null, true);
                 }
                 cb(null, _user.points);
             });
