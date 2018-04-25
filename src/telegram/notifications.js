@@ -185,12 +185,12 @@ exports.ordersCompleteReminder = function () {
                             });
                         }
                     });
-
                     //Send mail
                     const adminMailUsers = users.filter(u => {
-                        return roles.checkUserAccessLevel(users[i].role, accessLevel) && u.settings.adminOrdersCompleteMail == true;
+                        return roles.checkUserAccessLevel(u.role, accessLevel) && u.settings.adminOrdersCompleteMail == true;
                     });
-                    if (adminMailUsers.length >= 0) {
+
+                    if (adminMailUsers.length > 0) {
                         mail.sendOrdersCompleteMail(adminMailUsers.map(u => u.email), message, (err, info) => {
                             if (err) {
                                 console.error(err);

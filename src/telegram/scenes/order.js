@@ -633,7 +633,7 @@ scene.enter((ctx) => {
             ctx.reply(require('../bot').formatOrder(dailyOrder, ctx.session.user), {
                 parse_mode: "markdown"
             }).then(() => {
-                if (moment().isAfter(moment(ratingDeadline, "HH:mm")) && ctx.session.user && ctx.session.user.level > 0 && dailyOrder.rating == undefined) {
+                if (moment().isAfter(moment(ratingDeadline, "HH:mm")) && ctx.session.user && levels.getLevel(ctx.session.user.points) > 0 && dailyOrder.rating == undefined) {
                     //users with level > 0 can rate their orders after 13:00
                     ctx.reply("Did you enjoy your lunch?", {
                         parse_mode: "markdown",

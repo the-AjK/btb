@@ -314,7 +314,7 @@ function parseMention(ctx) {
 }
 
 //Mention handler to broadcast by table
-bot.mention(['@tables', '@table'], (ctx) => {
+bot.mention(['@tables', '@table', '@Tables', '@Table'], (ctx) => {
   console.log("From: " + ctx.session.user.email + " Mention: '" + ctx.message.text + "'");
   const mentions = parseMention(ctx);
   for (let idx in mentions) {
@@ -331,7 +331,7 @@ bot.mention(['@tables', '@table'], (ctx) => {
           userMessage = "Broadcast service",
           userHasOrdered = false,
           counter = 0;
-        if (mention.indexOf("tables") >= 0) {
+        if (mention.indexOf("ables") >= 0) {
           for (let i = 0; i < orders.length; i++) {
             if (!orders[i].owner._id.equals(ctx.session.user._id)) {
               bot.telegram.sendMessage(orders[i].owner.telegram.id, message, {
@@ -347,7 +347,7 @@ bot.mention(['@tables', '@table'], (ctx) => {
           if (counter == 0) {
             userMessage = "Seems like people are not hungry anymore!"
           }
-        } else if (mention.indexOf("table") >= 0) {
+        } else if (mention.indexOf("able") >= 0) {
           //find user table and broadcast the message
           for (let i = 0; i < orders.length; i++) {
             if (orders[i].owner._id.equals(ctx.session.user._id)) {
