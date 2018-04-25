@@ -924,8 +924,8 @@ exports.getStats = function (req, res) {
             }, callback)
         },
         usersWithoutOrder: (callback) => {
-            DB.getNotOrderUsers(null, (err, users)=>{
-                if(err){
+            DB.getNotOrderUsers(null, (err, users) => {
+                if (err) {
                     return callback(null, []);
                 }
                 callback(null, users);
@@ -953,7 +953,19 @@ exports.getStats = function (req, res) {
             });
         },
         dailyMenu: (callback) => {
-            DB.getDailyMenu(null, (err, res) => {
+            const today = moment().startOf("day"),
+                tomorrow = moment(today).add(1, "days"),
+                query = {
+                    deleted: false,
+                    day: {
+                        $gte: today.toDate(),
+                        $lt: tomorrow.toDate()
+                    }
+                };
+            DB.Menu.findOne(query).populate('tables').populate({
+                path: 'owner',
+                select: 'username email _id'
+            }).exec((err, res) => {
                 if (err) {
                     callback(null)
                 } else {
