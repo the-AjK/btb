@@ -16,8 +16,9 @@ import IconButton from 'material-ui/IconButton';
 import Input, { InputLabel, InputAdornment } from 'material-ui/Input';
 import Visibility from 'material-ui-icons/Visibility';
 import VisibilityOff from 'material-ui-icons/VisibilityOff';
-import { FormControl } from 'material-ui/Form';
+import { FormControl, FormLabel, FormGroup, FormControlLabel } from 'material-ui/Form';
 import Validator from "validatorjs";
+import Switch from 'material-ui/Switch';
 
 const styles = theme => ({
     root: {
@@ -36,6 +37,9 @@ const styles = theme => ({
         width: 60,
         height: 60,
     },
+    settings: {
+        marginTop: "2em"
+    }
 });
 
 const Profile = inject("ctx")(
@@ -47,6 +51,7 @@ const Profile = inject("ctx")(
                 extendObservable(this, {
                     username: this.props.ctx.auth.user.username,
                     email: this.props.ctx.auth.user.email,
+                    settings: this.props.ctx.auth.user.settings,
                     errors: {
                         email: false,
                         username: false,
@@ -62,7 +67,7 @@ const Profile = inject("ctx")(
                 this.props.ctx.dialog.set({
                     open: true,
                     onClose: (response) => {
-                        if(onClose)
+                        if (onClose)
                             onClose(response);
                     },
                     showCancel: false,
@@ -72,16 +77,15 @@ const Profile = inject("ctx")(
             }
 
             profileUpdate = () => {
-                this.props.ctx.auth.updateProfile(this.username, this.email, this.password, (err) => {
+                this.props.ctx.auth.updateProfile(this.username, this.email, this.password, this.settings, (err) => {
                     if (err) {
                         this.showAlert("Error", err);
                     } else {
-                        this.showAlert("Success", "Profile updated!\nPlease login again.", ()=>{
-                            this.props.ctx.history.push('/login');
-                        });
+                        this.showAlert("Success", "Profile updated!");
                         action(() => {
                             this.email = this.props.ctx.auth.user.email;
                             this.username = this.props.ctx.auth.user.username;
+                            this.settings = this.props.ctx.auth.user.settings;
                             this.password = "";
                         })()
                     }
@@ -101,6 +105,10 @@ const Profile = inject("ctx")(
                     description: "Are you sure to save the changes?"
                 })
             }
+
+            handleSettingsChange = action((e, key) => {
+                this.settings[key] = e.target.checked;
+            });
 
             handleMouseDownPassword = event => {
                 event.preventDefault();
@@ -138,7 +146,8 @@ const Profile = inject("ctx")(
             });
 
             render() {
-                const { classes } = this.props;
+                const { classes } = this.props,
+                    roles = this.props.ctx.roles;
                 return (
                     <Grid
                         className={classes.root}
@@ -197,7 +206,7 @@ const Profile = inject("ctx")(
                                             id="password"
                                             type={this.showPassword ? 'text' : 'password'}
                                             value={this.password}
-                                            autoComplete={false}
+                                            autoComplete="password2"
                                             onChange={(e) => { this.handleChangeField("password", e) }}
                                             error={this.password !== this.password2 || this.errors.password !== false}
                                             fullWidth
@@ -242,6 +251,63 @@ const Profile = inject("ctx")(
                                         />
                                     </FormControl>
                                 </Grid>}
+                                <Grid item xs={12} className={classes.settings}>
+                                    <FormControl component="fieldset">
+                                        <FormLabel component="legend">User Settings</FormLabel>
+                                        <FormGroup>
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={this.settings.dailyMenu}
+                                                        onChange={e => this.handleSettingsChange(e, "dailyMenu")}
+                                                        value="dailyMenu"
+                                                    />
+                                                }
+                                                label={(this.settings.dailyMenu ? "[ON]": "[OFF]") + " Telegram daily menu notification"}
+                                            />
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={this.settings.orderReminder}
+                                                        onChange={e => this.handleSettingsChange(e, "orderReminder")}
+                                                        value="orderReminder"
+                                                    />
+                                                }
+                                                label={(this.settings.orderReminder ? "[ON]": "[OFF]") + " Telegram daily order reminder"}
+                                            />
+                                            {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={this.settings.adminOrdersCompleteMail}
+                                                        onChange={e => this.handleSettingsChange(e, "adminOrdersCompleteMail")}
+                                                        value="adminOrdersCompleteMail"
+                                                    />
+                                                }
+                                                label={(this.settings.adminOrdersCompleteMail ? "[ON]": "[OFF]") + " Order complete email notification [Admin only]"}
+                                            />}
+                                            {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={this.settings.adminReminders}
+                                                        onChange={e => this.handleSettingsChange(e, "adminReminders")}
+                                                        value="adminReminders"
+                                                    />
+                                                }
+                                                label={(this.settings.adminReminders ? "[ON]": "[OFF]") + " Admins reminders"}
+                                            />}
+                                            {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={this.settings.rootReminders}
+                                                        onChange={e => this.handleSettingsChange(e, "rootReminders")}
+                                                        value="rootReminders"
+                                                    />
+                                                }
+                                                label={(this.settings.rootReminders ? "[ON]": "[OFF]") + " Root reminders"}
+                                            />}
+                                        </FormGroup>
+                                    </FormControl>
+                                </Grid>
                             </Grid>
                         </Grid>
                     </Grid>

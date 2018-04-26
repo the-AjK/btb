@@ -103,6 +103,7 @@ function _addUser(req, res) {
         delete data.settings;
         delete data.beerCounter;
         delete data.lastLogin;
+        delete data.points;
         if (!checkUser(data.role, userRoles.user) && !checkUser(data.role, userRoles.admin)) {
             //avoid non root user to create root users
             delete data.role;
@@ -150,6 +151,7 @@ function _updateUser(req, res) {
         delete data.telegram.language_code;
         delete data.role;
         delete data.password;
+        delete data.points;
         //TODO avoid to update root users or other admind
 
         //non root users can update only basic users

@@ -246,7 +246,7 @@ const Users = inject("ctx")(
                         Cell: props => <span className='enabled'>{props.value ? "OK" : "-"}</span>
                     }, {
                         Header: 'Points',
-                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
+                        //show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
                         accessor: 'points'
                     }, {
                         id: 'orderReminder',

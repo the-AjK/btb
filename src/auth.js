@@ -98,7 +98,8 @@ exports.login = function (req, res) {
         const userData = {
           username: user.username,
           email: user.email,
-          role: user.role
+          role: user.role,
+          settings: user.settings
         };
         res.send({
           access_token: generateToken(userData),
@@ -143,7 +144,8 @@ exports.updateProfile = function (req, res) {
   const data = {
     username: req.body.username,
     email: req.body.email,
-    updatedAt: moment().format()
+    updatedAt: moment().format(),
+    settings: req.body.settings
   };
   if (req.body.password) {
     let pass = req.body.password.trim();
@@ -162,9 +164,15 @@ exports.updateProfile = function (req, res) {
       console.error(err);
       return res.sendStatus(500);
     }
-    res.json({
+    const userData = {
       username: user.username,
-      email: user.email
+      email: user.email,
+      role: user.role,
+      settings: user.settings
+    };
+    res.send({
+      access_token: generateToken(userData),
+      token_type: "bearer"
     });
   });
 }

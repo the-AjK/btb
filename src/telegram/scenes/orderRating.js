@@ -16,6 +16,7 @@ const Telegraf = require("telegraf"),
     accessLevels = roles.accessLevels,
     bot = require('../bot'),
     DB = require("../../db"),
+    levels = require("../../levels"),
     ACTIONS = bot.ACTIONS;
 
 const scene = new Scene('orderRating'),

@@ -9,12 +9,12 @@ import { observer, inject } from "mobx-react";
 import { extendObservable, action } from "mobx";
 import { withStyles } from "material-ui/styles";
 import TextField from 'material-ui/TextField';
-import { FormGroup, FormControlLabel } from 'material-ui/Form';
+import { FormGroup, FormControl, FormLabel, FormHelperText, FormControlLabel } from 'material-ui/Form';
+import Checkbox from 'material-ui/Checkbox';
 import Switch from 'material-ui/Switch';
 import Grid from "material-ui/Grid";
 import FirstCourseSelect from "./inputs/FirstCourseSelect";
 import GenericCourseSelect from "./inputs/GenericCourseSelect";
-import TableSelect from "./inputs/TableSelect";
 import FloatingSaveButton from "./buttons/FloatingSaveButton";
 import Button from 'material-ui/Button';
 import TimePicker from 'react-times';
@@ -47,6 +47,9 @@ const styles = theme => ({
     },
     unselected: {
         fontWeight: theme.typography.fontWeightRegular
+    },
+    tables: {
+        marginTop: "1em"
     }
 });
 
@@ -64,6 +67,7 @@ const Menu = inject("ctx")(
                     suggestions: props.ctx.menus.suggestions.fc.map(fc => { return { label: fc } }),
                     secondCourseSuggestions: props.ctx.menus.suggestions.sc.map(sc => { return { label: sc } }),
                     sideDishesSuggestions: props.ctx.menus.suggestions.sideDishes.map(sd => { return { label: sd } }),
+                    availableTables: [],
                     menu: {
                         label: "Autostop daily menu",
                         deadline: moment("11:00", "HH:mm").format("HH:mm"),
@@ -106,11 +110,26 @@ const Menu = inject("ctx")(
                             menu.deadline = moment(menu.deadline).format("HH:mm");
                             menu.day = moment(menu.day).format("YYYY-MM-DD");
                             this.menu = menu;
-                            //this.getTables();
+                            this.props.ctx.tables.fetch(action((err, tables) => {
+                                if (err) {
+                                    console.error(err);
+                                } else if (tables) {
+                                    this.availableTables = tables.map(t => {
+                                        t.enabled = this.menu.tables.map(mt => mt._id).indexOf(t._id) >= 0;
+                                        return t;
+                                    });
+                                }
+                            }));
                         }
                     }));
                 } else {
-                    this.getTables();
+                    this.props.ctx.tables.fetch(action((err, tables) => {
+                        if (err) {
+                            console.error(err);
+                        } else if (tables) {
+                            this.availableTables = tables;
+                        }
+                    }));
                 }
             }
 
@@ -120,22 +139,6 @@ const Menu = inject("ctx")(
                 this.secondCourseSuggestions = this.props.ctx.menus.suggestions.sc.map(sc => { return { label: sc } });
                 this.sideDishesSuggestions = this.props.ctx.menus.suggestions.sideDishes.map(sd => { return { label: sd } });
             });
-
-            getTables = () => {
-                this.props.ctx.tables.fetch(action((err, tables) => {
-                    if (err) {
-                        console.error(err);
-                    } else if (tables) {
-                        let t = [];
-                        for (let i = 0; i < tables.length; i++) {
-                            if (tables[i].enabled) {
-                                t.push(tables[i]._id);
-                            }
-                        }
-                        this.menu.tables = t;
-                    }
-                }))
-            }
 
             handleChangeFirstCourse = key => action((value, condiments) => {
                 let found = false;
@@ -211,7 +214,7 @@ const Menu = inject("ctx")(
             })
 
             handleSecondCourse = action((i) => {
-                this.menu.secondCourse.items = i;;
+                this.menu.secondCourse.items = i;
             });
 
             handleSideDishes = action((s) => {
@@ -219,22 +222,24 @@ const Menu = inject("ctx")(
             });
 
             handleChangeField = action((field, event) => {
-                this.menu[field] = event.target.value
+                this.menu[field] = event.target.value;
             });
 
             handleDeadlineChange = action((value) => {
-                this.menu.deadline = value
+                this.menu.deadline = value;
             });
 
-
-            handleTableChange = action((tables) => {
-                console.log(tables)
-                this.menu.tables = tables;
+            handleTableChange = action((event, index) => {
+                this.availableTables[index].enabled = event.target.checked;
             });
 
             menuIsValid = (cb) => {
                 if (!this.menu.day) {
                     cb("Menu date is required")
+                    return false;
+                }
+                if (this.availableTables.filter(t => t.enabled).length === 0) {
+                    cb("At least one table shall be enabled");
                     return false;
                 }
                 if (this.menu.firstCourse && this.menu.firstCourse.items) {
@@ -307,6 +312,7 @@ const Menu = inject("ctx")(
 
             save = action(() => {
                 this.isSaving = true;
+                this.menu.tables = this.availableTables.filter(t => t.enabled);
                 if (this.id && this.id !== "new") {
                     //Update
                     this.menu.sendNotification = true
@@ -459,15 +465,31 @@ const Menu = inject("ctx")(
                                                 />
                                             </Grid>
 
-                                            {false && <Grid item xs={12}>
-                                                <TableSelect
-                                                    title={"Tables"}
-                                                    placeholder={"Add Tables"}
-                                                    suggestions={[{ "enabled": false, "deleted": false, "seats": 2, "createdAt": "2018-03-28T10:47:42.423Z", "updatedAt": "2018-03-28T12:36:07.080Z", "_id": "5abb72cee2348f2242de3a6e", "name": "Table0" }, { "enabled": true, "deleted": false, "seats": 3, "createdAt": "2018-03-28T10:50:38.633Z", "updatedAt": "2018-03-28T12:36:09.486Z", "_id": "5abb737ee2348f2242de3a6f", "name": "Table1aa" }]}
-                                                    selectedItem={this.menu.tables}
-                                                    onChange={this.handleTableChange}
-                                                />
-                                            </Grid>}
+                                            <Grid item xs={12} className={classes.tables}>
+                                                <FormControl component="fieldset">
+                                                    <FormLabel component="legend">Available tables</FormLabel>
+                                                    <FormGroup>
+                                                        {this.availableTables.map((t, i) => {
+                                                            return (
+                                                                <FormControlLabel
+                                                                    key={i}
+                                                                    control={
+                                                                        <Checkbox
+                                                                            checked={this.availableTables[i].enabled}
+                                                                            onChange={e => this.handleTableChange(e, i)}
+                                                                            value={t.name}
+                                                                        />
+                                                                    }
+                                                                    label={t.name}
+                                                                />
+                                                            )
+                                                        })}
+                                                    </FormGroup>
+                                                    {this.availableTables.filter(t => t.enabled).length === 0 &&
+                                                        <FormHelperText>At least one table shall be selected</FormHelperText>
+                                                    }
+                                                </FormControl>
+                                            </Grid>
 
                                         </Grid>
                                     </Grid>}

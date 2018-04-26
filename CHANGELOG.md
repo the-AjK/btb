@@ -1,5 +1,18 @@
 # Change Log
 
+## [1.0.0-RC12](https://github.com/the-AjK/btb/tree/1.0.0-RC12) (2018-04-27)
+
+[Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC11...1.0.0-RC12)
+
+### Changes
+
+- Add menu tables selection
+- User settings
+
+### Bugfixes
+
+- Various bugfixes
+
 ## [1.0.0-RC11](https://github.com/the-AjK/btb/tree/1.0.0-RC11) (2018-04-24)
 
 [Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC10...1.0.0-RC11)

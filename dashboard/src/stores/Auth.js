@@ -54,14 +54,6 @@ export default class Auth {
     this.jwt = null;
   });
 
-  setEmail = action(value => {
-    this.user.email = value;
-  });
-
-  setUsername = action(value => {
-    this.user.username = value;
-  });
-
   setLoading = action(value => {
     this.isLoading = value;
   });
@@ -121,16 +113,24 @@ export default class Auth {
     });
   }
 
-  updateProfile(username, email, password, cb) {
+  updateProfile(username, email, password, settings, cb) {
     this.setLoading(true);
-    this.api.updateProfile(username, email, password !== "" ? password : null, (err, res) => {
+    this.api.updateProfile(username, email, password !== "" ? password : null, settings, (err, res) => {
       if (err) {
         err = err.response ? err.response.text : err;
         console.error(err);
       } else if (res && res.ok) {
-        this.setEmail(res.body.email);
-        this.setUsername(res.body.username);
-        this.clearToken();
+        const data = res.body;
+        if (data && data.access_token && data.token_type === "bearer") {
+          try {
+            this.token = data.access_token;
+          } catch (ex) {
+            err = "Token decode error!";
+            console.error(ex);
+          }
+        } else {
+          err = "Missing/Wrong token!";
+        }
       }
       this.setLoading(false);
       if (cb) cb(err);
