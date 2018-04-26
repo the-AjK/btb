@@ -40,11 +40,12 @@ export default class API {
     );
   }
 
-  updateProfile(username, email, password, cb) {
+  updateProfile(username, email, password, settings, cb) {
     const data = {
       username: username,
       email: email,
-      password: password
+      password: password,
+      settings: settings
     };
     this.server.http({
         method: "POST",
