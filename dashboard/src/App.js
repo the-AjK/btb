@@ -97,6 +97,9 @@ const BTB = observer(
         }
       });
       services.ctx.dialog = this.handleDialog;
+      window.Mousetrap.bind('up up down down left right left right b a enter', function () {
+        alert('JK was here!');
+      });
     }
 
     handleDialog = {
