@@ -256,6 +256,7 @@ function textManager(ctx) {
     client.message(ctx.message.text).then((response) => {
       console.log(JSON.stringify(response))
       if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
+        ctx.session.mainCounter = 0;
         decodeWit(ctx, response);
       } else {
         //unrecognized by wit.ai
