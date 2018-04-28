@@ -304,6 +304,9 @@ function decodeWit(ctx, witResponse) {
     case "hi":
       msg = ["Hey!", "How are you?"];
       break;
+    case "great":
+      msg = ["That's great!"];
+      break;
     case "help":
       msg = ["Do you need help?", "Use the custom keyboard to check my features", "or ask me something!"];
       break;
@@ -325,11 +328,11 @@ function decodeWit(ctx, witResponse) {
     case "beerscount":
       let done = false,
         userBeers = -1;
-      DB.getUserBeers(ctx.session.user._id, null, (err, beerCounts) => {
+      DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
         if (err) {
           console.error(err);
         } else {
-          userBeers = beerCounts;
+          userBeers = beers.length;
         }
         done = true;
       });
