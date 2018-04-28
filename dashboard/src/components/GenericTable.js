@@ -7,7 +7,7 @@
 import ReactTable from 'react-table'
 import checkboxHOC from 'react-table/lib/hoc/selectTable';
 import React from 'react';
-import { extendObservable, action } from "mobx";
+import { extendObservable, action, toJS } from "mobx";
 import { observer, inject } from "mobx-react";
 import { withStyles } from "material-ui/styles";
 import Fade from "material-ui/transitions/Fade";
@@ -165,7 +165,7 @@ const Table = inject("ctx")(
                                             getTheadProps={fixAligment}
                                             getTheadGroupProps={fixAligment}
                                             filterable={this.filters_enabled}
-                                            data={this.props.data}
+                                            data={toJS(this.props.data)}
                                             columns={this.props.columns}
                                             showPagination={this.props.showPagination || false}
                                             showPaginationBottom={true}
@@ -181,7 +181,7 @@ const Table = inject("ctx")(
                                             getTheadProps={fixAligment}
                                             getTheadGroupProps={fixAligment}
                                             filterable={this.filters_enabled}
-                                            data={this.props.data}
+                                            data={toJS(this.props.data)}
                                             columns={this.props.columns}
                                         />}
                                     </Grid>
