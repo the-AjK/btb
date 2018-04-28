@@ -57,6 +57,7 @@ const GenericCourseSelect = observer(
                         direction={"row"}
                         onMouseOver={this.setFocus}
                         //onMouseOut={this.clearFocus}
+                        spacing={16}
                     >
                         <Grid item xs={12}>
                             <h4 className={classes.title}>{this.props.title}</h4>

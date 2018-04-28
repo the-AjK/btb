@@ -8,8 +8,8 @@ import React from "react";
 import { observer, inject } from "mobx-react";
 import { withStyles } from "material-ui/styles";
 import IconButton from 'material-ui/IconButton';
-import DeleteIcon from 'material-ui-icons/Delete';
-import EditIcon from 'material-ui-icons/ModeEdit';
+import DeleteIcon from '@material-ui/icons/Delete';
+import EditIcon from '@material-ui/icons/ModeEdit';
 import blue from 'material-ui/colors/blue';
 
 const styles = theme => ({

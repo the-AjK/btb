@@ -9,7 +9,7 @@ import { observer, inject } from "mobx-react";
 import { withStyles } from "material-ui/styles";
 import Button from 'material-ui/Button';
 import Slide from 'material-ui/transitions/Slide';
-import * as Icons from 'material-ui-icons';
+import * as Icons from '@material-ui/icons';
 
 const styles = theme => ({
     save: {
