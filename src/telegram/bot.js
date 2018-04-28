@@ -255,44 +255,78 @@ function textManager(ctx) {
 
     client.message(ctx.message.text).then((response) => {
       console.log(JSON.stringify(response))
-      //if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
-      //  decodeWit(ctx, response);
-      //} else {
-      //unrecognized by wit.ai
-      // answer politely
-      let msg = ["Hey *" + ctx.from.first_name + "*, how can I help you?"];
-
-      if (ctx.session.mainCounter > 2) {
-        //random answer when the user continue writing 
-        msg = bender.getRandomTagQuote(["hi", "fuck", "ass"]);
-        //reset session counter to start answer politely again
-        ctx.session.mainCounter = 0;
-        ctx.replyWithSticker({
-          source: require('fs').createReadStream(__dirname + "/img/11.webp")
-        }).then(() => {
-          replyDiscussion(ctx, msg);
-        });
-        levels.removePoints(ctx.session.user._id, 1, (err, points) => {
-          if (err) {
-            console.error(err);
-          }
-        });
+      if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
+        decodeWit(ctx, response);
       } else {
-        ctx.replyWithSticker({
-          source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
-        }).then(() => {
-          replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
-        });
+        //unrecognized by wit.ai
+        defaultAnswer(ctx);
       }
-      //}
+    }, (err) => {
+      console.error(err);
+      defaultAnswer(ctx);
     });
   }
 };
+
+function defaultAnswer(ctx) {
+  // answer politely
+  let msg = ["Hey *" + ctx.from.first_name + "*, how can I help you?"];
+
+  if (ctx.session.mainCounter > 2) {
+    //random answer when the user continue writing 
+    msg = bender.getRandomTagQuote(["hi", "fuck", "ass"]);
+    //reset session counter to start answer politely again
+    ctx.session.mainCounter = 0;
+    ctx.replyWithSticker({
+      source: require('fs').createReadStream(__dirname + "/img/11.webp")
+    }).then(() => {
+      replyDiscussion(ctx, msg);
+    });
+    levels.removePoints(ctx.session.user._id, 1, (err, points) => {
+      if (err) {
+        console.error(err);
+      }
+    });
+  } else {
+    ctx.replyWithSticker({
+      source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
+    }).then(() => {
+      replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+    });
+  }
+}
 
 function decodeWit(ctx, witResponse) {
   let value = witResponse.entities.intent[0].value,
     msg = ["Ehm", "I don't know"];
   switch (value) {
+    case "hi":
+      msg = ["Hey!", "How are you?"];
+      break;
+    case "help":
+      msg = ["Do you need help?", "Use the custom keyboard to check my features", "or ask me something!"];
+      break;
+    case "botstatus":
+      msg = ["I'm ok!", "I'm always ok!"];
+      break;
+    case "changetable":
+      msg = ["Do you want to change your table?", "You shall delete your order and place a new one"];
+      break;
+    case "hungry":
+      msg = ["You know,", "I'm hungry, too."];
+      break;
+    case "howgetpoints":
+      msg = ["To get more points you can give me a beer!", "or be the first to place a daily order", "or who knows 😜"];
+      break;
+    case "points":
+      msg = ["Well, you got " + ctx.session.user.points + " points in total.", "This means that you are a level " + levels.getLevel(ctx.session.user.points) + " user!"];
+      break;
+    case "angry":
+      msg = ["Keep calm bro", "You just got banned for 5mins!", "Nahh, I'm kidding"];
+      break;
+    case "weather":
+      msg = ["Weather results will be implemented asap!", "Meanwhile let's drink a fresh beer!"];
+      break;
     case "botlocation":
       msg = ["Well", "I'm always here,", "ready to serve you!"]
       break;
