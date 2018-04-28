@@ -27,6 +27,10 @@ const Telegraf = require("telegraf"),
 
 let ordersLock = new ReadWriteLock();
 
+exports.getOrdersLock = function(){
+    return ordersLock;
+}
+
 function leave(ctx) {
     if (ctx.session.lastMessage) {
         require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "😬", {

@@ -449,23 +449,35 @@ function _updateMenu(req, res) {
                                     if (!oldMenu.enabled && menu.enabled) {
                                         botNotifications.dailyMenu(menu);
                                     } else if (menu.enabled) {
-                                        //TODO check the menu diff and send notification to the right user
-                                        //plus clear those user's orders
+                                        // TODO check the menu diff and send notification to the right user
+                                        // plus clear those user's orders
                                         // NOW i will delete ALL user orders
-                                        DB.getDailyOrders(null, (err, orders) => {
-                                            if (err) {
-                                                console.error(err);
-                                            } else {
-                                                for (let i = 0; i < orders.length; i++) {
-                                                    DB.Order.findByIdAndRemove(orders[i]._id).exec(() => {
-                                                        if (err)
-                                                            console.error(err);
+                                        const ordersLock = require('./telegram/scenes/order').getOrdersLock();
+                                        ordersLock.writeLock('order', function (release) {
+                                            DB.getDailyOrders(null, (err, orders) => {
+                                                if (err) {
+                                                    console.error(err);
+                                                    release();
+                                                } else {
+                                                    console.warn("Deleting " + orders.length + " orders...");
+                                                    DB.Order.deleteMany({
+                                                        _id: {
+                                                            $in: orders.map(o => o._id)
+                                                        }
+                                                    }, (_err) => {
+                                                        if (_err) {
+                                                            console.error(_err);
+                                                            release();
+                                                        } else {
+                                                            //and lets notify the users to place an order again
+                                                            botNotifications.dailyMenuUpdated(menu, () => {
+                                                                release();
+                                                            });
+                                                        }
                                                     });
                                                 }
-                                            }
+                                            });
                                         });
-                                        //and lets notify the users to place an order again
-                                        botNotifications.dailyMenuUpdated(menu);
                                     }
                                 }
                             }
