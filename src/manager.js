@@ -15,6 +15,7 @@ const schedule = require('node-schedule'),
     accessLevels = roles.accessLevels,
     reminder = require('./reminder'),
     auth = require('./auth'),
+    mail = require('./mail'),
     bot = require("./telegram/bot"),
     telegramBot = require("./telegram/bot").bot,
     botNotifications = require('./telegram/notifications'),
@@ -1080,4 +1081,25 @@ exports.broadcastMessage = (req, res) => {
             }
         });
     }
+}
+
+exports.sendMail = function (req, res) {
+    const data = req.body,
+        message = {
+            to: data.to,
+            subject: data.title,
+            text: data.text
+        };
+    mail.sendMail(message, (err, info) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send(err);
+        } else {
+            if (info.accepted.length > 0) {
+                res.status(200).send(info);
+            } else {
+                res.status(400).send(info);
+            }
+        }
+    });
 }
