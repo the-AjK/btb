@@ -9,6 +9,7 @@ const Telegraf = require("telegraf"),
   session = require("telegraf/session"),
   Stage = require('telegraf/stage'),
   rateLimit = require("telegraf-ratelimit"),
+  uuidv1 = require('uuid/v1'),
   googleTTS = require('google-tts-api'),
   moment = require("moment"),
   delay = require("delay"),
@@ -705,9 +706,18 @@ exports.broadcastDailyMenu = function () {
 }
 
 exports.init = function (expressApp) {
-  bot.startPolling();
   if (process.env.NODE_ENV === "production") {
+    console.log("Bot webhook mode: ON");
+    const webHookPath = "/" + uuidv1(),
+      webHookURL = process.env.BOT_WEBHOOK + webHookPath;
+    expressApp.use(bot.webhookCallback(webHookPath));
+    bot.telegram.setWebhook(webHookURL);
+    console.log("Bot webhook set to: " + webHookURL);
     broadcastMessage("BTB has started!", accessLevels.root, null, true);
+  } else {
+    //DEV polling mode
+    console.log("Bot polling mode: ON");
+    bot.startPolling();
   }
 }
 

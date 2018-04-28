@@ -51,6 +51,7 @@ Find me on:
 The following enviroments variable are required to run BTB, you can save them in a .env file in the root dir:
 
 * NODE_ENV: production/development flag
+* BOT_WEBHOOK: telegram bot webhook URL for production enviroment
 * BOT_TOKEN: telegram bot token
 * PORT: NodeJS binding port
 * MONGODB_URI: MongoDB connection URI
