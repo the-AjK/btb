@@ -11,7 +11,7 @@ if (process.env.NODE_ENV !== "production") {
 } else {
 	//keepAwake heroku dyno
 	var https = require("https");
-	setInterval(function() {
+	setInterval(function () {
 		https.get("https://bitethebot.herokuapp.com");
 	}, 15 * 60000);
 }
@@ -37,6 +37,9 @@ app.use(Raven.requestHandler());
 
 //cors settings
 const whitelist = ['https://bitethebot.herokuapp.com', 'http://localhost']
+
+console.log("Starting telegram bot...");
+require("./src/telegram/bot").init(app);
 
 app.use((req, res, next) => {
 	let allowedOrigin = false,
@@ -92,13 +95,10 @@ function addRawBody(req, res, buf, encoding) {
 
 app.use(requestIp.mw());
 
-console.log("Starting telegram bot...");
-require("./src/telegram/bot").init(app);
-
 app.use("/static", express.static(path.join(__dirname, "dashboard/build/static")));
 app.use("/api", apiRouter.api);
 app.use("/", express.static(path.join(__dirname, "dashboard/build")));
-app.get('*', function(req, res) {
+app.get('*', function (req, res) {
 	res.sendFile(path.join(__dirname, "dashboard/build/index.html"));
 });
 
