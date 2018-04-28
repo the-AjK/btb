@@ -321,6 +321,25 @@ function decodeWit(ctx, witResponse) {
     case "points":
       msg = ["Well, you got " + ctx.session.user.points + " points in total.", "This means that you are a level " + levels.getLevel(ctx.session.user.points) + " user!"];
       break;
+    case "beerscount":
+      let done = false,
+        userBeers = -1;
+      DB.getUserBeers(ctx.session.user._id, null, (err, beerCounts) => {
+        if (err) {
+          console.error(err);
+        } else {
+          userBeers = beerCounts;
+        }
+        done = true;
+      });
+      require('deasync').loopWhile(function () {
+        return !done;
+      });
+      msg = ["Let's see if I remember...", "Oh yes", "You gave me " + userBeers + " beers in total."];
+      break;
+    case "beers":
+      msg = ["Hmmm did you just said beers?", "Select 'settings' menu and send me one!", "or two 😁"];
+      break;
     case "angry":
       msg = ["Keep calm bro", "You just got banned for 5mins!", "Nahh, I'm kidding"];
       break;
