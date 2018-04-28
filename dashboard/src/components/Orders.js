@@ -11,8 +11,8 @@ import { withStyles } from "material-ui/styles";
 import Table from "./GenericTable"
 import Grid from "material-ui/Grid";
 import ActionsButtons from "./buttons/ActionsButtons"
-import EnabledIcon from "material-ui-icons/Done"
-import DisabledIcon from "material-ui-icons/Clear"
+import EnabledIcon from "@material-ui/icons/Done"
+import DisabledIcon from "@material-ui/icons/Clear"
 
 const styles = theme => ({
     enabled: {

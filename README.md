@@ -51,6 +51,7 @@ Find me on:
 The following enviroments variable are required to run BTB, you can save them in a .env file in the root dir:
 
 * NODE_ENV: production/development flag
+* BOT_WEBHOOK: telegram bot webhook URL for production enviroment
 * BOT_TOKEN: telegram bot token
 * PORT: NodeJS binding port
 * MONGODB_URI: MongoDB connection URI
@@ -59,6 +60,8 @@ The following enviroments variable are required to run BTB, you can save them in
 * MAIL_USERNAME: email account username
 * MAIL_PASSWORD: email account password
 * ROOT_TELEGRAM_ID: Telegram ID of the choosen one ;D 
+* SENTRY_DSN: Sentry DSN URL
+* WIT_TOKEN: wit.ai token
 
 Example:
 

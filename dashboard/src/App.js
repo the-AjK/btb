@@ -7,7 +7,7 @@
 import React from "react";
 import { observer } from "mobx-react";
 import { extendObservable, action } from "mobx";
-import Reboot from "material-ui/Reboot";
+import CssBaseline from "material-ui/CssBaseline";
 import { Provider } from "mobx-react";
 import { useStrict } from "mobx";
 import {
@@ -97,6 +97,9 @@ const BTB = observer(
         }
       });
       services.ctx.dialog = this.handleDialog;
+      window.Mousetrap.bind('up up down down left right left right b a enter', function () {
+        alert('JK was here!');
+      });
     }
 
     handleDialog = {
@@ -119,7 +122,7 @@ const BTB = observer(
         <Provider {...services}>
           <Router basename={basename}>
             <MuiThemeProvider theme={theme}>
-              <Reboot />
+              <CssBaseline />
               <GenericDialog {...this.dialog} handleClose={this.handleDialogClose} />
               <Switch>
                 <Route path="/login" component={Login} />

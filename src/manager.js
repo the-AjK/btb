@@ -15,6 +15,7 @@ const schedule = require('node-schedule'),
     accessLevels = roles.accessLevels,
     reminder = require('./reminder'),
     auth = require('./auth'),
+    mail = require('./mail'),
     bot = require("./telegram/bot"),
     telegramBot = require("./telegram/bot").bot,
     botNotifications = require('./telegram/notifications'),
@@ -348,6 +349,16 @@ function menuIsValid(menu) {
     return true;
 }
 
+let dailyMenuNotificationTimeout;
+
+function notifyDailyMenu(menu) {
+    console.log("Daily menu will be broadcasted in 5mins.");
+    clearTimeout(dailyMenuNotificationTimeout);
+    dailyMenuNotificationTimeout = setTimeout(() => {
+        botNotifications.dailyMenu(menu);
+    }, 60000 * 5); //5mins
+}
+
 function _addMenu(req, res) {
     let data = req.body;
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
@@ -383,8 +394,9 @@ function _addMenu(req, res) {
                         return res.sendStatus(400);
                     }
                     if (data.sendNotification && menu.enabled) {
-                        if (moment(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline)))
-                            botNotifications.dailyMenu(menu);
+                        if (moment(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
+                            notifyDailyMenu(menu);
+                        }
                     }
                     bot.broadcastMessage("Daily Menu uploaded by *" + req.user.email + "*", accessLevels.root, null, true);
                     //update reminder stuff
@@ -447,25 +459,37 @@ function _updateMenu(req, res) {
                             if (data.sendNotification) {
                                 if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
                                     if (!oldMenu.enabled && menu.enabled) {
-                                        botNotifications.dailyMenu(menu);
+                                        notifyDailyMenu(menu);
                                     } else if (menu.enabled) {
-                                        //TODO check the menu diff and send notification to the right user
-                                        //plus clear those user's orders
+                                        // TODO check the menu diff and send notification to the right user
+                                        // plus clear those user's orders
                                         // NOW i will delete ALL user orders
-                                        DB.getDailyOrders(null, (err, orders) => {
-                                            if (err) {
-                                                console.error(err);
-                                            } else {
-                                                for (let i = 0; i < orders.length; i++) {
-                                                    DB.Order.findByIdAndRemove(orders[i]._id).exec(() => {
-                                                        if (err)
-                                                            console.error(err);
+                                        const ordersLock = require('./telegram/scenes/order').getOrdersLock();
+                                        ordersLock.writeLock('order', function (release) {
+                                            DB.getDailyOrders(null, (err, orders) => {
+                                                if (err) {
+                                                    console.error(err);
+                                                    release();
+                                                } else {
+                                                    console.warn("Deleting " + orders.length + " orders...");
+                                                    DB.Order.deleteMany({
+                                                        _id: {
+                                                            $in: orders.map(o => o._id)
+                                                        }
+                                                    }, (_err) => {
+                                                        if (_err) {
+                                                            console.error(_err);
+                                                            release();
+                                                        } else {
+                                                            //and lets notify the users to place an order again
+                                                            botNotifications.dailyMenuUpdated(menu, () => {
+                                                                release();
+                                                            });
+                                                        }
                                                     });
                                                 }
-                                            }
+                                            });
                                         });
-                                        //and lets notify the users to place an order again
-                                        botNotifications.dailyMenuUpdated(menu);
                                     }
                                 }
                             }
@@ -1057,4 +1081,25 @@ exports.broadcastMessage = (req, res) => {
             }
         });
     }
+}
+
+exports.sendMail = function (req, res) {
+    const data = req.body,
+        message = {
+            to: data.to,
+            subject: data.title,
+            text: data.text
+        };
+    mail.sendMail(message, (err, info) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send(err);
+        } else {
+            if (info.accepted.length > 0) {
+                res.status(200).send(info);
+            } else {
+                res.status(400).send(info);
+            }
+        }
+    });
 }

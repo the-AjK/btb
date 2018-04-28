@@ -8,6 +8,7 @@
 const moment = require('moment'),
     bot = require('./bot').bot,
     DB = require("../db"),
+    async = require('async'),
     levels = require("../levels"),
     mail = require("../mail"),
     roles = require("../roles"),
@@ -72,8 +73,32 @@ exports.dailyMenu = function (menu) {
     });
 }
 
+//Utility function for dailyMenuUpdated
+function sendDailyMenuUpdate(user) {
+    return (callback) => {
+        DB.getDailyUserOrder(null, user._id, (err, order) => {
+            if (err) {
+                console.error(err);
+            } else if (!order) {
+                //user didnt ordered yet, nothing to do.
+            } else {
+                console.log("broadcasting dailyMenu update to: " + user.telegram.id + "-" + user.telegram.first_name);
+                const ctx = {
+                    session: {
+                        user: user
+                    }
+                };
+                bot.telegram.sendMessage(user.telegram.id, message, keyboards.btb(ctx).opts).then((m) => {
+                    console.log("dailyMenuUpdate sent to: " + user.telegram.id + "-" + user.telegram.first_name)
+                });
+            }
+            callback();
+        });
+    }
+}
+
 //Send daily menu update notification for every user
-exports.dailyMenuUpdated = function (menu) {
+exports.dailyMenuUpdated = function (menu, cb) {
     const query = {
             "telegram.enabled": true,
             "telegram.banned": false,
@@ -85,26 +110,13 @@ exports.dailyMenuUpdated = function (menu) {
     DB.User.find(query, (err, users) => {
         if (err) {
             console.error(err);
+            if (cb)
+                cb(err);
         } else {
-            for (let i = 0; i < users.length; i++) {
-                DB.getDailyUserOrder(null, users[i]._id, (err, order) => {
-                    if (err) {
-                        console.error(err);
-                    } else if (!order) {
-                        //user didnt ordered yet, nothing to do.
-                    } else {
-                        console.log("broadcasting dailyMenu update to: " + users[i].telegram.id + "-" + users[i].telegram.first_name);
-                        const ctx = {
-                            session: {
-                                user: users[i]
-                            }
-                        };
-                        bot.telegram.sendMessage(users[i].telegram.id, message, keyboards.btb(ctx).opts).then((m) => {
-                            console.log("dailyMenuUpdate sent to: " + users[i].telegram.id + "-" + users[i].telegram.first_name)
-                        });
-                    }
-                });
-            }
+            async.parallel(users.map(u => sendDailyMenuUpdate(u)), (_err) => {
+                if (cb)
+                    cb(_err);
+            });
         }
     });
 }

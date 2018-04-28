@@ -374,6 +374,7 @@ const Menu = inject("ctx")(
                                             direction={"column"}
                                             justify={"center"}
                                             alignItems={"stretch"}
+                                            spacing={16}
                                         >
                                             <Grid item xs={12}>
                                                 <TextField
@@ -387,7 +388,7 @@ const Menu = inject("ctx")(
                                                 />
                                             </Grid>
                                             <Grid item xs={12}>
-                                                <Grid container direction={"row"}>
+                                                <Grid container direction={"row"} spacing={16}>
                                                     <Grid item xs={12} md={4}>
                                                         <TextField
                                                             id="day"

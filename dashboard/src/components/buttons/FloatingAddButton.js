@@ -8,7 +8,7 @@ import React from "react";
 import { observer, inject } from "mobx-react";
 import { withStyles } from "material-ui/styles";
 import Button from 'material-ui/Button';
-import AddIcon from 'material-ui-icons/Add';
+import AddIcon from '@material-ui/icons/Add';
 import Slide from 'material-ui/transitions/Slide';
 
 const styles = theme => ({

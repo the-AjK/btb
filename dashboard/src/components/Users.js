@@ -12,7 +12,7 @@ import Table from "./GenericTable"
 import Grid from "material-ui/Grid";
 import ActionsButtons from "./buttons/ActionsButtons"
 import Button from "material-ui/Button";
-import Autorenew from 'material-ui-icons/Autorenew';
+import Autorenew from '@material-ui/icons/Autorenew';
 
 
 const styles = theme => ({

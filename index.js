@@ -92,6 +92,9 @@ function addRawBody(req, res, buf, encoding) {
 
 app.use(requestIp.mw());
 
+console.log("Starting telegram bot...");
+require("./src/telegram/bot").init(app);
+
 app.use("/static", express.static(path.join(__dirname, "dashboard/build/static")));
 app.use("/api", apiRouter.api);
 app.use("/", express.static(path.join(__dirname, "dashboard/build")));
@@ -100,15 +103,10 @@ app.get('*', function(req, res) {
 });
 
 console.log("DB connecting...");
-//require("./src/telegram").init(expressApp);
 const db = require("./src/db");
 db.init(() => {
 
 });
-
-console.log("Starting telegram bot...");
-//require("./src/telegram").init(expressApp);
-require("./src/telegram/bot").init();
 
 require("./src/reminder").init();
 

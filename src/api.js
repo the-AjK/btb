@@ -56,6 +56,9 @@ api.post("/menus", apiLimiter, auth.checkAuthUser, manager.menus.add);
 api.put("/menus/:id", apiLimiter, auth.checkAuthUser, manager.menus.update);
 api.delete("/menus/:id", apiLimiter, auth.checkAuthUser, manager.menus.delete);
 
+// Root stuff
+api.post("/mail", apiLimiter, auth.checkAuthRoot, manager.sendMail);
+
 api.get("/coffee", apiLimiter, function (req, res) {
 	//I'm a teapot
 	return res.sendStatus(418);

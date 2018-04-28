@@ -9,7 +9,7 @@ import { observer, inject } from "mobx-react";
 import { withStyles } from "material-ui/styles";
 import GridList, { GridListTile, GridListTileBar } from 'material-ui/GridList';
 import Subheader from 'material-ui/List/ListSubheader';
-import Autorenew from 'material-ui-icons/Autorenew';
+import Autorenew from '@material-ui/icons/Autorenew';
 
 const styles = theme => ({
     root: {

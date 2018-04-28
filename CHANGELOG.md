@@ -1,5 +1,21 @@
 # Change Log
 
+## [1.0.0-RC13](https://github.com/the-AjK/btb/tree/1.0.0-RC13) (2018-04-xx)
+
+[Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC12...1.0.0-RC13)
+
+### Changes
+
+- MateriaUI upgrade
+- Production telegram bot webhook
+- Wit.ai handler update
+- Italian holidays check
+
+### Bugfixes
+
+- Menu edit order delete lock
+- Various bugfixes
+
 ## [1.0.0-RC12](https://github.com/the-AjK/btb/tree/1.0.0-RC12) (2018-04-27)
 
 [Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC11...1.0.0-RC12)

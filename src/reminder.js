@@ -63,7 +63,7 @@ exports.init = () => {
         DB.getDailyMenu(null, (err, menu) => {
             if (err) {
                 console.error(err);
-            } else if (!menu) {
+            } else if (!menu && !isHoliday()) {
                 //The daily menu wasnt uploaded yet, lets notify admins
                 const message = "*Hey you 😬!*\n\nDid you forgot to upload a *new daily menu*?\nHurry up!\n\n[BTB - Dashboard](https://bitethebot.herokuapp.com)";
                 bot.broadcastMessage(message, accessLevels.admin);
@@ -97,7 +97,7 @@ function initDailyReminders() {
                 //with the dailyOrders results
                 botNotifications.ordersCompleteReminder();
             });
-            
+
             if (!moment.utc(menu.updatedAt).isSame(moment(), 'day')) {
                 //The dailyMenu was updated in the past days, so lets remind the users that
                 //its available today
@@ -114,3 +114,95 @@ function initDailyReminders() {
 }
 
 exports.initDailyReminders = initDailyReminders;
+
+function getEaster(year) {
+    var f = Math.floor,
+        // Golden Number - 1
+        G = year % 19,
+        C = f(year / 100),
+        // related to Epact
+        H = (C  -  f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30,
+        // number of days from 21 March to the Paschal full moon
+        I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11)),
+        // weekday for the Paschal full moon
+        J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7,
+        // number of days from 21 March to the Sunday on or before the Paschal full moon
+        L = I - J,
+        month = 3 + f((L + 40) / 44),
+        day = L + 28 - 31 * f(month / 4);
+
+    return [month, day];
+}
+
+function isHoliday(date) {
+    if (!date)
+        date = moment();
+
+    const easter = getEaster(date.year()),
+        month = date.month() + 1,
+        day = date.date();
+
+    // Easter check
+    if (month == easter[0]) {
+        if (day == easter[1]) {
+            console.log("Today is Pasqua!");
+            return true;
+        } else if (day == (easter[1] + 1)) {
+            console.log("Today is Pasquetta!");
+            return true;
+        }
+    }
+
+    const italianHolidays = [{
+        day: 1,
+        month: 1,
+        name: "Capodanno"
+    }, {
+        day: 6,
+        month: 1,
+        name: "Epifania"
+    }, {
+        day: 25,
+        month: 4,
+        name: "Anniversario della Liberazione"
+    }, {
+        day: 1,
+        month: 5,
+        name: "Festa del Lavoro"
+    }, {
+        day: 2,
+        month: 6,
+        name: "Festa della Repubblica"
+    }, {
+        day: 15,
+        month: 8,
+        name: "Ferragosto"
+    }, {
+        day: 1,
+        month: 11,
+        name: "Ognissanti"
+    }, {
+        day: 8,
+        month: 12,
+        name: "Immacolata Concezione"
+    }, {
+        day: 25,
+        month: 12,
+        name: "Natale"
+    }, {
+        day: 26,
+        month: 12,
+        name: "Santo Stefano"
+    }];
+
+    //Check other holidays
+    return italianHolidays.filter(h => {
+        if (h.day == day && h.month == month) {
+            console.log("Today is " + h.name + "!");
+            return true;
+        } else {
+            return false
+        }
+    }).length > 0;
+
+}

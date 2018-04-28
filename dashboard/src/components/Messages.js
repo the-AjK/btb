@@ -105,11 +105,11 @@ const Messages = inject("ctx")(
                                 <Grid item xs={12}>
                                     <h2>Broadcast message</h2>
                                     <Select
-                                        value={this.data.email}
+                                        value={this.data.email || "None"}
                                         onChange={(e) => { this.handleChangeField("email", e) }}
                                     >
                                         <MenuItem value={null}>None</MenuItem>
-                                        {this.props.ctx.users.users && this.props.ctx.users.users.map(user => { return (<MenuItem value={user.email}>{user.email}</MenuItem>) })}
+                                        {this.props.ctx.users.users && this.props.ctx.users.users.map((user, i) => { return (<MenuItem key={i} value={user.email}>{user.email}</MenuItem>) })}
                                     </Select>
                                 </Grid>
                                 <Grid item xs={12}>

@@ -11,8 +11,8 @@ import { withStyles } from "material-ui/styles";
 import MultipleSelect from "./MultipleSelect";
 import Grid from "material-ui/Grid";
 import Paper from 'material-ui/Paper';
-import CloseIcon from 'material-ui-icons/Close';
-import CloneIcon from 'material-ui-icons/ControlPointDuplicate';
+import CloseIcon from '@material-ui/icons/Close';
+import CloneIcon from '@material-ui/icons/ControlPointDuplicate';
 
 const styles = theme => ({
     container: {

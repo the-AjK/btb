@@ -14,8 +14,8 @@ import Grid from "material-ui/Grid";
 import TextField from 'material-ui/TextField';
 import IconButton from 'material-ui/IconButton';
 import Input, { InputLabel, InputAdornment } from 'material-ui/Input';
-import Visibility from 'material-ui-icons/Visibility';
-import VisibilityOff from 'material-ui-icons/VisibilityOff';
+import Visibility from '@material-ui/icons/Visibility';
+import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import { FormControl, FormLabel, FormGroup, FormControlLabel } from 'material-ui/Form';
 import Validator from "validatorjs";
 import Switch from 'material-ui/Switch';
@@ -38,7 +38,7 @@ const styles = theme => ({
         height: 60,
     },
     settings: {
-        marginTop: "2em"
+        marginTop: "1.5em"
     }
 });
 
@@ -163,6 +163,7 @@ const Profile = inject("ctx")(
                                 container
                                 direction={"row"}
                                 alignItems={"stretch"}
+                                spacing={16}
                             >
                                 <Grid item xs={12}>
                                     <h2>Profile</h2>
@@ -173,29 +174,39 @@ const Profile = inject("ctx")(
                                     />
                                 </Grid>
                                 <Grid item xs={12}>
-                                    <TextField
-                                        id="username"
-                                        label="Username"
-                                        value={this.username}
-                                        error={this.errors.username !== false}
-                                        placeholder="Username"
-                                        onChange={(e) => { this.handleChangeField("username", e) }}
-                                        fullWidth
-                                        margin="normal"
-                                    />
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <TextField
-                                        id="email"
-                                        label="Email"
-                                        type="email"
-                                        error={this.errors.email !== false}
-                                        value={this.email}
-                                        placeholder="Email"
-                                        onChange={(e) => { this.handleChangeField("email", e) }}
-                                        fullWidth
-                                        margin="normal"
-                                    />
+                                    <Grid
+                                        className={classes.root}
+                                        container
+                                        direction={"row"}
+                                        alignItems={"stretch"}
+                                        spacing={16}
+                                    >
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                id="username"
+                                                label="Username"
+                                                value={this.username}
+                                                error={this.errors.username !== false}
+                                                placeholder="Username"
+                                                onChange={(e) => { this.handleChangeField("username", e) }}
+                                                fullWidth
+                                                margin="normal"
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                id="email"
+                                                label="Email"
+                                                type="email"
+                                                error={this.errors.email !== false}
+                                                value={this.email}
+                                                placeholder="Email"
+                                                onChange={(e) => { this.handleChangeField("email", e) }}
+                                                fullWidth
+                                                margin="normal"
+                                            />
+                                        </Grid>
+                                    </Grid>
                                 </Grid>
                                 <Grid item xs={12}>
                                     <FormControl className={classes.passwordText}>
@@ -263,7 +274,7 @@ const Profile = inject("ctx")(
                                                         value="dailyMenu"
                                                     />
                                                 }
-                                                label={(this.settings.dailyMenu ? "[ON]": "[OFF]") + " Telegram daily menu notification"}
+                                                label={(this.settings.dailyMenu ? "[ON]" : "[OFF]") + " Telegram daily menu notification"}
                                             />
                                             <FormControlLabel
                                                 control={
@@ -273,7 +284,7 @@ const Profile = inject("ctx")(
                                                         value="orderReminder"
                                                     />
                                                 }
-                                                label={(this.settings.orderReminder ? "[ON]": "[OFF]") + " Telegram daily order reminder"}
+                                                label={(this.settings.orderReminder ? "[ON]" : "[OFF]") + " Telegram daily order reminder"}
                                             />
                                             {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && <FormControlLabel
                                                 control={
@@ -283,7 +294,7 @@ const Profile = inject("ctx")(
                                                         value="adminOrdersCompleteMail"
                                                     />
                                                 }
-                                                label={(this.settings.adminOrdersCompleteMail ? "[ON]": "[OFF]") + " Order complete email notification [Admin only]"}
+                                                label={(this.settings.adminOrdersCompleteMail ? "[ON]" : "[OFF]") + " Order complete email notification [Admin only]"}
                                             />}
                                             {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && <FormControlLabel
                                                 control={
@@ -293,7 +304,7 @@ const Profile = inject("ctx")(
                                                         value="adminReminders"
                                                     />
                                                 }
-                                                label={(this.settings.adminReminders ? "[ON]": "[OFF]") + " Admins reminders"}
+                                                label={(this.settings.adminReminders ? "[ON]" : "[OFF]") + " Admins reminders"}
                                             />}
                                             {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && <FormControlLabel
                                                 control={
@@ -303,7 +314,7 @@ const Profile = inject("ctx")(
                                                         value="rootReminders"
                                                     />
                                                 }
-                                                label={(this.settings.rootReminders ? "[ON]": "[OFF]") + " Root reminders"}
+                                                label={(this.settings.rootReminders ? "[ON]" : "[OFF]") + " Root reminders"}
                                             />}
                                         </FormGroup>
                                     </FormControl>
