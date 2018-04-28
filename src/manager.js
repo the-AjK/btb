@@ -348,6 +348,16 @@ function menuIsValid(menu) {
     return true;
 }
 
+let dailyMenuNotificationTimeout;
+
+function notifyDailyMenu(menu) {
+    console.log("Daily menu will be broadcasted in 5mins.");
+    clearTimeout(dailyMenuNotificationTimeout);
+    dailyMenuNotificationTimeout = setTimeout(() => {
+        botNotifications.dailyMenu(menu);
+    }, 60000 * 5); //5mins
+}
+
 function _addMenu(req, res) {
     let data = req.body;
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
@@ -383,8 +393,9 @@ function _addMenu(req, res) {
                         return res.sendStatus(400);
                     }
                     if (data.sendNotification && menu.enabled) {
-                        if (moment(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline)))
-                            botNotifications.dailyMenu(menu);
+                        if (moment(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
+                            notifyDailyMenu(menu);
+                        }
                     }
                     bot.broadcastMessage("Daily Menu uploaded by *" + req.user.email + "*", accessLevels.root, null, true);
                     //update reminder stuff
@@ -447,7 +458,7 @@ function _updateMenu(req, res) {
                             if (data.sendNotification) {
                                 if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
                                     if (!oldMenu.enabled && menu.enabled) {
-                                        botNotifications.dailyMenu(menu);
+                                        notifyDailyMenu(menu);
                                     } else if (menu.enabled) {
                                         // TODO check the menu diff and send notification to the right user
                                         // plus clear those user's orders
