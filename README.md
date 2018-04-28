@@ -60,6 +60,8 @@ The following enviroments variable are required to run BTB, you can save them in
 * MAIL_USERNAME: email account username
 * MAIL_PASSWORD: email account password
 * ROOT_TELEGRAM_ID: Telegram ID of the choosen one ;D 
+* SENTRY_DSN: Sentry DSN URL
+* WIT_TOKEN: wit.ai token
 
 Example:
 
