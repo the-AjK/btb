@@ -325,11 +325,11 @@ function decodeWit(ctx, witResponse) {
     case "beerscount":
       let done = false,
         userBeers = -1;
-      DB.getUserBeers(ctx.session.user._id, null, (err, beerCounts) => {
+      DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
         if (err) {
           console.error(err);
         } else {
-          userBeers = beerCounts;
+          userBeers = beers.length;
         }
         done = true;
       });
