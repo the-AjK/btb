@@ -42,6 +42,7 @@ app.use((req, res, next) => {
 	let allowedOrigin = false,
 		origin = req.headers.origin || req.headers.referer || undefined;
 	if (origin) {
+		console.log(origin)
 		for (let i = 0; i < whitelist.length; i++) {
 			if (origin.indexOf(whitelist[i]) == 0) {
 				allowedOrigin = true;
