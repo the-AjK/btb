@@ -763,7 +763,7 @@ exports.broadcastDailyMenu = function () {
 }
 
 exports.init = function (expressApp) {
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production" && process.env.BOT_WEBHOOK) {
     console.log("Bot webhook mode: ON");
     const webHookPath = "/" + uuidv1(),
       webHookURL = process.env.BOT_WEBHOOK + webHookPath;
@@ -774,6 +774,7 @@ exports.init = function (expressApp) {
   } else {
     //DEV polling mode
     console.log("Bot polling mode: ON");
+    bot.telegram.deleteWebhook();
     bot.startPolling();
   }
 }
