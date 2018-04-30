@@ -496,7 +496,7 @@ function formatMenu(menu) {
     text = text + "\n - *" + sd + "*"
   });
   if (menu.additionalInfos && menu.additionalInfos != "") {
-    text = text + "\n\n__Additional informations__:\n*" + menu.additionalInfos + "*"
+    text = text + "\n\n__Additional information__:\n*" + menu.additionalInfos + "*"
   }
   if (moment().isAfter(menu.deadline)) {
     text = text + "\n\nThe deadline was at *" + moment(menu.deadline).format("HH:mm") + "*.\nNo more orders will be accepted.";
