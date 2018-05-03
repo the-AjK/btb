@@ -74,31 +74,23 @@ exports.dailyMenu = function (menu) {
 }
 
 //Utility function for dailyMenuUpdated
-function sendDailyMenuUpdate(user) {
+function sendDailyMenuUpdate(user, message) {
     return (callback) => {
-        DB.getDailyUserOrder(null, user._id, (err, order) => {
-            if (err) {
-                console.error(err);
-            } else if (!order) {
-                //user didnt ordered yet, nothing to do.
-            } else {
-                console.log("broadcasting dailyMenu update to: " + user.telegram.id + "-" + user.telegram.first_name);
-                const ctx = {
-                    session: {
-                        user: user
-                    }
-                };
-                bot.telegram.sendMessage(user.telegram.id, message, keyboards.btb(ctx).opts).then((m) => {
-                    console.log("dailyMenuUpdate sent to: " + user.telegram.id + "-" + user.telegram.first_name)
-                });
+        console.log("broadcasting dailyMenu update to: " + user.telegram.id + "-" + user.telegram.first_name);
+        const ctx = {
+            session: {
+                user: user
             }
-            callback();
+        };
+        bot.telegram.sendMessage(user.telegram.id, message, keyboards.btb(ctx).opts).then((m) => {
+            console.log("dailyMenuUpdate sent to: " + user.telegram.id + "-" + user.telegram.first_name);
         });
+        callback();
     }
 }
 
-//Send daily menu update notification for every user
-exports.dailyMenuUpdated = function (menu, cb) {
+//Send daily menu update notification for every user in the list
+exports.dailyMenuUpdated = function (users, cb) {
     const query = {
             "telegram.enabled": true,
             "telegram.banned": false,
@@ -107,17 +99,24 @@ exports.dailyMenuUpdated = function (menu, cb) {
         },
         message = "⚠️ Daily menu has been changed and your order has been deleted!\nPlease place your order again.";
 
-    DB.User.find(query, (err, users) => {
-        if (err) {
-            console.error(err);
-            if (cb)
-                cb(err);
-        } else {
-            async.parallel(users.map(u => sendDailyMenuUpdate(u)), (_err) => {
-                if (cb)
-                    cb(_err);
-            });
-        }
+    async.parallel(users.map(u => sendDailyMenuUpdate(u, message)), (_err) => {
+        if (cb)
+            cb(_err);
+    });
+}
+
+exports.dailyMenuUpdatedNotify = function (users, cb) {
+    const query = {
+            "telegram.enabled": true,
+            "telegram.banned": false,
+            "deleted": false,
+            "settings.dailyMenu": true
+        },
+        message = "ℹ️ Daily menu has been changed\nYour order hasn't been affected tho!";
+
+    async.parallel(users.map(u => sendDailyMenuUpdate(u, message)), (_err) => {
+        if (cb)
+            cb(_err);
     });
 }
 

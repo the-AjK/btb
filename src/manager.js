@@ -352,11 +352,12 @@ function menuIsValid(menu) {
 let dailyMenuNotificationTimeout;
 
 function notifyDailyMenu(menu) {
-    console.log("Daily menu will be broadcasted in 5mins.");
+    const timeout = 3; //minutes
+    console.log("Daily menu will be broadcasted in " + timeout + " mins.");
     clearTimeout(dailyMenuNotificationTimeout);
     dailyMenuNotificationTimeout = setTimeout(() => {
         botNotifications.dailyMenu(menu);
-    }, 60000 * 5); //5mins
+    }, 60000 * timeout);
 }
 
 function _addMenu(req, res) {
@@ -408,6 +409,112 @@ function _addMenu(req, res) {
     }
 }
 
+// Returns the orders which has been affected by the menu changes
+function getOrdersMenuDiff(oldMenu, menu, orders) {
+    let _orders = [];
+
+    console.log("Menu diff checking...");
+
+    // check removed tables
+    const removedTables = oldMenu.tables.filter(ot => menu.tables.indexOf(ot) < 0);
+    for (let i = 0; i < removedTables.length; i++) {
+        let tableID = removedTables[i];
+        console.log("Table _id:" + tableID + " has been removed");
+        for (let j = 0; j < orders.length; j++) {
+            let order = orders[j];
+            if (String(tableID).localeCompare(String(order.table._id)) == 0) {
+                console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because table '" + order.table.name + "' has been removed");
+                _orders.push(order);
+                orders.splice(j--, 1);
+            }
+        }
+    }
+
+    // firstCourse check
+    for (let i = 0; i < oldMenu.firstCourse.items.length; i++) {
+        let oldFc = oldMenu.firstCourse.items[i];
+
+        if (menu.firstCourse.items.map(mfc => mfc.value).indexOf(oldFc.value) < 0) {
+            console.log("First course '" + oldFc.value + "' has been removed");
+            for (let k = 0; k < orders.length; k++) {
+                let order = orders[k];
+                if (order.firstCourse && order.firstCourse.item.localeCompare(oldFc.value) == 0) {
+                    console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because firstCourse '" + oldFc.value + "' has been removed");
+                    _orders.push(order);
+                    orders.splice(k--, 1);
+                }
+            }
+        } else {
+            // condiments check
+            for (let j = 0; j < menu.firstCourse.items.length; j++) {
+                let newFc = menu.firstCourse.items[j];
+                if (newFc.value.localeCompare(oldFc.value) == 0) {
+                    for (let k = 0; k < oldFc.condiments.length; k++) {
+                        let oldCondiment = oldFc.condiments[k];
+                        if (newFc.condiments.indexOf(oldCondiment) < 0) {
+                            console.log("Condiment '" + oldCondiment + "' has been removed");
+                            for (let z = 0; z < orders.length; z++) {
+                                let order = orders[z];
+                                if (order.firstCourse && order.firstCourse.item.localeCompare(oldFc.value) == 0 && order.firstCourse.condiment.localeCompare(oldCondiment) == 0) {
+                                    console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because condiment '" + oldCondiment + "' has been removed");
+                                    _orders.push(order);
+                                    orders.splice(z--, 1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // secondCourse check
+    for (let i = 0; i < oldMenu.secondCourse.items.length; i++) {
+        let oldSc = oldMenu.secondCourse.items[i];
+        if (menu.secondCourse.items.indexOf(oldSc) < 0) {
+            console.log("Second course '" + oldSc + "' has been removed");
+            for (let z = 0; z < orders.length; z++) {
+                let order = orders[z];
+                if (order.secondCourse && order.secondCourse.item.localeCompare(oldSc) == 0) {
+                    console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because second course '" + oldSc + "' has been removed");
+                    _orders.push(order);
+                    orders.splice(z--, 1);
+                }
+            }
+        }
+    }
+
+    //side dishes checks
+    for (let i = 0; i < oldMenu.secondCourse.sideDishes.length; i++) {
+        let oldSideDish = oldMenu.secondCourse.sideDishes[i];
+        if (menu.secondCourse.sideDishes.indexOf(oldSideDish) < 0) {
+            console.log("Side dish '" + oldSideDish + "' has been removed");
+            for (let z = 0; z < orders.length; z++) {
+                let order = orders[z];
+                if (order.secondCourse && order.secondCourse.sideDishes.indexOf(oldSideDish) >= 0) {
+                    console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because side dish '" + oldSideDish + "' has been removed");
+                    _orders.push(order);
+                    orders.splice(z--, 1);
+                }
+            }
+        }
+    }
+
+    console.log(_orders.length + "/" + (_orders.length + orders.length) + " affected orders.");
+    return [_orders, orders];
+}
+exports.getOrdersMenuDiff = getOrdersMenuDiff;
+
+function getDailyOrdersMenuDiff(oldMenu, menu, cb) {
+    DB.getDailyOrders(null, (err, orders) => {
+        if (err) {
+            cb(err);
+        } else {
+            cb(null, getOrdersMenuDiff(oldMenu, menu, orders));
+        }
+    });
+}
+
 function _updateMenu(req, res) {
     const query = {
             _id: req.params.id
@@ -417,8 +524,18 @@ function _updateMenu(req, res) {
             new: true
         };
 
+    if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
+        //non root user limitations
+        delete data.deleted;
+        data.owner = req.user._id;
+    }
+    if (!data.owner) {
+        data.owner = req.user._id;
+    }
+
     data._id = req.params.id;
     data.updatedAt = moment().format();
+    delete data.createdAt;
 
     if (!menuIsValid(data)) {
         res.sendStatus(400);
@@ -459,36 +576,48 @@ function _updateMenu(req, res) {
                             if (data.sendNotification) {
                                 if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
                                     if (!oldMenu.enabled && menu.enabled) {
+                                        console.log("Daily menu has been enabled!")
                                         notifyDailyMenu(menu);
                                     } else if (menu.enabled) {
-                                        // TODO check the menu diff and send notification to the right user
-                                        // plus clear those user's orders
-                                        // NOW i will delete ALL user orders
+
+                                        //Daily menu was already enabled, lets check the orders
                                         const ordersLock = require('./telegram/scenes/order').getOrdersLock();
                                         ordersLock.writeLock('order', function (release) {
-                                            DB.getDailyOrders(null, (err, orders) => {
+
+                                            getDailyOrdersMenuDiff(oldMenu, menu, (err, result) => {
                                                 if (err) {
                                                     console.error(err);
+                                                    return release();
+                                                }
+                                                const ordersToDelete = result[0],
+                                                    ordersNotAffected = result[1];
+                                                if (ordersToDelete.length == 0) {
+                                                    console.log("No orders has been affected by menu changes. Skipping");
+                                                    botNotifications.dailyMenuUpdatedNotify(ordersNotAffected.map(o => o.owner));
                                                     release();
                                                 } else {
-                                                    console.warn("Deleting " + orders.length + " orders...");
+                                                    console.log("Deleting " + ordersToDelete.length + " orders...");
                                                     DB.Order.deleteMany({
                                                         _id: {
-                                                            $in: orders.map(o => o._id)
+                                                            $in: ordersToDelete.map(o => o._id)
                                                         }
                                                     }, (_err) => {
                                                         if (_err) {
                                                             console.error(_err);
                                                             release();
                                                         } else {
-                                                            //and lets notify the users to place an order again
-                                                            botNotifications.dailyMenuUpdated(menu, () => {
+                                                            console.log("Orders deleted!");
+                                                            //and lets notify the related users to place an order again
+                                                            botNotifications.dailyMenuUpdated(ordersToDelete.map(o => o.owner), () => {
                                                                 release();
                                                             });
+                                                            botNotifications.dailyMenuUpdatedNotify(ordersNotAffected.map(o => o.owner));
                                                         }
                                                     });
+
                                                 }
                                             });
+
                                         });
                                     }
                                 }
@@ -528,37 +657,56 @@ function _deleteMenu(req, res) {
     const query = {
         _id: req.params.id
     };
-    if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
-        //non root users SHALL update ONLY the deleted flag
-        query.enabled = false;
-        const data = {
-                deleted: true,
-                updatedAt: moment().format()
-            },
-            options = {
-                new: false
-            };
-        DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
-            if (err) {
-                console.error(err);
-                return res.sendStatus(500);
-            } else if (!menu) {
-                return res.sendStatus(404);
-            }
-            res.sendStatus(200);
-        });
-    } else {
-        //Root user full remove
-        DB.Menu.findOneAndRemove(query, (err, menu) => {
-            if (err) {
-                console.error(err);
-                return res.sendStatus(500);
-            } else if (!menu) {
-                return res.sendStatus(404);
-            }
-            res.sendStatus(200);
-        });
-    }
+    const ordersLock = require('./telegram/scenes/order').getOrdersLock();
+    ordersLock.writeLock('order', function (release) {
+        if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
+            //non root users SHALL update ONLY the deleted flag
+            query.enabled = false;
+            const data = {
+                    deleted: true,
+                    updatedAt: moment().format()
+                },
+                options = {
+                    new: false
+                };
+            DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
+                release();
+                if (err) {
+                    console.error(err);
+                    return res.sendStatus(500);
+                } else if (!menu) {
+                    return res.sendStatus(404);
+                }
+                //check if its the daily menu
+                if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
+                    clearTimeout(dailyMenuNotificationTimeout);
+                    reminder.initDailyReminders();
+                    bot.broadcastMessage("Daily Menu deleted by *" + req.user.email + "*", accessLevels.root, null, true);
+                    //TODO send user notifications
+                }
+                res.sendStatus(200);
+            });
+        } else {
+            //Root user full remove
+            DB.Menu.findOneAndRemove(query, (err, menu) => {
+                release();
+                if (err) {
+                    console.error(err);
+                    return res.sendStatus(500);
+                } else if (!menu) {
+                    return res.sendStatus(404);
+                }
+                //check if its the daily menu
+                if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
+                    clearTimeout(dailyMenuNotificationTimeout);
+                    reminder.initDailyReminders();
+                    bot.broadcastMessage("Daily Menu deleted by *" + req.user.email + "*", accessLevels.root, null, true);
+                    //TODO send user notifications
+                }
+                res.sendStatus(200);
+            });
+        }
+    });
 }
 
 function getPaginationOptions(req) {

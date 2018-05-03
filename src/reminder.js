@@ -58,8 +58,8 @@ exports.init = () => {
         initDailyReminders();
     });
 
-    //Admin daily menu reminder at 10.30am from monday to friday
-    const dailyMenuAdminReminderSchedule = schedule.scheduleJob("30 10 * * MON-FRI", function () {
+    //Admin daily menu reminder at 10.00am from monday to friday
+    const dailyMenuAdminReminderSchedule = schedule.scheduleJob("0 10 * * MON-FRI", function () {
         DB.getDailyMenu(null, (err, menu) => {
             if (err) {
                 console.error(err);

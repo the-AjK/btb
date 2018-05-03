@@ -324,7 +324,7 @@ const TableSchema = new mongoose.Schema({
 //Root user utility presave function
 UserSchema.pre('save', function (next) {
   if (process.env.ROOT_TELEGRAM_ID && this.telegram.id === parseInt(process.env.ROOT_TELEGRAM_ID)) {
-    console.log('Saving ***ROOT*** user.')
+    //console.log('Saving ***ROOT*** user.')
     this.role = userRoles.root;
     this.enabled = true;
     this.telegram.enabled = true;

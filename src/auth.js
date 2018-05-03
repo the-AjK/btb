@@ -19,6 +19,11 @@ const passport = require("passport"),
   userRoles = roles.userRoles,
   DB = require("./db");
 
+//test stuff
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").load();
+} 
+
 const JWTOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: process.env.JWT_SECRET,

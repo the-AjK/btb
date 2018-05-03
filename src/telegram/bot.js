@@ -235,31 +235,17 @@ function textManager(ctx) {
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.settings) {
     ctx.session.mainCounter = 0;
     ctx.scene.enter('settings');
-  } else if (ctx.message.text.indexOf("coffee") >= 0 || ctx.message.text.indexOf("☕️") >= 0) {
-    //418 I'M A TEAPOT
-    ctx.replyWithChatAction(ACTIONS.LOCATION_DATA);
-    console.log("Got a coffee from: " + ctx.session.user.email);
-    if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
-      broadcastMessage("Got a coffee from: " + ctx.session.user.email, accessLevels.root, null, true);
-    }
-    ctx.replyWithSticker({
-      source: require('fs').createReadStream(__dirname + "/img/coffee.gif")
-    }).then(() => {
-      replyDiscussion(ctx, ["Status code: *418*", "I'm a teapot", "BTB refuses to brew coffee"], keyboards.btb(ctx).opts);
-    });
   } else {
-    //Unknow message handler
     ctx.session.mainCounter++;
-
-    console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text);
-
     client.message(ctx.message.text).then((response) => {
-      console.log(JSON.stringify(response))
+      //console.log(JSON.stringify(response))
       if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
         ctx.session.mainCounter = 0;
+        console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [OK]");
         decodeWit(ctx, response);
       } else {
         //unrecognized by wit.ai
+        console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [Unknow]");
         defaultAnswer(ctx);
       }
     }, (err) => {
@@ -273,7 +259,7 @@ function defaultAnswer(ctx) {
   // answer politely
   let msg = ["Hey *" + ctx.from.first_name + "*, how can I help you?"];
 
-  if (ctx.session.mainCounter > 2) {
+  if (ctx.session.mainCounter > 3) {
     //random answer when the user continue writing 
     msg = bender.getRandomTagQuote(["hi", "fuck", "ass"]);
     //reset session counter to start answer politely again
@@ -299,62 +285,63 @@ function defaultAnswer(ctx) {
 
 function decodeWit(ctx, witResponse) {
   let value = witResponse.entities.intent[0].value,
-    msg = ["Ehm", "I don't know"];
-  switch (value) {
-    case "hi":
-      msg = ["Hey!", "How are you?"];
-      break;
-    case "great":
-      msg = ["That's great!"];
-      break;
-    case "help":
-      msg = ["Do you need help?", "Use the custom keyboard to check my features", "or ask me something!"];
-      break;
-    case "botstatus":
-      msg = ["I'm ok!", "I'm always ok!"];
-      break;
-    case "changetable":
-      msg = ["Do you want to change your table?", "You shall delete your order and place a new one"];
-      break;
-    case "hungry":
-      msg = ["You know,", "I'm hungry, too."];
-      break;
-    case "howgetpoints":
-      msg = ["To get more points you can give me a beer!", "or be the first to place a daily order", "or who knows 😜"];
-      break;
-    case "points":
-      msg = ["Well, you got " + ctx.session.user.points + " points in total.", "This means that you are a level " + levels.getLevel(ctx.session.user.points) + " user!"];
-      break;
-    case "beerscount":
-      let done = false,
-        userBeers = -1;
-      DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
-        if (err) {
-          console.error(err);
-        } else {
-          userBeers = beers.length;
+    msg = require("./mind")[value];
+
+  if (!msg) {
+    switch (value) {
+      case "menu":
+        _getDailyMenu((err, text, menu) => {
+          ctx.reply(text || err, {
+            parse_mode: "markdown"
+          });
+        });
+        break;
+      case "order":
+        ctx.scene.enter('order');
+        break;
+      case "coffee":
+        //418 I'M A TEAPOT
+        ctx.replyWithChatAction(ACTIONS.LOCATION_DATA);
+        console.log("Got a coffee from: " + ctx.session.user.email);
+        if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
+          broadcastMessage("Got a coffee from: " + ctx.session.user.email, accessLevels.root, null, true);
         }
-        done = true;
-      });
-      require('deasync').loopWhile(function () {
-        return !done;
-      });
-      msg = ["Let's see if I remember...", "Oh yes", "You gave me " + userBeers + " beers in total."];
-      break;
-    case "beers":
-      msg = ["Hmmm did you just said beers?", "Select 'settings' menu and send me one!", "or two 😁"];
-      break;
-    case "angry":
-      msg = ["Keep calm bro", "You just got banned for 5mins!", "Nahh, I'm kidding"];
-      break;
-    case "weather":
-      msg = ["Weather results will be implemented asap!", "Meanwhile let's drink a fresh beer!"];
-      break;
-    case "botlocation":
-      msg = ["Well", "I'm always here,", "ready to serve you!"]
-      break;
-    default:
-      msg = ["Ehm", "I don't know"]
+        ctx.replyWithSticker({
+          source: require('fs').createReadStream(__dirname + "/img/coffee.gif")
+        }).then(() => {
+          replyDiscussion(ctx, ["Status code: *418*", "I'm a teapot", "BTB refuses to brew coffee"], keyboards.btb(ctx).opts);
+        });
+        break;
+      case "points":
+        msg = ["Well, you got " + ctx.session.user.points + " points in total.", "This means that you are a level " + levels.getLevel(ctx.session.user.points) + " user!"];
+        break;
+      case "beerscount":
+        let done = false,
+          userBeers = -1;
+        DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
+          if (err) {
+            console.error(err);
+          } else {
+            userBeers = beers.length;
+          }
+          done = true;
+        });
+        require('deasync').loopWhile(function () {
+          return !done;
+        });
+        msg = ["Let's see if I remember...", "Oh yes", "You gave me " + userBeers + " beers in total."];
+        break;
+      case "angry":
+        msg = bender.getRandomTagQuote(["hi", "fuck", "ass"]);
+        ctx.replyWithSticker({
+          source: require('fs').createReadStream(__dirname + "/img/11.webp")
+        }).then(() => {
+          replyDiscussion(ctx, msg);
+        });
+        return;
+      default:
+        msg = ["Ehm", "I don't know"]
+    }
   }
   replyDiscussion(ctx, msg);
 }
@@ -496,7 +483,7 @@ function formatMenu(menu) {
     text = text + "\n - *" + sd + "*"
   });
   if (menu.additionalInfos && menu.additionalInfos != "") {
-    text = text + "\n\n__Additional informations__:\n*" + menu.additionalInfos + "*"
+    text = text + "\n\n__Additional information__:\n*" + menu.additionalInfos + "*"
   }
   if (moment().isAfter(menu.deadline)) {
     text = text + "\n\nThe deadline was at *" + moment(menu.deadline).format("HH:mm") + "*.\nNo more orders will be accepted.";

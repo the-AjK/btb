@@ -143,34 +143,39 @@ exports.scene = scene;
 
 function deleteDailyOrder(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-    DB.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
-        if (err) {
-            console.error(err);
-            ctx.reply("Cannot delete the daily order");
-        } else if (!order) {
-            ctx.reply("You didn't placed any order yet! c'mon...");
-        } else {
-            if (moment().isAfter(order.menu.deadline)) {
+    const ordersLock = require('./order').getOrdersLock();
+    ordersLock.writeLock('order', function (release) {
+        DB.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
+            if (err) {
+                console.error(err);
+                ctx.reply("Cannot delete the daily order");
+                release();
+            } else if (!order) {
+                ctx.reply("You didn't placed any order yet! c'mon...");
+                release();
+            } else if (moment().isAfter(order.menu.deadline)) {
                 ctx.reply("AAHahahAH too late! 😂\n\nRemoving the daily order is no longer possible when the deadline is reached.");
-                return;
-            }
-            DB.Order.findByIdAndRemove(order._id, (err, deletedOrder) => {
-                if (!err && deletedOrder) {
-                    ctx.reply("Your daily order has been deleted!");
-                    levels.removePoints(ctx.session.user._id, 1, (err, points) => {
-                        if (err) {
-                            console.error(err);
+                release();
+            } else {
+                DB.Order.findByIdAndRemove(order._id, (err, deletedOrder) => {
+                    if (!err && deletedOrder) {
+                        ctx.reply("Your daily order has been deleted!");
+                        levels.removePoints(ctx.session.user._id, 1, (err, points) => {
+                            if (err) {
+                                console.error(err);
+                            }
+                        });
+                        if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                            bot.broadcastMessage("Order deleted by *" + ctx.session.user.email + "* ", accessLevels.root, null, true);
                         }
-                    });
-                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                        bot.broadcastMessage("Order deleted by *" + ctx.session.user.email + "* ", accessLevels.root, null, true);
+                    } else {
+                        console.error(err || "DB error");
+                        ctx.reply("DB error!");
                     }
-                } else {
-                    console.error(err || "DB error");
-                    ctx.reply("DB error!");
-                }
-            });
-        }
+                    release();
+                });
+            }
+        });
     });
 }
 
@@ -189,9 +194,7 @@ function addBeer(ctx) {
                 parse_mode: "markdown"
             });
         }
-        if (!checkUser(ctx.session.user.role, userRoles.root)) {
-            bot.broadcastMessage("Locked beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
-        }
+        console.log("Locked beer from: " + ctx.session.user.email);
     } else {
         drinkBeer(ctx.session.user);
         const type = ctx.update.callback_query.data,
