@@ -22,7 +22,7 @@ const pointsLevels = {
     1000: 6
 };
 
-function getLevelFeatures(level){
+function getLevelFeatures(level) {
     const features = {
         1: "- Rate your lunch",
         2: "- Check orders status\n- Check tables status\n- Check users without orders",
@@ -91,16 +91,17 @@ exports.addPoints = function (userID, points, cb) {
         } else if (!user) {
             return cb("User not found");
         } else {
-            const initialPoints = user.points;
+            const initialPoints = user.points,
+                initialLevel = getLevel(initialPoints);
             user.points = initialPoints + points;
             user.save((err, _user) => {
                 if (err) {
                     return cb(err);
                 }
                 let message = "🏅 Congratulations!\n\nYou got *" + points + "* point" + (points > 1 ? "s" : "") + "!";
-                if (getLevel(_user.points) > getLevel(initialPoints)) {
-                    let message = "You got *" + points + "* point" + (points > 1 ? "s" : "") + "!" +
-                        "\n\n⭐️ Level Up!\nUnlocked features:\n" + getLevelFeatures(getLevel(_user.points));
+                if (getLevel(_user.points) >= initialLevel) {
+                    message = "You collected *" + _user.points + "* points!" +
+                        "\n\n⭐️ Level Up!\n\n*Unlocked features*:\n" + getLevelFeatures(getLevel(_user.points));
                 }
                 require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
                     parse_mode: "markdown"
