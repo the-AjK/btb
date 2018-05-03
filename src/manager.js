@@ -425,7 +425,7 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
             if (order.table._id.localeCompare(tableID) == 0) {
                 console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because table '" + order.table.name + "' has been removed");
                 _orders.push(order);
-                orders.splice(j, 1);
+                orders.splice(j--, 1);
             }
         }
     }
@@ -441,7 +441,7 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
                 if (order.firstCourse && order.firstCourse.item.localeCompare(oldFc.value) == 0) {
                     console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because firstCourse '" + oldFc.value + "' has been removed");
                     _orders.push(order);
-                    orders.splice(k, 1);
+                    orders.splice(k--, 1);
                 }
             }
         } else {
@@ -458,7 +458,7 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
                                 if (order.firstCourse && order.firstCourse.item.localeCompare(oldFc.value) == 0 && order.firstCourse.condiment.localeCompare(oldCondiment) == 0) {
                                     console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because condiment '" + oldCondiment + "' has been removed");
                                     _orders.push(order);
-                                    orders.splice(z, 1);
+                                    orders.splice(z--, 1);
                                 }
                             }
                         }
@@ -470,8 +470,7 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
 
     // secondCourse check
     for (let i = 0; i < oldMenu.secondCourse.items.length; i++) {
-        let oldSc = oldMenu.secondCourse.items[i],
-            oldSideDish = oldMenu.secondCourse.sideDishes[i];
+        let oldSc = oldMenu.secondCourse.items[i];
         if (menu.secondCourse.items.indexOf(oldSc) < 0) {
             console.log("Second course '" + oldSc + "' has been removed");
             for (let z = 0; z < orders.length; z++) {
@@ -479,18 +478,23 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
                 if (order.secondCourse && order.secondCourse.item.localeCompare(oldSc) == 0) {
                     console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because second course '" + oldSc + "' has been removed");
                     _orders.push(order);
-                    orders.splice(z, 1);
+                    orders.splice(z--, 1);
                 }
             }
-        } else if (menu.secondCourse.sideDishes.indexOf(oldSideDish) < 0) {
-            //side dishes checks
+        }
+    }
+
+    //side dishes checks
+    for (let i = 0; i < oldMenu.secondCourse.sideDishes.length; i++) {
+        let oldSideDish = oldMenu.secondCourse.sideDishes[i];
+        if (menu.secondCourse.sideDishes.indexOf(oldSideDish) < 0) {
             console.log("Side dish '" + oldSideDish + "' has been removed");
             for (let z = 0; z < orders.length; z++) {
                 let order = orders[z];
-                if (order.secondCourse && order.secondCourse.item.localeCompare(oldSc) == 0 && order.secondCourse.sideDishes.indexOf(oldSideDish) >= 0) {
+                if (order.secondCourse && order.secondCourse.sideDishes.indexOf(oldSideDish) >= 0) {
                     console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because side dish '" + oldSideDish + "' has been removed");
                     _orders.push(order);
-                    orders.splice(z, 1);
+                    orders.splice(z--, 1);
                 }
             }
         }
