@@ -757,12 +757,14 @@ exports.init = function (expressApp) {
     expressApp.use(bot.webhookCallback(webHookPath));
     bot.telegram.setWebhook(webHookURL);
     console.log("Bot webhook set to: " + webHookURL);
-    broadcastMessage("BTB has started!", accessLevels.root, null, true);
   } else {
     //DEV polling mode
     console.log("Bot polling mode: ON");
     bot.telegram.deleteWebhook();
     bot.startPolling();
+  }
+  if (process.env.NODE_ENV === "production") {
+    broadcastMessage("BTB has started!", accessLevels.root, null, true);
   }
 }
 
