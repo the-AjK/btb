@@ -1,6 +1,14 @@
 # Change Log
 
-## [1.0.0-RC13](https://github.com/the-AjK/btb/tree/1.0.0-RC13) (2018-04-xx)
+## [1.0.0-RC14](https://github.com/the-AjK/btb/tree/1.0.0-RC14) (2018-05-xx)
+
+[Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC13...1.0.0-RC14)
+
+### Changes
+
+- Menu diff check on update
+
+## [1.0.0-RC13](https://github.com/the-AjK/btb/tree/1.0.0-RC13) (2018-04-28)
 
 [Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC12...1.0.0-RC13)
 
