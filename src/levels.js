@@ -14,12 +14,12 @@ const bot = require("./telegram/bot"),
     DB = require("./db");
 
 const pointsLevels = {
-    30: 1,
-    150: 2,
-    500: 3,
-    1000: 4,
-    2500: 5,
-    5000: 6
+    10: 1,
+    50: 2,
+    150: 3,
+    300: 4,
+    600: 5,
+    1000: 6
 };
 
 function getLevel(points) {
