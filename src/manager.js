@@ -545,6 +545,7 @@ function _deleteMenu(req, res) {
             } else if (!menu) {
                 return res.sendStatus(404);
             }
+            clearTimeout(dailyMenuNotificationTimeout);
             res.sendStatus(200);
         });
     } else {
@@ -556,6 +557,7 @@ function _deleteMenu(req, res) {
             } else if (!menu) {
                 return res.sendStatus(404);
             }
+            clearTimeout(dailyMenuNotificationTimeout);
             res.sendStatus(200);
         });
     }
