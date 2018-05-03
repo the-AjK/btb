@@ -4,6 +4,8 @@
     "thanks": ["Thank you!"],
     "icant": ["I can't do it"],
     "noimnot": ["No, I'm not!"],
+    "arewefriends": ["Ehm,", "are we friends?"],
+    "imnotyourfriend": ["I'm not your friend"],
     "shutdown": ["I'm sorry! This is a ROOT command only"],
     "help": ["Do you need help?", "Use the custom keyboard to check my features", "or ask me something!"],
     "botstatus": ["I'm ok!", "I'm always ok!"],
