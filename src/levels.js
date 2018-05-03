@@ -69,11 +69,11 @@ exports.removePoints = function (userID, points, cb) {
                         cb(err);
                     } else {
                         let message = "💩 Ops!\n\nYou lost *" + points + "* point" + (points > 1 ? "s" : "") + "!";
-                        /*require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
+                        require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
                             parse_mode: "markdown"
                         }).then(() => {
                             console.log("removePoints message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
-                        });*/
+                        });
                         if (!checkUser(user.role, userRoles.root)) {
                             bot.broadcastMessage("User: *" + user.email + "* lost " + points + " points (" + user.points + ")", accessLevels.root, null, true);
                         }
@@ -99,7 +99,7 @@ exports.addPoints = function (userID, points, cb) {
                     return cb(err);
                 }
                 let message = "🏅 Congratulations!\n\nYou got *" + points + "* point" + (points > 1 ? "s" : "") + "!";
-                if (getLevel(_user.points) >= initialLevel) {
+                if (getLevel(_user.points) > initialLevel) {
                     message = "You collected *" + _user.points + "* points!" +
                         "\n\n⭐️ Level Up!\n\n*Unlocked features*:\n" + getLevelFeatures(getLevel(_user.points));
                 }

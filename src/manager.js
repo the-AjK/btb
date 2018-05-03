@@ -422,7 +422,7 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
         console.log("Table _id:" + tableID + " has been removed");
         for (let j = 0; j < orders.length; j++) {
             let order = orders[j];
-            if (order.table._id.localeCompare(tableID) == 0) {
+            if (String(tableID).localeCompare(String(order.table._id)) == 0) {
                 console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because table '" + order.table.name + "' has been removed");
                 _orders.push(order);
                 orders.splice(j--, 1);
@@ -593,6 +593,7 @@ function _updateMenu(req, res) {
                                                     ordersNotAffected = result[1];
                                                 if (ordersToDelete.length == 0) {
                                                     console.log("No orders has been affected by menu changes. Skipping");
+                                                    botNotifications.dailyMenuUpdatedNotify(ordersNotAffected.map(o => o.owner));
                                                     release();
                                                 } else {
                                                     console.log("Deleting " + ordersToDelete.length + " orders...");
@@ -605,6 +606,7 @@ function _updateMenu(req, res) {
                                                             console.error(_err);
                                                             release();
                                                         } else {
+                                                            console.log("Orders deleted!");
                                                             //and lets notify the related users to place an order again
                                                             botNotifications.dailyMenuUpdated(ordersToDelete.map(o => o.owner), () => {
                                                                 release();
