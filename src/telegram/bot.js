@@ -254,7 +254,7 @@ function textManager(ctx) {
     console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text);
 
     client.message(ctx.message.text).then((response) => {
-      console.log(JSON.stringify(response))
+      //console.log(JSON.stringify(response))
       if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
         ctx.session.mainCounter = 0;
         decodeWit(ctx, response);
