@@ -499,6 +499,7 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
     console.log(_orders.length + "/" + (_orders.length + orders.length) + " affected orders.");
     return [_orders, orders];
 }
+exports.getOrdersMenuDiff = getOrdersMenuDiff;
 
 function getDailyOrdersMenuDiff(oldMenu, menu, cb) {
     DB.getDailyOrders(null, (err, orders) => {

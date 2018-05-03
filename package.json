@@ -7,7 +7,11 @@
   "author": "Alberto Garbui aka JK <alberto.garbui@gmail.com>",
   "license": "BSD-3",
   "private": true,
+  "directories": {
+    "test": "test"
+  },
   "scripts": {
+    "test": "mocha",
     "start": "node index.js",
     "postinstall": "cd dashboard/ && yarn install && yarn run build"
   },
@@ -47,5 +51,9 @@
   },
   "engines": {
     "node": "^8.11.1"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.1.1"
   }
 }
