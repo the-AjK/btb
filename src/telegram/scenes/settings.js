@@ -194,9 +194,7 @@ function addBeer(ctx) {
                 parse_mode: "markdown"
             });
         }
-        if (!checkUser(ctx.session.user.role, userRoles.root)) {
-            bot.broadcastMessage("Locked beer from: *" + ctx.session.user.email + "*", accessLevels.root, null, true);
-        }
+        console.log("Locked beer from: " + ctx.session.user.email);
     } else {
         drinkBeer(ctx.session.user);
         const type = ctx.update.callback_query.data,
