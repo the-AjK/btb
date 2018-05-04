@@ -38,8 +38,8 @@ function leave(ctx) {
         });
         delete ctx.session.lastMessage;
     }
-    ctx.scene.leave()
-    ctx.reply('ACK', keyboards.btb(ctx).opts)
+    ctx.scene.leave();
+    ctx.reply('ACK', keyboards.btb(ctx).opts);
 }
 
 function checkReEnter(ctx) {
@@ -708,7 +708,9 @@ function textManager(ctx) {
     } else if (keyboards.order(ctx).cmd.second == ctx.message.text) {
         ctx.scene.enter('secondCourseWizard');
     } else {
-        leave(ctx)
+        ctx.scene.leave();
+        //fallback to main bot scene
+        bot.textManager(ctx);
     }
 }
 

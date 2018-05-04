@@ -220,9 +220,7 @@ function textManager(ctx) {
   if (ctx.message.text.toLowerCase().indexOf("menu") == 0) {
     ctx.session.mainCounter = 0;
     _getDailyMenu((err, text, menu) => {
-      ctx.reply(text || err, {
-        parse_mode: "markdown"
-      });
+      ctx.reply(text || err, keyboards.btb(ctx).opts);
     });
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.order) {
     ctx.session.mainCounter = 0;
@@ -251,6 +249,10 @@ function textManager(ctx) {
     });
   }
 };
+exports.textManager = (ctx) => {
+  ctx.session.mainCounter = 0;
+  textManager(ctx);
+}
 
 function defaultAnswer(ctx) {
   // answer politely
@@ -264,7 +266,7 @@ function defaultAnswer(ctx) {
     ctx.replyWithSticker({
       source: require('fs').createReadStream(__dirname + "/img/11.webp")
     }).then(() => {
-      replyDiscussion(ctx, msg);
+      replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
     });
     levels.removePoints(ctx.session.user._id, 1, (err, points) => {
       if (err) {
@@ -288,9 +290,7 @@ function decodeWit(ctx, witResponse) {
     switch (value) {
       case "menu":
         _getDailyMenu((err, text, menu) => {
-          ctx.reply(text || err, {
-            parse_mode: "markdown"
-          });
+          ctx.reply(text || err, keyboards.btb(ctx).opts);
         });
         break;
       case "order":
@@ -333,14 +333,14 @@ function decodeWit(ctx, witResponse) {
         ctx.replyWithSticker({
           source: require('fs').createReadStream(__dirname + "/img/11.webp")
         }).then(() => {
-          replyDiscussion(ctx, msg);
+          replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
         });
         return;
       default:
         msg = ["Ehm", "I don't know"]
     }
   }
-  replyDiscussion(ctx, msg);
+  replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
 }
 
 function parseMention(ctx) {
