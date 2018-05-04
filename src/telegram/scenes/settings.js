@@ -28,12 +28,15 @@ let beerLock = null,
     drinkingSchedule;
 
 function drinkBeer(user) {
-    beerLock = user;
-    console.log("Beer lock for: " + beerLock.email);
+    const minDrinkingTime = 60000 * 45, //45min
+        maxDrinkingTime = 60000 * 75, //75min
+        drinkingTime = Math.round(utils.getRandomInt(minDrinkingTime, maxDrinkingTime)),
+        beerLock = user;
+    console.log("Beer lock for: " + beerLock.email + " [" + Math.round(drinkingTime / 60000) + "mins]");
     setTimeout(() => {
         beerLock = null;
         console.log("Beer unlocked")
-    }, beerLockTimeout);
+    }, drinkingTime);
 }
 
 function setDrinkingSchedule(minimumToWait) {
