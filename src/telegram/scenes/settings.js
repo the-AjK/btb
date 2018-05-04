@@ -28,12 +28,15 @@ let beerLock = null,
     drinkingSchedule;
 
 function drinkBeer(user) {
-    beerLock = user;
-    console.log("Beer lock for: " + beerLock.email);
+    const minDrinkingTime = 60000 * 45, //45min
+        maxDrinkingTime = 60000 * 75, //75min
+        drinkingTime = Math.round(utils.getRandomInt(minDrinkingTime, maxDrinkingTime)),
+        beerLock = user;
+    console.log("Beer lock for: " + beerLock.email + " [" + Math.round(drinkingTime / 60000) + "mins]");
     setTimeout(() => {
         beerLock = null;
         console.log("Beer unlocked")
-    }, beerLockTimeout);
+    }, drinkingTime);
 }
 
 function setDrinkingSchedule(minimumToWait) {
@@ -99,10 +102,16 @@ function textManager(ctx) {
             disable_web_page_preview: true
         });
     } else if (ctx.message.text == keyboards.reminders(ctx).cmd.back) {
+        //back from reminders
         ctx.reply(keyboards.settings(ctx).text, keyboards.settings(ctx).opts);
-    } else {
-        ctx.reply("ACK", keyboards.btb(ctx).opts)
+    } else if (ctx.message.text == keyboards.settings(ctx).cmd.back) {
+        //back button
         ctx.scene.leave();
+        ctx.reply('ACK', keyboards.btb(ctx).opts);
+    } else {
+        ctx.scene.leave();
+        //fallback to main bot scene
+        bot.textManager(ctx);
     }
 }
 

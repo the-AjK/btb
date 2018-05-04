@@ -11,6 +11,7 @@ const Telegraf = require("telegraf"),
   rateLimit = require("telegraf-ratelimit"),
   uuidv1 = require('uuid/v1'),
   googleTTS = require('google-tts-api'),
+  request = require('request'),
   moment = require("moment"),
   delay = require("delay"),
   ReadWriteLock = require("rwlock"),
@@ -217,15 +218,10 @@ function textManager(ctx) {
 
   ctx.session.mainCounter = ctx.session.mainCounter || 0;
 
-  if (ctx.message.text == 'ACK') {
-    //user is coming back from a scene
-    return;
-  } else if (ctx.message.text.toLowerCase().indexOf("menu") == 0) {
+  if (ctx.message.text.toLowerCase().indexOf("menu") == 0) {
     ctx.session.mainCounter = 0;
     _getDailyMenu((err, text, menu) => {
-      ctx.reply(text || err, {
-        parse_mode: "markdown"
-      });
+      ctx.reply(text || err, keyboards.btb(ctx).opts);
     });
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.order) {
     ctx.session.mainCounter = 0;
@@ -239,9 +235,19 @@ function textManager(ctx) {
     ctx.session.mainCounter++;
     client.message(ctx.message.text).then((response) => {
       //console.log(JSON.stringify(response))
-      if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
+      if (response.entities && response.entities.number && response.entities.number.length >= 0) {
+        const number = response.entities.number[0].value
+        request('http://numbersapi.com/' + number, {
+          json: true
+        }, (err, res, body) => {
+          if (err) {
+            return console.error(err);
+          }
+          replyDiscussion(ctx, ["About number *" + number + "*...", body], keyboards.btb(ctx).opts);
+        });
+      } else if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
         ctx.session.mainCounter = 0;
-        console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [OK]");
+        console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [" + response.entities.intent[0].value + "]");
         decodeWit(ctx, response);
       } else {
         //unrecognized by wit.ai
@@ -254,6 +260,10 @@ function textManager(ctx) {
     });
   }
 };
+exports.textManager = (ctx) => {
+  ctx.session.mainCounter = 0;
+  textManager(ctx);
+}
 
 function defaultAnswer(ctx) {
   // answer politely
@@ -267,7 +277,7 @@ function defaultAnswer(ctx) {
     ctx.replyWithSticker({
       source: require('fs').createReadStream(__dirname + "/img/11.webp")
     }).then(() => {
-      replyDiscussion(ctx, msg);
+      replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
     });
     levels.removePoints(ctx.session.user._id, 1, (err, points) => {
       if (err) {
@@ -291,9 +301,7 @@ function decodeWit(ctx, witResponse) {
     switch (value) {
       case "menu":
         _getDailyMenu((err, text, menu) => {
-          ctx.reply(text || err, {
-            parse_mode: "markdown"
-          });
+          ctx.reply(text || err, keyboards.btb(ctx).opts);
         });
         break;
       case "order":
@@ -331,19 +339,64 @@ function decodeWit(ctx, witResponse) {
         });
         msg = ["Let's see if I remember...", "Oh yes", "You gave me " + userBeers + " beers in total."];
         break;
+      case "joke":
+        request('https://08ad1pao69.execute-api.us-east-1.amazonaws.com/dev/random_joke', {
+          json: true
+        }, (err, res, body) => {
+          if (err) {
+            return console.error(err);
+          }
+          replyDiscussion(ctx, [body.setup, body.punchline], keyboards.btb(ctx).opts);
+        });
+        return;
+      case "today":
+        const today = moment(),
+          day = today.date(),
+          month = today.month();
+        request('http://numbersapi.com/' + day + '/' + month + '/date', {
+          json: true
+        }, (err, res, body) => {
+          if (err) {
+            return console.error(err);
+          }
+          msg = "Today is *" + moment().format("dddd, MMMM Do YYYY") + "*";
+          replyDiscussion(ctx, [msg, "Interesting facts about today:", body], keyboards.btb(ctx).opts);
+        });
+        return;
+      case "autostop":
+        msg = "If I remember...";
+        ctx.reply(msg, keyboards.btb(ctx).opts).then(() => {
+          const autostop = ["45.586607", "11.623588"]; //LAT LON
+          ctx.replyWithLocation(autostop[0], autostop[1], keyboards.btb(ctx).opts).then(() => {
+            msg = "*L'Autostop*\naddress: 36050 Bolzano Vicentino VI, Italy\nmobile: +393397067253";
+            ctx.reply(msg, keyboards.btb(ctx).opts);
+          });
+        });
+        return;
+      case "botlocation":
+        msg = "Let me check...";
+        ctx.reply(msg, keyboards.btb(ctx).opts).then(() => {
+          const irelandServer = ["53.3244431", "-6.3857854"]; //LAT LON
+          ctx.replyWithLocation(irelandServer[0], irelandServer[1], keyboards.btb(ctx).opts).then(() => {
+            msg = "I'm based in *Europe*\nstate: *Ireland*\ncity: *Dublin*\ndatacenter: *AWS*\nstack: *heroku-16*";
+            ctx.reply(msg, keyboards.btb(ctx).opts);
+          });
+        });
+        return;
       case "angry":
         msg = bender.getRandomTagQuote(["hi", "fuck", "ass"]);
         ctx.replyWithSticker({
           source: require('fs').createReadStream(__dirname + "/img/11.webp")
         }).then(() => {
-          replyDiscussion(ctx, msg);
+          replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
         });
         return;
       default:
+        console.warn("Unknow wit.ai intent: " + value);
         msg = ["Ehm", "I don't know"]
     }
   }
-  replyDiscussion(ctx, msg);
+  replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
 }
 
 function parseMention(ctx) {

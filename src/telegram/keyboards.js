@@ -397,6 +397,7 @@ module.exports = {
     settings: function (ctx) {
         let keyboard = [],
             cmd = {
+                back: "◀️ Back",
                 orderDelete: "✖️ Delete Order",
                 beer: "🍺 Beer",
                 reminders: "⏰ Reminders",
@@ -432,7 +433,7 @@ module.exports = {
             text: cmd.reminders
         }]);
         keyboard.push([{
-            text: "◀️ Back"
+            text: cmd.back
         }, {
             text: cmd.leave
         }]);

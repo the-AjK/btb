@@ -27,7 +27,7 @@ const Telegraf = require("telegraf"),
 
 let ordersLock = new ReadWriteLock();
 
-exports.getOrdersLock = function(){
+exports.getOrdersLock = function () {
     return ordersLock;
 }
 
@@ -38,8 +38,8 @@ function leave(ctx) {
         });
         delete ctx.session.lastMessage;
     }
-    ctx.scene.leave()
-    ctx.reply('ACK', keyboards.btb(ctx).opts)
+    ctx.scene.leave();
+    ctx.reply('ACK', keyboards.btb(ctx).opts);
 }
 
 function checkReEnter(ctx) {
@@ -78,7 +78,7 @@ function sendTables(ctx) {
                 release();
                 return leave(ctx)
             } else {
-                //lets find the favailable tables
+                //lets find the available tables
                 let inline_keyboard = ctx.session.dailyMenu.tables.map((t) => {
                     let usedSeats = tables[t._id] ? tables[t._id].used : 0;
                     return [{
@@ -86,6 +86,8 @@ function sendTables(ctx) {
                         callback_data: t._id
                     }]
                 });
+                //sort by table name
+                inline_keyboard.sort((t1, t2) => (t1[0].text).localeCompare(t2[0].text))
                 ctx.reply("Available tables:", {
                     parse_mode: "markdown",
                     force_reply: true,
@@ -113,6 +115,15 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
         if (!inline_keyboard.length) {
             return leave(ctx);
         }
+        //clear previous order draft in case user enter again in this schene
+        ctx.session.order.firstCourse = {
+            item: undefined,
+            condiment: undefined
+        };
+        ctx.session.order.secondCourse = {
+            item: undefined,
+            sideDishes: []
+        };
         ctx.reply("Available first courses:", {
             parse_mode: "markdown",
             remove_keyboard: true,
@@ -375,6 +386,15 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
         if (!inline_keyboard.length) {
             return leave(ctx);
         }
+        //clear previous order draft in case user enter again in this schene
+        ctx.session.order.firstCourse = {
+            item: undefined,
+            condiment: undefined
+        };
+        ctx.session.order.secondCourse = {
+            item: undefined,
+            sideDishes: []
+        };
         ctx.reply("Available second courses:", {
             parse_mode: "markdown",
             remove_keyboard: true,
@@ -456,37 +476,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                 delete ctx.session.lastMessage;
             }
             //no more side dishes to add, go ahead...
-            ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-            ordersLock.writeLock('order', function (release) {
-                DB.getTablesStatus(null, (err, tables) => {
-                    if (err) {
-                        console.error(err);
-                        ctx.reply("DB error ehm");
-                        release();
-                        return leave(ctx)
-                    } else {
-                        //lets find the available tables
-                        let inline_keyboard = ctx.session.dailyMenu.tables.map((t) => {
-                            let usedSeats = tables[t._id] ? tables[t._id].used : 0;
-                            return [{
-                                text: t.name + " [" + usedSeats + "/" + t.seats + "]",
-                                callback_data: t._id
-                            }]
-                        });
-                        ctx.reply("Available tables:", {
-                            parse_mode: "markdown",
-                            force_reply: true,
-                            reply_markup: JSON.stringify({
-                                inline_keyboard: inline_keyboard
-                            })
-                        }).then((msg) => {
-                            //lets save the message to delete it afterward
-                            ctx.session.lastMessage = msg;
-                        });
-                        release();
-                    }
-                });
-            });
+            sendTables(ctx);
             ctx.wizard.next()
         } else {
             leave(ctx)
@@ -718,7 +708,9 @@ function textManager(ctx) {
     } else if (keyboards.order(ctx).cmd.second == ctx.message.text) {
         ctx.scene.enter('secondCourseWizard');
     } else {
-        leave(ctx)
+        ctx.scene.leave();
+        //fallback to main bot scene
+        bot.textManager(ctx);
     }
 }
 
