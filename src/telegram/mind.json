@@ -1,5 +1,9 @@
 {
     "hi": ["Hey!", "How are you?"],
+    "yes": ["Yes"],
+    "no": ["No!"],
+    "userlaugh": ["Hmm,", "Do I look like a joke?", "I'm not laughing!"],
+    "sad": ["That's sad!"],
     "great": ["That's great!"],
     "thanks": ["Thank you!"],
     "icant": ["I can't do it"],
