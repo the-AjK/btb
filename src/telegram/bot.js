@@ -328,6 +328,13 @@ function decodeWit(ctx, witResponse) {
         });
         msg = ["Let's see if I remember...", "Oh yes", "You gave me " + userBeers + " beers in total."];
         break;
+      case "botlocation":
+        msg = "I'm based in *Europe*\ncity: *Dublin*\ndatacenter: *AWS*\nstack: *heroku-16*";
+        ctx.reply(msg, keyboards.btb(ctx).opts).then(() => {
+          const irelandServer = ["53.3244431", "-6.3857854"]; //LAT LON
+          ctx.replyWithLocation(irelandServer[0], irelandServer[1], keyboards.btb(ctx).opts);
+        });
+        break;
       case "angry":
         msg = bender.getRandomTagQuote(["hi", "fuck", "ass"]);
         ctx.replyWithSticker({
