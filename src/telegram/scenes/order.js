@@ -27,7 +27,7 @@ const Telegraf = require("telegraf"),
 
 let ordersLock = new ReadWriteLock();
 
-exports.getOrdersLock = function(){
+exports.getOrdersLock = function () {
     return ordersLock;
 }
 
@@ -78,7 +78,7 @@ function sendTables(ctx) {
                 release();
                 return leave(ctx)
             } else {
-                //lets find the favailable tables
+                //lets find the available tables
                 let inline_keyboard = ctx.session.dailyMenu.tables.map((t) => {
                     let usedSeats = tables[t._id] ? tables[t._id].used : 0;
                     return [{
@@ -476,37 +476,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                 delete ctx.session.lastMessage;
             }
             //no more side dishes to add, go ahead...
-            ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-            ordersLock.writeLock('order', function (release) {
-                DB.getTablesStatus(null, (err, tables) => {
-                    if (err) {
-                        console.error(err);
-                        ctx.reply("DB error ehm");
-                        release();
-                        return leave(ctx)
-                    } else {
-                        //lets find the available tables
-                        let inline_keyboard = ctx.session.dailyMenu.tables.map((t) => {
-                            let usedSeats = tables[t._id] ? tables[t._id].used : 0;
-                            return [{
-                                text: t.name + " [" + usedSeats + "/" + t.seats + "]",
-                                callback_data: t._id
-                            }]
-                        });
-                        ctx.reply("Available tables:", {
-                            parse_mode: "markdown",
-                            force_reply: true,
-                            reply_markup: JSON.stringify({
-                                inline_keyboard: inline_keyboard
-                            })
-                        }).then((msg) => {
-                            //lets save the message to delete it afterward
-                            ctx.session.lastMessage = msg;
-                        });
-                        release();
-                    }
-                });
-            });
+            sendTables(ctx);
             ctx.wizard.next()
         } else {
             leave(ctx)
