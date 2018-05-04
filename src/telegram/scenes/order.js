@@ -115,6 +115,15 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
         if (!inline_keyboard.length) {
             return leave(ctx);
         }
+        //clear previous order draft in case user enter again in this schene
+        ctx.session.order.firstCourse = {
+            item: undefined,
+            condiment: undefined
+        };
+        ctx.session.order.secondCourse = {
+            item: undefined,
+            sideDishes: []
+        };
         ctx.reply("Available first courses:", {
             parse_mode: "markdown",
             remove_keyboard: true,
@@ -377,6 +386,15 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
         if (!inline_keyboard.length) {
             return leave(ctx);
         }
+        //clear previous order draft in case user enter again in this schene
+        ctx.session.order.firstCourse = {
+            item: undefined,
+            condiment: undefined
+        };
+        ctx.session.order.secondCourse = {
+            item: undefined,
+            sideDishes: []
+        };
         ctx.reply("Available second courses:", {
             parse_mode: "markdown",
             remove_keyboard: true,
