@@ -86,6 +86,8 @@ function sendTables(ctx) {
                         callback_data: t._id
                     }]
                 });
+                //sort by table name
+                inline_keyboard.sort((t1, t2) => (t1[0].text).localeCompare(t2[0].text))
                 ctx.reply("Available tables:", {
                     parse_mode: "markdown",
                     force_reply: true,
