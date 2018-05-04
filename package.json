@@ -40,6 +40,7 @@
     "pdfkit": "^0.8.3",
     "raven": "^2.4.2",
     "remark": "^9.0.0",
+    "request": "^2.85.0",
     "request-ip": "^2.0.2",
     "rwlock": "^5.0.0",
     "showdown": "^1.8.6",

@@ -11,6 +11,7 @@ const Telegraf = require("telegraf"),
   rateLimit = require("telegraf-ratelimit"),
   uuidv1 = require('uuid/v1'),
   googleTTS = require('google-tts-api'),
+  request = require('request'),
   moment = require("moment"),
   delay = require("delay"),
   ReadWriteLock = require("rwlock"),
@@ -234,7 +235,17 @@ function textManager(ctx) {
     ctx.session.mainCounter++;
     client.message(ctx.message.text).then((response) => {
       //console.log(JSON.stringify(response))
-      if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
+      if (response.entities && response.entities.number && response.entities.number.length >= 0) {
+        const number = response.entities.number[0].value
+        request('http://numbersapi.com/' + number, {
+          json: true
+        }, (err, res, body) => {
+          if (err) {
+            return console.error(err);
+          }
+          replyDiscussion(ctx, ["About number *" + number + "*...", body], keyboards.btb(ctx).opts);
+        });
+      } else if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
         ctx.session.mainCounter = 0;
         console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [" + response.entities.intent[0].value + "]");
         decodeWit(ctx, response);
@@ -328,6 +339,40 @@ function decodeWit(ctx, witResponse) {
         });
         msg = ["Let's see if I remember...", "Oh yes", "You gave me " + userBeers + " beers in total."];
         break;
+      case "joke":
+        request('https://08ad1pao69.execute-api.us-east-1.amazonaws.com/dev/random_joke', {
+          json: true
+        }, (err, res, body) => {
+          if (err) {
+            return console.error(err);
+          }
+          replyDiscussion(ctx, [body.setup, body.punchline], keyboards.btb(ctx).opts);
+        });
+        return;
+      case "today":
+        const today = moment(),
+          day = today.date(),
+          month = today.month();
+        request('http://numbersapi.com/' + day + '/' + month + '/date', {
+          json: true
+        }, (err, res, body) => {
+          if (err) {
+            return console.error(err);
+          }
+          msg = "Today is *" + moment().format("dddd, MMMM Do YYYY") + "*";
+          replyDiscussion(ctx, [msg, "Interesting facts about today:", body], keyboards.btb(ctx).opts);
+        });
+        return;
+      case "autostop":
+        msg = "If I remember...";
+        ctx.reply(msg, keyboards.btb(ctx).opts).then(() => {
+          const autostop = ["45.586607", "11.623588"]; //LAT LON
+          ctx.replyWithLocation(autostop[0], autostop[1], keyboards.btb(ctx).opts).then(() => {
+            msg = "*L'Autostop*\naddress: 36050 Bolzano Vicentino VI, Italy\nmobile: +393397067253";
+            ctx.reply(msg, keyboards.btb(ctx).opts);
+          });
+        });
+        return;
       case "botlocation":
         msg = "Let me check...";
         ctx.reply(msg, keyboards.btb(ctx).opts).then(() => {
