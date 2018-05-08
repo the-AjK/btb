@@ -307,6 +307,37 @@ function decodeWit(ctx, witResponse) {
       case "order":
         ctx.scene.enter('order');
         break;
+      case "toptenuser":
+        DB.getTopTenUsers((err, topUsers) => {
+          if (err) {
+            console.error(err);
+          } else {
+            msg = ["Top ten users:"]
+            for (let i = 0; i < topUsers.length; i++) {
+              let user = topUsers[i],
+                userLink = "[" + (user.telegram.first_name || user.email) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
+              switch (i) {
+                case 0:
+                  msg.push("🥇 - " + userLink);
+                  break;
+                case 1:
+                  msg.push("🥈 - " + userLink);
+                  break;
+                case 2:
+                  msg.push("🥉 - " + userLink);
+                  break;
+                case 3:
+                  msg.push((i + 1) + " - " + userLink);
+                  break;
+                default:
+                  msg[msg.length - 1] += "\n" + (i + 1) + " - " + userLink;
+              }
+            }
+            console.log(JSON.stringify(msg))
+            replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+          }
+        });
+        return;
       case "coffee":
         //418 I'M A TEAPOT
         ctx.replyWithChatAction(ACTIONS.LOCATION_DATA);

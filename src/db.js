@@ -632,3 +632,23 @@ exports.getNotOrderUsers = (day, cb) => {
     }
   });
 };
+
+exports.getTopTenUsers = (cb) => {
+  let query = {
+          "telegram.enabled": true,
+          "telegram.banned": false,
+          "deleted": false
+      },
+      select = {
+          username: 1,
+          email: 1,
+          telegram: 1,
+          points: 1
+      },
+      options = {
+          sort: {
+              points: -1
+          }
+      };
+  User.find(query, select, options, cb);
+}
