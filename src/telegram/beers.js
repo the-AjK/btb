@@ -20,17 +20,25 @@ const schedule = require('node-schedule'),
 
 let beerLock = null,
     beerLockTimeout = 60000 * 60, //1h
+    lastUserBeer,
+    drunkBot = false,
     autoDrinkRange = 60000 * 30, //30mins
     drinkingSchedule;
 
 function drinkBeer(user) {
     const minDrinkingTime = 60000 * 45, //45min
         maxDrinkingTime = 60000 * 75, //75min
-        drinkingTime = Math.round(utils.getRandomInt(minDrinkingTime, maxDrinkingTime));
+        minDrunkDrinkingTime = 60000 * 60 * 3, //3h
+        maxDrunkDrinkingTime = 60000 * 60 * 5; //5h
+    let drinkingTime = Math.round(utils.getRandomInt(minDrinkingTime, maxDrinkingTime));
     beerLock = user;
+    if (drunkBot) {
+        drinkingTime = Math.round(utils.getRandomInt(minDrunkDrinkingTime, maxDrunkDrinkingTime));
+    }
     console.log("Beer lock for: " + beerLock.email + " [" + Math.round(drinkingTime / 60000) + "mins]");
     setTimeout(() => {
         beerLock = null;
+        drunkBot = false;
         console.log("Beer unlocked")
     }, drinkingTime);
 }
@@ -76,6 +84,19 @@ function autoDrink() {
 setDrinkingSchedule(60000 * 30);
 
 function addBeer(ctx) {
+    if (drunkBot && beerLock.username != ctx.session.user.username) {
+        ctx.reply("😵 [" + lastUserBeer.username + "](tg://user?id=" + lastUserBeer.telegram.id + ") got me drunk!", {
+            parse_mode: "markdown"
+        });
+        console.log("Drunk beer from: " + ctx.session.user.email);
+        return;
+    } else if (drunkBot) {
+        ctx.reply("😵 You got me drunk!", {
+            parse_mode: "markdown"
+        });
+        console.log("Drunk beer from: " + ctx.session.user.email);
+        return;
+    }
     if (beerLock != null) {
         if (beerLock.username == "BiteTheBot") {
             ctx.reply("Wait wait, I'm drinking my own beer!\nI can get one beer at time!", {
@@ -92,6 +113,11 @@ function addBeer(ctx) {
         }
         console.log("Locked beer from: " + ctx.session.user.email);
     } else {
+        if (lastUserBeer && lastUserBeer.email == ctx.session.user.email) {
+            drunkBot = true;
+        } else {
+            lastUserBeer = ctx.session.user;
+        }
         drinkBeer(ctx.session.user);
         const type = ctx.update.callback_query.data,
             newBeer = new DB.Beer({
