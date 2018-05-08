@@ -150,7 +150,7 @@ bot.on("callback_query", ctx => {
       });
     }
   } else if (ctx.update.callback_query.data == 'statustables') {
-    if (levels.getLevel(ctx.session.user.points) < 2) {
+    if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -171,7 +171,7 @@ bot.on("callback_query", ctx => {
       });
     }
   } else if (ctx.update.callback_query.data == 'userswithoutorder') {
-    if (levels.getLevel(ctx.session.user.points) < 2) {
+    if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
       ctx.reply("Admin stuff. Keep out.");
       return;
     } else {
@@ -309,7 +309,7 @@ function decodeWit(ctx, witResponse) {
         break;
       case "toptenuser":
         msg = ["401 - Unauthorized", "This feature is reserved for level >= 1 users"];
-        if (levels.getLevel(ctx.session.user.points) > 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+        if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
           DB.getTopTenUsers((err, topUsers) => {
             if (err) {
               console.error(err);
@@ -320,13 +320,13 @@ function decodeWit(ctx, witResponse) {
                   userLink = "[" + (user.telegram.first_name || user.email) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
                 switch (i) {
                   case 0:
-                    msg.push("🥇 - " + userLink);
+                    msg.push("🥇 " + userLink);
                     break;
                   case 1:
-                    msg.push("🥈 - " + userLink);
+                    msg.push("🥈 " + userLink);
                     break;
                   case 2:
-                    msg.push("🥉 - " + userLink);
+                    msg.push("🥉 " + userLink);
                     break;
                   case 3:
                     msg.push((i + 1) + " - " + userLink);
@@ -335,7 +335,6 @@ function decodeWit(ctx, witResponse) {
                     msg[msg.length - 1] += "\n" + (i + 1) + " - " + userLink;
                 }
               }
-              console.log(JSON.stringify(msg))
               replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
             }
           });
@@ -360,24 +359,27 @@ function decodeWit(ctx, witResponse) {
         msg = ["Well, you got " + ctx.session.user.points + " points in total.", "This means that you are a level " + levels.getLevel(ctx.session.user.points) + " user!"];
         break;
       case "beerscount":
-        let done = false,
-          userBeers = -1;
-        DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
-          if (err) {
-            console.error(err);
-          } else {
-            userBeers = beers.length;
-          }
-          done = true;
-        });
-        require('deasync').loopWhile(function () {
-          return !done;
-        });
-        msg = ["Let's see if I remember...", "Oh yes", "You gave me " + userBeers + " beers in total."];
+        msg = ["401 - Unauthorized", "This feature is reserved for level >= 1 users"];
+        if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+          let done = false,
+            userBeers = -1;
+          DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
+            if (err) {
+              console.error(err);
+            } else {
+              userBeers = beers.length;
+            }
+            done = true;
+          });
+          require('deasync').loopWhile(function () {
+            return !done;
+          });
+          msg = ["Let's see if I remember...", "Oh yes", "You gave me " + userBeers + " beers in total."];
+        }
         break;
       case "joke":
         msg = ["401 - Unauthorized", "This feature is reserved for level >= 1 users"];
-        if (levels.getLevel(ctx.session.user.points) > 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+        if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
           request('https://08ad1pao69.execute-api.us-east-1.amazonaws.com/dev/random_joke', {
             json: true
           }, (err, res, body) => {
@@ -391,19 +393,24 @@ function decodeWit(ctx, witResponse) {
           break;
         }
       case "today":
-        const today = moment(),
-          day = today.date(),
-          month = today.month();
-        request('http://numbersapi.com/' + day + '/' + month + '/date', {
-          json: true
-        }, (err, res, body) => {
-          if (err) {
-            return console.error(err);
-          }
-          msg = "Today is *" + moment().format("dddd, MMMM Do YYYY") + "*";
-          replyDiscussion(ctx, [msg, "Interesting facts about today:", body], keyboards.btb(ctx).opts);
-        });
-        return;
+        msg = ["401 - Unauthorized", "This feature is reserved for level >= 1 users"];
+        if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+          const today = moment(),
+            day = today.date(),
+            month = today.month();
+          request('http://numbersapi.com/' + day + '/' + month + '/date', {
+            json: true
+          }, (err, res, body) => {
+            if (err) {
+              return console.error(err);
+            }
+            msg = "Today is *" + moment().format("dddd, MMMM Do YYYY") + "*";
+            replyDiscussion(ctx, [msg, "Interesting facts about today:", body], keyboards.btb(ctx).opts);
+          });
+          return;
+        } else {
+          break;
+        }
       case "autostop":
         msg = "If I remember...";
         ctx.reply(msg, keyboards.btb(ctx).opts).then(() => {
@@ -415,15 +422,20 @@ function decodeWit(ctx, witResponse) {
         });
         return;
       case "botlocation":
-        msg = "Let me check...";
-        ctx.reply(msg, keyboards.btb(ctx).opts).then(() => {
-          const irelandServer = ["53.3244431", "-6.3857854"]; //LAT LON
-          ctx.replyWithLocation(irelandServer[0], irelandServer[1], keyboards.btb(ctx).opts).then(() => {
-            msg = "I'm based in *Europe*\nstate: *Ireland*\ncity: *Dublin*\ndatacenter: *AWS*\nstack: *heroku-16*";
-            ctx.reply(msg, keyboards.btb(ctx).opts);
+        msg = ["401 - Unauthorized", "This feature is reserved for level >= 1 users"];
+        if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+          msg = "Let me check...";
+          ctx.reply(msg, keyboards.btb(ctx).opts).then(() => {
+            const irelandServer = ["53.3244431", "-6.3857854"]; //LAT LON
+            ctx.replyWithLocation(irelandServer[0], irelandServer[1], keyboards.btb(ctx).opts).then(() => {
+              msg = "I'm based in *Europe*\nstate: *Ireland*\ncity: *Dublin*\ndatacenter: *AWS*\nstack: *heroku-16*";
+              ctx.reply(msg, keyboards.btb(ctx).opts);
+            });
           });
-        });
-        return;
+          return;
+        } else {
+          break;
+        }
       case "angry":
         msg = bender.getRandomTagQuote(["hi", "fuck", "ass"]);
         ctx.replyWithSticker({
@@ -554,7 +566,7 @@ bot.on(['audio', 'voice'], (ctx) => {
   if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
     broadcastMessage("Got voice from: " + ctx.session.user.email, accessLevels.root, null, true);
   }
-  if (levels.getLevel(ctx.session.user.points) > 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+  if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
     ctx.replyWithChatAction(ACTIONS.RECORD_AUDIO);
     console.log("Sent voice answer to " + ctx.session.user.email);
     sendTTSVoice(ctx, "Hey " + ctx.session.user.telegram.first_name + ", bite my metal shiny ass!");
