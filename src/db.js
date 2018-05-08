@@ -648,7 +648,8 @@ exports.getTopTenUsers = (cb) => {
       options = {
           sort: {
               points: -1
-          }
+          },
+          limit: 10
       };
   User.find(query, select, options, cb);
 }
