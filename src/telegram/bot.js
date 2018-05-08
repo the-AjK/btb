@@ -209,7 +209,7 @@ function replyDiscussion(ctx, messages, opts) {
     ctx.reply(messages.splice(0, 1).toString(), opts)
   }
   if (messages.length > 0) {
-    replyWithDelay(ctx, interval, messages);
+    replyWithDelay(ctx, interval, messages, opts);
   }
 }
 
