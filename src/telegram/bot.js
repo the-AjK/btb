@@ -235,7 +235,7 @@ function textManager(ctx) {
     ctx.session.mainCounter++;
     client.message(ctx.message.text).then((response) => {
       //console.log(JSON.stringify(response))
-      if (response.entities && response.entities.number && response.entities.number.length >= 0) {
+      if (response.entities && !response.entities.intent && response.entities.number && response.entities.number.length >= 0) {
         const number = response.entities.number[0].value
         request('http://numbersapi.com/' + number, {
           json: true
