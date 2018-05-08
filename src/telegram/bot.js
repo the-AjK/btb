@@ -308,36 +308,41 @@ function decodeWit(ctx, witResponse) {
         ctx.scene.enter('order');
         break;
       case "toptenuser":
-        DB.getTopTenUsers((err, topUsers) => {
-          if (err) {
-            console.error(err);
-          } else {
-            msg = ["Top ten users:"]
-            for (let i = 0; i < topUsers.length; i++) {
-              let user = topUsers[i],
-                userLink = "[" + (user.telegram.first_name || user.email) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
-              switch (i) {
-                case 0:
-                  msg.push("🥇 - " + userLink);
-                  break;
-                case 1:
-                  msg.push("🥈 - " + userLink);
-                  break;
-                case 2:
-                  msg.push("🥉 - " + userLink);
-                  break;
-                case 3:
-                  msg.push((i + 1) + " - " + userLink);
-                  break;
-                default:
-                  msg[msg.length - 1] += "\n" + (i + 1) + " - " + userLink;
+        msg = ["401 - Unauthorized", "This feature is reserved for level >= 1 users"];
+        if (levels.getLevel(ctx.session.user.points) > 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+          DB.getTopTenUsers((err, topUsers) => {
+            if (err) {
+              console.error(err);
+            } else {
+              msg = ["Top ten users:"]
+              for (let i = 0; i < topUsers.length; i++) {
+                let user = topUsers[i],
+                  userLink = "[" + (user.telegram.first_name || user.email) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
+                switch (i) {
+                  case 0:
+                    msg.push("🥇 - " + userLink);
+                    break;
+                  case 1:
+                    msg.push("🥈 - " + userLink);
+                    break;
+                  case 2:
+                    msg.push("🥉 - " + userLink);
+                    break;
+                  case 3:
+                    msg.push((i + 1) + " - " + userLink);
+                    break;
+                  default:
+                    msg[msg.length - 1] += "\n" + (i + 1) + " - " + userLink;
+                }
               }
+              console.log(JSON.stringify(msg))
+              replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
             }
-            console.log(JSON.stringify(msg))
-            replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
-          }
-        });
-        return;
+          });
+          return;
+        } else {
+          break;
+        }
       case "coffee":
         //418 I'M A TEAPOT
         ctx.replyWithChatAction(ACTIONS.LOCATION_DATA);
@@ -371,15 +376,20 @@ function decodeWit(ctx, witResponse) {
         msg = ["Let's see if I remember...", "Oh yes", "You gave me " + userBeers + " beers in total."];
         break;
       case "joke":
-        request('https://08ad1pao69.execute-api.us-east-1.amazonaws.com/dev/random_joke', {
-          json: true
-        }, (err, res, body) => {
-          if (err) {
-            return console.error(err);
-          }
-          replyDiscussion(ctx, [body.setup, body.punchline], keyboards.btb(ctx).opts);
-        });
-        return;
+        msg = ["401 - Unauthorized", "This feature is reserved for level >= 1 users"];
+        if (levels.getLevel(ctx.session.user.points) > 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+          request('https://08ad1pao69.execute-api.us-east-1.amazonaws.com/dev/random_joke', {
+            json: true
+          }, (err, res, body) => {
+            if (err) {
+              return console.error(err);
+            }
+            replyDiscussion(ctx, [body.setup, body.punchline], keyboards.btb(ctx).opts);
+          });
+          return;
+        } else {
+          break;
+        }
       case "today":
         const today = moment(),
           day = today.date(),
@@ -541,11 +551,14 @@ function sendTTSVoice(ctx, text, options) {
 }
 
 bot.on(['audio', 'voice'], (ctx) => {
-  ctx.replyWithChatAction(ACTIONS.RECORD_AUDIO);
   if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
     broadcastMessage("Got voice from: " + ctx.session.user.email, accessLevels.root, null, true);
   }
-  sendTTSVoice(ctx, "Hey " + ctx.session.user.telegram.first_name + ", bite my metal shiny ass!");
+  if (levels.getLevel(ctx.session.user.points) > 0 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+    ctx.replyWithChatAction(ACTIONS.RECORD_AUDIO);
+    console.log("Sent voice answer to " + ctx.session.user.email);
+    sendTTSVoice(ctx, "Hey " + ctx.session.user.telegram.first_name + ", bite my metal shiny ass!");
+  }
 });
 
 function formatMenu(menu) {
