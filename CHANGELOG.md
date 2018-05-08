@@ -1,5 +1,18 @@
 # Change Log
 
+## [1.0.0-RC15](https://github.com/the-AjK/btb/tree/1.0.0-RC15) (2018-05-08)
+
+[Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC14...1.0.0-RC15)
+
+### Changes
+
+- Add DrunkBot
+- Add topTen list
+
+### Bugfixes
+
+- Various bugfixes
+
 ## [1.0.0-RC14](https://github.com/the-AjK/btb/tree/1.0.0-RC14) (2018-05-04)
 
 [Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC13...1.0.0-RC14)
