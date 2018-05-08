@@ -19,12 +19,12 @@ const pointsLevels = {
     150: 3,
     300: 4,
     600: 5,
-    1000: 6
+    1200: 6
 };
 
 function getLevelFeatures(level) {
     const features = {
-        1: "- Rate your lunch",
+        1: "- Rate your lunch\n- Top ten users\n- Joke bot\n- Audio bot",
         2: "- Check orders status\n- Check tables status\n- Check users without orders",
         3: "- Secret stuff"
     };

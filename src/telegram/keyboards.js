@@ -76,7 +76,7 @@ module.exports = {
                     }]
                 ],
                 text = "Daily status:";
-            if (ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) {
+            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
                 inline_keyboard.push([{
                     text: 'Tables',
                     callback_data: 'statustables'

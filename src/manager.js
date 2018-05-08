@@ -397,6 +397,12 @@ function _addMenu(req, res) {
                     if (data.sendNotification && menu.enabled) {
                         if (moment(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
                             notifyDailyMenu(menu);
+                            //Add 1 point
+                            levels.addPoints(req.user._id, 1, (err, points) => {
+                                if (err) {
+                                    console.error(err);
+                                }
+                            });
                         }
                     }
                     bot.broadcastMessage("Daily Menu uploaded by *" + req.user.email + "*", accessLevels.root, null, true);
