@@ -28,8 +28,8 @@ let beerLock = null,
 function drinkBeer(user) {
     const minDrinkingTime = 60000 * 45, //45min
         maxDrinkingTime = 60000 * 75, //75min
-        minDrunkDrinkingTime = 60000 * 60 * 3, //3h
-        maxDrunkDrinkingTime = 60000 * 60 * 5; //5h
+        minDrunkDrinkingTime = 60000 * 60 * 2, //2h
+        maxDrunkDrinkingTime = 60000 * 60 * 3; //3h
     let drinkingTime = Math.round(utils.getRandomInt(minDrinkingTime, maxDrinkingTime));
     beerLock = user;
     if (drunkBot) {
