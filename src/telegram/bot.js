@@ -204,7 +204,7 @@ function replyWithDelay(ctx, interval, messages, opts) {
 }
 
 function replyDiscussion(ctx, messages, opts) {
-  if(!messages)
+  if (!messages)
     return;
   //deep copy
   messages = JSON.parse(JSON.stringify(messages))
@@ -311,6 +311,13 @@ function decodeWit(ctx, witResponse) {
         break;
       case "order":
         ctx.scene.enter('order');
+        break;
+      case "areyoudrunk":
+        if (require('./beers').botIsDrunk()) {
+          msg = ["Yeah!", "a little bit 😅"];
+        } else {
+          msg = ["Naaa", "I feel super! 😎"];
+        }
         break;
       case "toptenuser":
         msg = ["401 - Unauthorized", "This feature is reserved for level >= 1 users"];

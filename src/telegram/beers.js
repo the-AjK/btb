@@ -25,6 +25,10 @@ let beerLock = null,
     autoDrinkRange = 60000 * 30, //30mins
     drinkingSchedule;
 
+exports.botIsDrunk = function(){
+    return drunkBot;
+}
+
 function drinkBeer(user) {
     const minDrinkingTime = 60000 * 45, //45min
         maxDrinkingTime = 60000 * 75, //75min
