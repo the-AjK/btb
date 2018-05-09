@@ -299,7 +299,7 @@ function defaultAnswer(ctx) {
 
 function decodeWit(ctx, witResponse) {
   let value = witResponse.entities.intent[0].value,
-    msg = JSON.parse(JSON.stringify(require("./mind")[value]));
+    msg = require("./mind")[value];
 
   if (!msg) {
     console.log("Mind not found [" + value + "]");
