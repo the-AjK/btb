@@ -118,6 +118,22 @@ bot.use((ctx, next) => {
         return;
       }
       //Registered and enabled User found!
+      //Sync telegram profile info
+      if (dbuser.telegram.username != newUser.username ||
+        dbuser.telegram.first_name != newUser.first_name ||
+        dbuser.telegram.last_name != newUser.last_name) {
+        dbuser.telegram.username = newUser.username;
+        dbuser.telegram.first_name = newUser.first_name;
+        dbuser.telegram.last_name = newUser.last_name;
+        dbuser.updatedAt = moment().format();
+        dbuser.save((err) => {
+          if (err) {
+            console.error(err);
+          } else {
+            console.log("Telegram user " + newUser.username + " (" + newUser.id + ") profile has been syncronized");
+          }
+        });
+      }
       ctx.session.user = dbuser;
       return next();
     });
