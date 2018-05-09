@@ -354,7 +354,7 @@ function decodeWit(ctx, witResponse) {
         }).then(() => {
           replyDiscussion(ctx, ["Status code: *418*", "I'm a teapot", "BTB refuses to brew coffee"], keyboards.btb(ctx).opts);
         });
-        break;
+        return;
       case "points":
         msg = ["Well, you got " + ctx.session.user.points + " points in total.", "This means that you are a level " + levels.getLevel(ctx.session.user.points) + " user!"];
         break;
