@@ -295,9 +295,10 @@ function defaultAnswer(ctx) {
 
 function decodeWit(ctx, witResponse) {
   let value = witResponse.entities.intent[0].value,
-    msg = require("./mind")[value];
+    msg = JSON.parse(JSON.stringify(require("./mind")[value]));
 
   if (!msg) {
+    console.log("Mind not found [" + value + "]");
     switch (value) {
       case "menu":
         _getDailyMenu((err, text, menu) => {
@@ -354,7 +355,7 @@ function decodeWit(ctx, witResponse) {
         }).then(() => {
           replyDiscussion(ctx, ["Status code: *418*", "I'm a teapot", "BTB refuses to brew coffee"], keyboards.btb(ctx).opts);
         });
-        break;
+        return;
       case "points":
         msg = ["Well, you got " + ctx.session.user.points + " points in total.", "This means that you are a level " + levels.getLevel(ctx.session.user.points) + " user!"];
         break;
