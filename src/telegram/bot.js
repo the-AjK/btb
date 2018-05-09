@@ -204,6 +204,10 @@ function replyWithDelay(ctx, interval, messages, opts) {
 }
 
 function replyDiscussion(ctx, messages, opts) {
+  if(!messages)
+    return;
+  //deep copy
+  messages = JSON.parse(JSON.stringify(messages))
   const interval = 2500;
   if (messages.length > 0) {
     ctx.reply(messages.splice(0, 1).toString(), opts)
