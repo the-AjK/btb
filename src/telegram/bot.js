@@ -204,6 +204,10 @@ function replyWithDelay(ctx, interval, messages, opts) {
 }
 
 function replyDiscussion(ctx, messages, opts) {
+  if(!messages)
+    return;
+  //deep copy
+  messages = JSON.parse(JSON.stringify(messages))
   const interval = 2500;
   if (messages.length > 0) {
     ctx.reply(messages.splice(0, 1).toString(), opts)
@@ -295,7 +299,7 @@ function defaultAnswer(ctx) {
 
 function decodeWit(ctx, witResponse) {
   let value = witResponse.entities.intent[0].value,
-    msg = JSON.parse(JSON.stringify(require("./mind")[value]));
+    msg = require("./mind")[value];
 
   if (!msg) {
     console.log("Mind not found [" + value + "]");
