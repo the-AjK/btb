@@ -329,7 +329,7 @@ function decodeWit(ctx, witResponse) {
               msg = ["Top ten users:"]
               for (let i = 0; i < topUsers.length; i++) {
                 let user = topUsers[i],
-                  userLink = "[" + (user.telegram.first_name || user.email) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
+                  userLink = "[" + (user.telegram.first_name + " " + user.telegram.last_name) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
                 switch (i) {
                   case 0:
                     msg.push("🥇 " + userLink);
@@ -490,7 +490,7 @@ bot.mention(['@tables', '@table', '@Tables', '@Table'], (ctx) => {
       if (err) {
         ctx.reply(err);
       } else {
-        let message = "[" + (ctx.session.user.telegram.first_name || ctx.session.user.email) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text,
+        let message = "[" + (ctx.session.user.telegram.first_name + " " + ctx.session.user.telegram.last_name) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text,
           userMessage = "Broadcast service",
           userHasOrdered = false,
           counter = 0;
@@ -621,7 +621,7 @@ function formatUsersWithoutOrder(users, user) {
   let text = "Users who didn't place an order:\n";
   for (let i = 0; i < users.length; i++) {
     let u = users[i];
-    text = text + "\n - [" + (u.telegram.first_name || u.email) + "](tg://user?id=" + u.telegram.id + ")";
+    text = text + "\n - [" + (u.telegram.first_name + " " + u.telegram.last_name) + "](tg://user?id=" + u.telegram.id + ")";
     if (u._id.equals(user._id)) {
       text = text + " (*You*)";
     }
@@ -665,7 +665,7 @@ function formatOrder(order, user) {
   if (tableUsers && tableUsers.length) {
     for (let i = 0; i < tableUsers.length; i++) {
       let tableUser = tableUsers[i];
-      text = text + "\n - [" + (tableUser.telegram.first_name || tableUser.email) + "](tg://user?id=" + tableUser.telegram.id + ")";
+      text = text + "\n - [" + (tableUser.telegram.first_name + " " + tableUser.telegram.last_name) + "](tg://user?id=" + tableUser.telegram.id + ")";
       if (tableUser._id.equals(user._id)) {
         text = text + " (*You*)";
       }
@@ -715,7 +715,7 @@ function formatTables(tables, user) {
       for (let i = 0; i < tableOrders.length; i++) {
         let tableUser = tableOrders[i].owner,
           userOrder = tableOrders[i],
-          username = (tableUser.telegram.first_name || tableUser.email); //.replace(/[^a-zA-Z ]/g, "");
+          username = (tableUser.telegram.first_name + " " + tableUser.telegram.last_name); //.replace(/[^a-zA-Z ]/g, "");
         text = text + "\n - [" + username + "](tg://user?id=" + tableUser.telegram.id + ")";
         //text = text + "\n - " + username + "";
         if (tableUser._id.equals(user._id)) {
