@@ -413,28 +413,30 @@ function decodeWit(ctx, witResponse) {
             if (err) {
               console.error(err);
             } else {
-              msg = ["Top ten users:"]
-              for (let i = 0; i < topUsers.length; i++) {
-                let user = topUsers[i],
-                  userLink = "[" + (user.telegram.first_name + (user.telegram.last_name ? (" " + user.telegram.last_name) : "")) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
-                switch (i) {
-                  case 0:
-                    msg.push("🥇 " + userLink);
-                    break;
-                  case 1:
-                    msg.push("🥈 " + userLink);
-                    break;
-                  case 2:
-                    msg.push("🥉 " + userLink);
-                    break;
-                  case 3:
-                    msg.push((i + 1) + " - " + userLink);
-                    break;
-                  default:
-                    msg[msg.length - 1] += "\n" + (i + 1) + " - " + userLink;
+              typingEffect(ctx, "Top ten users:", () => {
+                msg = []
+                for (let i = 0; i < topUsers.length; i++) {
+                  let user = topUsers[i],
+                    userLink = "[" + (user.telegram.first_name + (user.telegram.last_name ? (" " + user.telegram.last_name) : "")) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
+                  switch (i) {
+                    case 0:
+                      msg.push("🥇 " + userLink);
+                      break;
+                    case 1:
+                      msg.push("🥈 " + userLink);
+                      break;
+                    case 2:
+                      msg.push("🥉 " + userLink);
+                      break;
+                    case 3:
+                      msg.push((i + 1) + " - " + userLink);
+                      break;
+                    default:
+                      msg[msg.length - 1] += "\n" + (i + 1) + " - " + userLink;
+                  }
                 }
-              }
-              replies(ctx, msg, keyboards.btb(ctx).opts);
+                replies(ctx, msg, keyboards.btb(ctx).opts);
+              });
             }
           });
           return;
