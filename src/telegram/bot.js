@@ -13,6 +13,7 @@ const Telegraf = require("telegraf"),
   googleTTS = require('google-tts-api'),
   request = require('request'),
   moment = require("moment"),
+  async = require("async"),
   delay = require("delay"),
   ReadWriteLock = require("rwlock"),
   bender = require("./bender"),
@@ -231,6 +232,92 @@ function replyDiscussion(ctx, messages, opts) {
   if (messages.length > 0) {
     replyWithDelay(ctx, interval, messages, opts);
   }
+}
+
+// Sequential replies
+function sequentialReplies(ctx, interval, messages, opts, callback) {
+  const firstMessage = messages.splice(0, 1).toString();
+  if (!firstMessage.length)
+    return callback();
+  const funList = [(cb) => {
+    ctx.reply(firstMessage, opts).then((m) => {
+      cb(null, m);
+    }, (err) => {
+      cb(err);
+    });
+  }];
+  for (let i = 0; i < messages.length; i++) {
+    funList.push(function (text) {
+      return (m, cb) => {
+        if (!text.length)
+          //skip
+          return cb(null, m);
+        setTimeout(() => {
+          ctx.reply(text, opts).then((m) => {
+            cb(null, m);
+          }, (err) => {
+            cb(err);
+          });
+        }, interval);
+        if (interval >= 1000)
+          ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
+      }
+    }(messages[i]));
+  }
+  async.waterfall(funList, (err, result) => {
+    if (err) {
+      console.error(err);
+    }
+    if (callback)
+      callback();
+  });
+}
+
+// Sequential message editing
+function animation(ctx, interval, animations, opts, callback) {
+  animations = JSON.parse(JSON.stringify(animations));
+  const firstAnim = animations.splice(0, 1).toString();
+  if (!firstAnim.length)
+    return callback();
+  const funList = [(cb) => {
+    ctx.reply(firstAnim, opts).then((m) => {
+      cb(null, m);
+    }, (err) => {
+      cb(err);
+    });
+  }];
+  for (let i = 0; i < animations.length; i++) {
+    funList.push(function (text) {
+      return (m, cb) => {
+        if (!text.length || text.trim() == m.text.trim())
+          //skip
+          return cb(null, m);
+        setTimeout(() => {
+          bot.telegram.editMessageText(m.chat.id, m.message_id, null, text, opts).then((m) => {
+            cb(null, m);
+          }, (err) => {
+            cb(err);
+          });
+        }, interval);
+      }
+    }(animations[i]));
+  }
+  async.waterfall(funList, (err, result) => {
+    if (err) {
+      console.error(err);
+    }
+    if (callback)
+      callback();
+  });
+}
+
+// Sequential message editing with typing effect
+function typingEffect(ctx, text, callback) {
+  let animations = [];
+  for (let i = 1; i < text.length + 1; i++) {
+    animations.push(text.substring(0, i))
+  }
+  animation(ctx, 100, animations, null, callback);
 }
 
 function textManager(ctx) {
