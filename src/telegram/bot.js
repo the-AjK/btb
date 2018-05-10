@@ -13,6 +13,7 @@ const Telegraf = require("telegraf"),
   googleTTS = require('google-tts-api'),
   request = require('request'),
   moment = require("moment"),
+  async = require("async"),
   delay = require("delay"),
   ReadWriteLock = require("rwlock"),
   bender = require("./bender"),
@@ -124,13 +125,13 @@ bot.use((ctx, next) => {
         dbuser.telegram.last_name != newUser.last_name) {
         dbuser.telegram.username = newUser.username;
         dbuser.telegram.first_name = newUser.first_name;
-        dbuser.telegram.last_name = newUser.last_name || "";
-        dbuser.updatedAt = moment().format();
+        dbuser.telegram.last_name = newUser.last_name;
+        //dbuser.updatedAt = moment().format();
         dbuser.save((err) => {
           if (err) {
             console.error(err);
           } else {
-            console.log("Telegram user " + newUser.username + " (" + newUser.id + ") profile has been syncronized");
+            console.log("Telegram user " + dbuser.email + " (" + newUser.id + ") profile has been updated and syncronized");
           }
         });
       }
@@ -206,31 +207,97 @@ bot.on("callback_query", ctx => {
   }
 });
 
-function replyWithDelay(ctx, interval, messages, opts) {
-  delay(interval, messages)
-    .then(_messages => {
-      if (_messages.length > 0) {
-        ctx.reply(_messages.splice(0, 1).toString(), opts)
-      }
-      if (_messages.length > 0) {
-        ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-        replyWithDelay(ctx, interval, _messages, opts);
-      }
-    });
+// sequentialReplies wrapper with constant interval
+function replies(ctx, messages, opts, callback) {
+  const interval = 2500;
+  sequentialReplies(ctx, interval, messages, opts, callback);
 }
 
-function replyDiscussion(ctx, messages, opts) {
-  if (!messages)
-    return;
-  //deep copy
-  messages = JSON.parse(JSON.stringify(messages))
-  const interval = 2500;
-  if (messages.length > 0) {
-    ctx.reply(messages.splice(0, 1).toString(), opts)
+// Sequential replies
+function sequentialReplies(ctx, interval, messages, opts, callback) {
+  messages = JSON.parse(JSON.stringify(messages));
+  const firstMessage = messages.splice(0, 1).toString();
+  if (!firstMessage.length)
+    return callback();
+  const funList = [(cb) => {
+    ctx.reply(firstMessage, opts).then((m) => {
+      cb(null, m);
+    }, (err) => {
+      cb(err);
+    });
+  }];
+  for (let i = 0; i < messages.length; i++) {
+    funList.push(function (text) {
+      return (m, cb) => {
+        if (!text.length)
+          //skip
+          return cb(null, m);
+        setTimeout(() => {
+          ctx.reply(text, opts).then((m) => {
+            cb(null, m);
+          }, (err) => {
+            cb(err);
+          });
+        }, interval);
+        if (interval >= 1000)
+          ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
+      }
+    }(messages[i]));
   }
-  if (messages.length > 0) {
-    replyWithDelay(ctx, interval, messages, opts);
+  async.waterfall(funList, (err, result) => {
+    if (err) {
+      console.error(err);
+    }
+    if (callback)
+      callback();
+  });
+}
+
+// Sequential message editing
+function animation(ctx, interval, animations, opts, callback) {
+  animations = JSON.parse(JSON.stringify(animations));
+  const firstAnim = animations.splice(0, 1).toString();
+  if (!firstAnim.length)
+    return callback();
+  const funList = [(cb) => {
+    ctx.reply(firstAnim, opts).then((m) => {
+      cb(null, m);
+    }, (err) => {
+      cb(err);
+    });
+  }];
+  for (let i = 0; i < animations.length; i++) {
+    funList.push(function (text) {
+      return (m, cb) => {
+        if (!text.length || text.trim() == m.text.trim())
+          //skip
+          return cb(null, m);
+        setTimeout(() => {
+          bot.telegram.editMessageText(m.chat.id, m.message_id, null, text, opts).then((m) => {
+            cb(null, m);
+          }, (err) => {
+            cb(err);
+          });
+        }, interval);
+      }
+    }(animations[i]));
   }
+  async.waterfall(funList, (err, result) => {
+    if (err) {
+      console.error(err);
+    }
+    if (callback)
+      callback();
+  });
+}
+
+// Sequential message editing with typing effect
+function typingEffect(ctx, text, callback) {
+  let animations = [];
+  for (let i = 1; i < text.length + 1; i++) {
+    animations.push(text.substring(0, i))
+  }
+  animation(ctx, 100, animations, null, callback);
 }
 
 function textManager(ctx) {
@@ -256,14 +323,18 @@ function textManager(ctx) {
     client.message(ctx.message.text).then((response) => {
       //console.log(JSON.stringify(response))
       if (response.entities && !response.entities.intent && response.entities.number && response.entities.number.length >= 0) {
-        const number = response.entities.number[0].value
+        const number = response.entities.number[0].value;
+        console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [-number-]");
         request('http://numbersapi.com/' + number, {
           json: true
         }, (err, res, body) => {
           if (err) {
             return console.error(err);
+          } else if (res && res.statusCode == 200) {
+            replies(ctx, ["About number *" + number + "*...", body], keyboards.btb(ctx).opts);
+          } else {
+            replies(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
           }
-          replyDiscussion(ctx, ["About number *" + number + "*...", body], keyboards.btb(ctx).opts);
         });
       } else if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
         ctx.session.mainCounter = 0;
@@ -297,7 +368,7 @@ function defaultAnswer(ctx) {
     ctx.replyWithSticker({
       source: require('fs').createReadStream(__dirname + "/img/11.webp")
     }).then(() => {
-      replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+      replies(ctx, msg, keyboards.btb(ctx).opts);
     });
     levels.removePoints(ctx.session.user._id, 1, (err, points) => {
       if (err) {
@@ -308,7 +379,7 @@ function defaultAnswer(ctx) {
     ctx.replyWithSticker({
       source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
     }).then(() => {
-      replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+      replies(ctx, msg, keyboards.btb(ctx).opts);
     });
   }
 }
@@ -318,7 +389,7 @@ function decodeWit(ctx, witResponse) {
     msg = require("./mind")[value];
 
   if (!msg) {
-    console.log("Mind not found [" + value + "]");
+    //console.log("Mind not found [" + value + "]");
     switch (value) {
       case "menu":
         _getDailyMenu((err, text, menu) => {
@@ -342,28 +413,30 @@ function decodeWit(ctx, witResponse) {
             if (err) {
               console.error(err);
             } else {
-              msg = ["Top ten users:"]
-              for (let i = 0; i < topUsers.length; i++) {
-                let user = topUsers[i],
-                  userLink = "[" + (user.telegram.first_name + (user.telegram.last_name ? (" " + user.telegram.last_name) : "")) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
-                switch (i) {
-                  case 0:
-                    msg.push("🥇 " + userLink);
-                    break;
-                  case 1:
-                    msg.push("🥈 " + userLink);
-                    break;
-                  case 2:
-                    msg.push("🥉 " + userLink);
-                    break;
-                  case 3:
-                    msg.push((i + 1) + " - " + userLink);
-                    break;
-                  default:
-                    msg[msg.length - 1] += "\n" + (i + 1) + " - " + userLink;
+              typingEffect(ctx, "Top ten users:", () => {
+                msg = []
+                for (let i = 0; i < topUsers.length; i++) {
+                  let user = topUsers[i],
+                    userLink = "[" + (user.telegram.first_name + (user.telegram.last_name ? (" " + user.telegram.last_name) : "")) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
+                  switch (i) {
+                    case 0:
+                      msg.push("🥇 " + userLink);
+                      break;
+                    case 1:
+                      msg.push("🥈 " + userLink);
+                      break;
+                    case 2:
+                      msg.push("🥉 " + userLink);
+                      break;
+                    case 3:
+                      msg.push((i + 1) + " - " + userLink);
+                      break;
+                    default:
+                      msg[msg.length - 1] += "\n" + (i + 1) + " - " + userLink;
+                  }
                 }
-              }
-              replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+                replies(ctx, msg, keyboards.btb(ctx).opts);
+              });
             }
           });
           return;
@@ -380,7 +453,7 @@ function decodeWit(ctx, witResponse) {
         ctx.replyWithSticker({
           source: require('fs').createReadStream(__dirname + "/img/coffee.gif")
         }).then(() => {
-          replyDiscussion(ctx, ["Status code: *418*", "I'm a teapot", "BTB refuses to brew coffee"], keyboards.btb(ctx).opts);
+          replies(ctx, ["Status code: *418*", "I'm a teapot", "BTB refuses to brew coffee"], keyboards.btb(ctx).opts);
         });
         return;
       case "points":
@@ -413,8 +486,11 @@ function decodeWit(ctx, witResponse) {
           }, (err, res, body) => {
             if (err) {
               return console.error(err);
+            } else if (res && res.statusCode == 200) {
+              replies(ctx, [body.setup, body.punchline], keyboards.btb(ctx).opts);
+            } else {
+              replies(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
             }
-            replyDiscussion(ctx, [body.setup, body.punchline], keyboards.btb(ctx).opts);
           });
           return;
         } else {
@@ -431,9 +507,12 @@ function decodeWit(ctx, witResponse) {
           }, (err, res, body) => {
             if (err) {
               return console.error(err);
+            } else if (res && res.statusCode == 200) {
+              msg = "Today is *" + moment().format("dddd, MMMM Do YYYY") + "*";
+              replies(ctx, [msg, "Interesting facts about today:", body], keyboards.btb(ctx).opts);
+            } else {
+              replies(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
             }
-            msg = "Today is *" + moment().format("dddd, MMMM Do YYYY") + "*";
-            replyDiscussion(ctx, [msg, "Interesting facts about today:", body], keyboards.btb(ctx).opts);
           });
           return;
         } else {
@@ -469,7 +548,7 @@ function decodeWit(ctx, witResponse) {
         ctx.replyWithSticker({
           source: require('fs').createReadStream(__dirname + "/img/11.webp")
         }).then(() => {
-          replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+          replies(ctx, msg, keyboards.btb(ctx).opts);
         });
         return;
       default:
@@ -477,7 +556,7 @@ function decodeWit(ctx, witResponse) {
         msg = ["Ehm", "I don't know"]
     }
   }
-  replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+  replies(ctx, msg, keyboards.btb(ctx).opts);
 }
 
 function parseMention(ctx) {
@@ -574,7 +653,7 @@ bot.on(['document', 'video', 'sticker', 'photo'], (ctx) => {
   ctx.replyWithSticker({
     source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
   }).then(() => {
-    replyDiscussion(ctx, bender.getRandomTagQuote(["ass"]));
+    replies(ctx, bender.getRandomTagQuote(["ass"]));
   });
 });
 
