@@ -124,13 +124,13 @@ bot.use((ctx, next) => {
         dbuser.telegram.last_name != newUser.last_name) {
         dbuser.telegram.username = newUser.username;
         dbuser.telegram.first_name = newUser.first_name;
-        dbuser.telegram.last_name = newUser.last_name || "";
-        dbuser.updatedAt = moment().format();
+        dbuser.telegram.last_name = newUser.last_name;
+        //dbuser.updatedAt = moment().format();
         dbuser.save((err) => {
           if (err) {
             console.error(err);
           } else {
-            console.log("Telegram user " + newUser.username + " (" + newUser.id + ") profile has been syncronized");
+            console.log("Telegram user " + dbuser.email + " (" + newUser.id + ") profile has been updated and syncronized");
           }
         });
       }
