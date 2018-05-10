@@ -207,35 +207,15 @@ bot.on("callback_query", ctx => {
   }
 });
 
-function replyWithDelay(ctx, interval, messages, opts) {
-  delay(interval, messages)
-    .then(_messages => {
-      if (_messages.length > 0) {
-        ctx.reply(_messages.splice(0, 1).toString(), opts)
-      }
-      if (_messages.length > 0) {
-        ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-        replyWithDelay(ctx, interval, _messages, opts);
-      }
-    });
-}
-
-function replyDiscussion(ctx, messages, opts) {
-  if (!messages)
-    return;
-  //deep copy
-  messages = JSON.parse(JSON.stringify(messages))
+// sequentialReplies wrapper with constant interval
+function replies(ctx, messages, opts, callback) {
   const interval = 2500;
-  if (messages.length > 0) {
-    ctx.reply(messages.splice(0, 1).toString(), opts)
-  }
-  if (messages.length > 0) {
-    replyWithDelay(ctx, interval, messages, opts);
-  }
+  sequentialReplies(ctx, interval, messages, opts, callback);
 }
 
 // Sequential replies
 function sequentialReplies(ctx, interval, messages, opts, callback) {
+  messages = JSON.parse(JSON.stringify(messages));
   const firstMessage = messages.splice(0, 1).toString();
   if (!firstMessage.length)
     return callback();
@@ -351,9 +331,9 @@ function textManager(ctx) {
           if (err) {
             return console.error(err);
           } else if (res && res.statusCode == 200) {
-            replyDiscussion(ctx, ["About number *" + number + "*...", body], keyboards.btb(ctx).opts);
+            replies(ctx, ["About number *" + number + "*...", body], keyboards.btb(ctx).opts);
           } else {
-            replyDiscussion(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
+            replies(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
           }
         });
       } else if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
@@ -388,7 +368,7 @@ function defaultAnswer(ctx) {
     ctx.replyWithSticker({
       source: require('fs').createReadStream(__dirname + "/img/11.webp")
     }).then(() => {
-      replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+      replies(ctx, msg, keyboards.btb(ctx).opts);
     });
     levels.removePoints(ctx.session.user._id, 1, (err, points) => {
       if (err) {
@@ -399,7 +379,7 @@ function defaultAnswer(ctx) {
     ctx.replyWithSticker({
       source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
     }).then(() => {
-      replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+      replies(ctx, msg, keyboards.btb(ctx).opts);
     });
   }
 }
@@ -454,7 +434,7 @@ function decodeWit(ctx, witResponse) {
                     msg[msg.length - 1] += "\n" + (i + 1) + " - " + userLink;
                 }
               }
-              replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+              replies(ctx, msg, keyboards.btb(ctx).opts);
             }
           });
           return;
@@ -471,7 +451,7 @@ function decodeWit(ctx, witResponse) {
         ctx.replyWithSticker({
           source: require('fs').createReadStream(__dirname + "/img/coffee.gif")
         }).then(() => {
-          replyDiscussion(ctx, ["Status code: *418*", "I'm a teapot", "BTB refuses to brew coffee"], keyboards.btb(ctx).opts);
+          replies(ctx, ["Status code: *418*", "I'm a teapot", "BTB refuses to brew coffee"], keyboards.btb(ctx).opts);
         });
         return;
       case "points":
@@ -505,9 +485,9 @@ function decodeWit(ctx, witResponse) {
             if (err) {
               return console.error(err);
             } else if (res && res.statusCode == 200) {
-              replyDiscussion(ctx, [body.setup, body.punchline], keyboards.btb(ctx).opts);
+              replies(ctx, [body.setup, body.punchline], keyboards.btb(ctx).opts);
             } else {
-              replyDiscussion(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
+              replies(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
             }
           });
           return;
@@ -527,9 +507,9 @@ function decodeWit(ctx, witResponse) {
               return console.error(err);
             } else if (res && res.statusCode == 200) {
               msg = "Today is *" + moment().format("dddd, MMMM Do YYYY") + "*";
-              replyDiscussion(ctx, [msg, "Interesting facts about today:", body], keyboards.btb(ctx).opts);
+              replies(ctx, [msg, "Interesting facts about today:", body], keyboards.btb(ctx).opts);
             } else {
-              replyDiscussion(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
+              replies(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
             }
           });
           return;
@@ -566,7 +546,7 @@ function decodeWit(ctx, witResponse) {
         ctx.replyWithSticker({
           source: require('fs').createReadStream(__dirname + "/img/11.webp")
         }).then(() => {
-          replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+          replies(ctx, msg, keyboards.btb(ctx).opts);
         });
         return;
       default:
@@ -574,7 +554,7 @@ function decodeWit(ctx, witResponse) {
         msg = ["Ehm", "I don't know"]
     }
   }
-  replyDiscussion(ctx, msg, keyboards.btb(ctx).opts);
+  replies(ctx, msg, keyboards.btb(ctx).opts);
 }
 
 function parseMention(ctx) {
@@ -671,7 +651,7 @@ bot.on(['document', 'video', 'sticker', 'photo'], (ctx) => {
   ctx.replyWithSticker({
     source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
   }).then(() => {
-    replyDiscussion(ctx, bender.getRandomTagQuote(["ass"]));
+    replies(ctx, bender.getRandomTagQuote(["ass"]));
   });
 });
 
