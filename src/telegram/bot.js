@@ -262,8 +262,11 @@ function textManager(ctx) {
         }, (err, res, body) => {
           if (err) {
             return console.error(err);
+          } else if (res && res.statusCode == 200) {
+            replyDiscussion(ctx, ["About number *" + number + "*...", body], keyboards.btb(ctx).opts);
+          } else {
+            replyDiscussion(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
           }
-          replyDiscussion(ctx, ["About number *" + number + "*...", body], keyboards.btb(ctx).opts);
         });
       } else if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
         ctx.session.mainCounter = 0;
@@ -413,8 +416,11 @@ function decodeWit(ctx, witResponse) {
           }, (err, res, body) => {
             if (err) {
               return console.error(err);
+            } else if (res && res.statusCode == 200) {
+              replyDiscussion(ctx, [body.setup, body.punchline], keyboards.btb(ctx).opts);
+            } else {
+              replyDiscussion(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
             }
-            replyDiscussion(ctx, [body.setup, body.punchline], keyboards.btb(ctx).opts);
           });
           return;
         } else {
@@ -431,9 +437,12 @@ function decodeWit(ctx, witResponse) {
           }, (err, res, body) => {
             if (err) {
               return console.error(err);
+            } else if (res && res.statusCode == 200) {
+              msg = "Today is *" + moment().format("dddd, MMMM Do YYYY") + "*";
+              replyDiscussion(ctx, [msg, "Interesting facts about today:", body], keyboards.btb(ctx).opts);
+            } else {
+              replyDiscussion(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
             }
-            msg = "Today is *" + moment().format("dddd, MMMM Do YYYY") + "*";
-            replyDiscussion(ctx, [msg, "Interesting facts about today:", body], keyboards.btb(ctx).opts);
           });
           return;
         } else {
