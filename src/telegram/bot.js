@@ -322,7 +322,7 @@ function decodeWit(ctx, witResponse) {
     msg = require("./mind")[value];
 
   if (!msg) {
-    console.log("Mind not found [" + value + "]");
+    //console.log("Mind not found [" + value + "]");
     switch (value) {
       case "menu":
         _getDailyMenu((err, text, menu) => {
