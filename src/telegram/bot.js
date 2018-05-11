@@ -595,7 +595,7 @@ bot.mention(['@tables', '@table', '@Tables', '@Table'], (ctx) => {
               bot.telegram.sendMessage(orders[i].owner.telegram.id, message, {
                 parse_mode: "markdown"
               }).then(() => {
-                console.log("Mention tables sent to " + orders[j].owner.telegram.id + "-" + orders[j].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
+                console.log("Mention tables sent to " + orders[i].owner.telegram.id + "-" + orders[i].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
               });
               counter += 1;
             } else {

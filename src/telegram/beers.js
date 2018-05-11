@@ -25,15 +25,15 @@ let beerLock = null,
     autoDrinkRange = 60000 * 30, //30mins
     drinkingSchedule;
 
-exports.botIsDrunk = function(){
+exports.botIsDrunk = function () {
     return drunkBot;
 }
 
 function drinkBeer(user) {
-    const minDrinkingTime = 60000 * 45, //45min
-        maxDrinkingTime = 60000 * 75, //75min
-        minDrunkDrinkingTime = 60000 * 60 * 2, //2h
-        maxDrunkDrinkingTime = 60000 * 60 * 3; //3h
+    const minDrinkingTime = 60000 * 30, //30min
+        maxDrinkingTime = 60000 * 60, //60min
+        minDrunkDrinkingTime = 60000 * 30 * 3, //1,5h
+        maxDrunkDrinkingTime = 60000 * 30 * 5; //2,5h
     let drinkingTime = Math.round(utils.getRandomInt(minDrinkingTime, maxDrinkingTime));
     beerLock = user;
     if (drunkBot) {
@@ -138,18 +138,33 @@ function addBeer(ctx) {
             ctx.reply("Oh yeah, let me drink it...");
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
             setTimeout(() => {
-                ctx.reply("Thank you bro!");
-                levels.addPoints(ctx.session.user._id, 1, (err, points) => {
-                    if (err) {
-                        console.error(err);
-                        return;
-                    }
-                    //update user session points
-                    ctx.session.user.points = points;
-                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                        bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
-                    }
-                });
+                if (drunkBot) {
+                    ctx.reply("😵 You got me drunk!");
+                    levels.removePoints(ctx.session.user._id, 1, (err, points) => {
+                        if (err) {
+                            console.error(err);
+                            return;
+                        }
+                        //update user session points
+                        ctx.session.user.points = points;
+                        if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                            bot.broadcastMessage("New drunk beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
+                        }
+                    });
+                } else {
+                    ctx.reply("Thank you bro!");
+                    levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                        if (err) {
+                            console.error(err);
+                            return;
+                        }
+                        //update user session points
+                        ctx.session.user.points = points;
+                        if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                            bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
+                        }
+                    });
+                }
             }, type == 'pint' ? 3000 : 2000)
         });
     }
