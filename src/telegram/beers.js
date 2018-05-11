@@ -30,10 +30,10 @@ exports.botIsDrunk = function () {
 }
 
 function drinkBeer(user) {
-    const minDrinkingTime = 60000 * 45, //45min
-        maxDrinkingTime = 60000 * 75, //75min
-        minDrunkDrinkingTime = 60000 * 60 * 2, //2h
-        maxDrunkDrinkingTime = 60000 * 60 * 3; //3h
+    const minDrinkingTime = 60000 * 30, //30min
+        maxDrinkingTime = 60000 * 60, //60min
+        minDrunkDrinkingTime = 60000 * 30 * 3, //1,5h
+        maxDrunkDrinkingTime = 60000 * 30 * 5; //2,5h
     let drinkingTime = Math.round(utils.getRandomInt(minDrinkingTime, maxDrinkingTime));
     beerLock = user;
     if (drunkBot) {
