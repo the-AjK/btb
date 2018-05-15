@@ -707,6 +707,10 @@ function textManager(ctx) {
         ctx.scene.enter('firstCourseWizard');
     } else if (keyboards.order(ctx).cmd.second == ctx.message.text) {
         ctx.scene.enter('secondCourseWizard');
+    } else if (ctx.message.text == keyboards.order(ctx).cmd.back) {
+        //back button
+        ctx.scene.leave();
+        ctx.reply('ACK', keyboards.btb(ctx).opts);
     } else {
         ctx.scene.leave();
         //fallback to main bot scene

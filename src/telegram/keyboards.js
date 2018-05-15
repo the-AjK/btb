@@ -104,7 +104,7 @@ module.exports = {
             cmd = {
                 first: "First course",
                 second: "Second course",
-                cancel: "◀️ Back",
+                back: "◀️ Back",
             };
         keyboard.push([{
             text: cmd.first
@@ -113,7 +113,7 @@ module.exports = {
             text: cmd.second
         }]);
         keyboard.push([{
-            text: cmd.cancel
+            text: cmd.back
         }]);
 
         let obj = {
