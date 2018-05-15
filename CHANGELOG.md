@@ -1,5 +1,18 @@
 # Change Log
 
+## [1.0.0-RC16](https://github.com/the-AjK/btb/tree/1.0.0-RC16) (2018-05-16)
+
+[Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC15...1.0.0-RC16)
+
+### Changes
+
+- Add Slot
+- Menu restyle
+
+### Bugfixes
+
+- Various bugfixes
+
 ## [1.0.0-RC15](https://github.com/the-AjK/btb/tree/1.0.0-RC15) (2018-05-08)
 
 [Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC14...1.0.0-RC15)
