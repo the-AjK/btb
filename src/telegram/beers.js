@@ -119,7 +119,7 @@ function addBeer(ctx) {
         }
         console.log("Locked beer from: " + ctx.session.user.email);
     } else {
-        if (lastUserBeer && lastUserBeer.email == ctx.session.user.email) {
+        if (lastUserBeer && lastUserBeer.email == ctx.session.user.email && levels.getLevel(ctx.session.user.points) > 0) {
             drunkBot = true;
         } else {
             lastUserBeer = ctx.session.user;
