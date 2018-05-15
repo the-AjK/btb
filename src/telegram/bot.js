@@ -31,10 +31,10 @@ const Telegraf = require("telegraf"),
 
 moment.locale("en");
 
-// Set limit to 1 message per half seconds
+// Set limit to 5 message per seconds
 const limitConfig = {
-  window: 500,
-  limit: 1,
+  window: 1000,
+  limit: 5,
   onLimitExceeded: (ctx, next) => ctx.reply("Hey bro, calm down...")
 };
 
