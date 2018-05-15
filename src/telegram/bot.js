@@ -66,6 +66,7 @@ stage.register(require('./scenes/order').secondCourse)
 stage.register(require('./scenes/settings').scene)
 stage.register(require('./scenes/register').scene)
 stage.register(require('./scenes/orderRating').scene)
+stage.register(require('./scenes/slot').scene)
 
 bot.use(session());
 bot.use(stage.middleware());
@@ -249,7 +250,7 @@ function sequentialReplies(ctx, interval, messages, opts, callback) {
       console.error(err);
     }
     if (callback)
-      callback();
+      callback(err, result);
   });
 }
 
@@ -287,9 +288,10 @@ function animation(ctx, interval, animations, opts, callback) {
       console.error(err);
     }
     if (callback)
-      callback();
+      callback(err, result);
   });
 }
+exports.animation = animation;
 
 // Sequential message editing with typing effect
 function typingEffect(ctx, text, callback) {
@@ -299,6 +301,7 @@ function typingEffect(ctx, text, callback) {
   }
   animation(ctx, 100, animations, null, callback);
 }
+exports.typingEffect = typingEffect;
 
 function textManager(ctx) {
   ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);

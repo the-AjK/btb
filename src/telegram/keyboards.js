@@ -400,6 +400,7 @@ module.exports = {
                 back: "◀️ Back",
                 orderDelete: "✖️ Delete Order",
                 beer: "🍺 Beer",
+                slot: "🎰 Lucky Slot",
                 reminders: "⏰ Reminders",
                 leave: "⚠️ Unsubscribe",
                 about: "ℹ️ About BTB"
@@ -427,6 +428,11 @@ module.exports = {
         keyboard.push([{
             text: cmd.about
         }]);
+        if(ctx && ctx.session.user && roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+            keyboard.push([{
+                text: cmd.slot
+            }]);
+        }
         keyboard.push([{
             text: cmd.beer
         }, {
@@ -535,6 +541,32 @@ module.exports = {
                 ctx.session.lastMessage = msg;
             });
         }
+
+        return obj;
+    },
+    slot: function (ctx) {
+        let keyboard = [],
+            cmd = {
+                back: "◀️ Back to settings"
+            };
+
+        keyboard.push([{
+            text: cmd.back
+        }]);
+
+        let obj = {
+            availableCmd: Object.keys(cmd).map(c => cmd[c]),
+            opts: {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    one_time_keyboard: false,
+                    keyboard: keyboard
+                })
+            },
+            text: "*Slot*",
+            cmd: cmd
+        };
 
         return obj;
     }
