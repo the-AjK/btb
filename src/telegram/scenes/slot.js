@@ -318,7 +318,7 @@ function handleResults(ctx) {
                 console.error(err);
             } else {
                 ctx.session.user.points = points;
-                console.log("User: *" + ctx.session.user.email + "* got " + pointsToAdd + " slot points (" + ctx.session.user.points + ")");
+                console.log("User: " + ctx.session.user.email + " got " + pointsToAdd + " slot points (" + ctx.session.user.points + ")");
             }
             printSlot(ctx);
         });
@@ -329,11 +329,12 @@ function handleResults(ctx) {
                 console.error(err);
             } else {
                 ctx.session.user.points = points;
-                console.log("User: *" + ctx.session.user.email + "* lost " + result + " slot points (" + ctx.session.user.points + ")");
+                console.log("User: " + ctx.session.user.email + " lost " + result + " slot points (" + ctx.session.user.points + ")");
             }
             printSlot(ctx);
         });
     } else {
+        console.log("User " + ctx.session.user.email + " slot run");
         printSlot(ctx);
     }
 }
