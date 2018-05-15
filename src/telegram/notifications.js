@@ -189,7 +189,7 @@ exports.ordersCompleteReminder = function () {
                         if (err) {
                             console.error(err);
                         } else if (orders.length) {
-                            levels.removePoints(orders[orders.length - 1].owner._id, 1, (err, points) => {
+                            levels.removePoints(orders[orders.length - 1].owner._id, 1, false, (err, points) => {
                                 if (err) {
                                     console.error(err);
                                 }

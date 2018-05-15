@@ -377,7 +377,7 @@ function defaultAnswer(ctx) {
     }).then(() => {
       replies(ctx, msg, keyboards.btb(ctx).opts);
     });
-    levels.removePoints(ctx.session.user._id, 1, (err, points) => {
+    levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
       if (err) {
         console.error(err);
       }

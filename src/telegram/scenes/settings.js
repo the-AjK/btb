@@ -118,7 +118,7 @@ function deleteDailyOrder(ctx) {
                 DB.Order.findByIdAndRemove(order._id, (err, deletedOrder) => {
                     if (!err && deletedOrder) {
                         ctx.reply("Your daily order has been deleted!");
-                        levels.removePoints(ctx.session.user._id, 1, (err, points) => {
+                        levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
                             if (err) {
                                 console.error(err);
                             }

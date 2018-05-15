@@ -140,7 +140,7 @@ function addBeer(ctx) {
             setTimeout(() => {
                 if (drunkBot) {
                     ctx.reply("😵 You got me drunk!");
-                    levels.removePoints(ctx.session.user._id, 1, (err, points) => {
+                    levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
                         if (err) {
                             console.error(err);
                             return;
@@ -153,7 +153,7 @@ function addBeer(ctx) {
                     });
                 } else {
                     ctx.reply("Thank you bro!");
-                    levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                    levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
                         if (err) {
                             console.error(err);
                             return;

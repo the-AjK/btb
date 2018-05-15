@@ -319,7 +319,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                                     if (err) {
                                         console.error(err);
                                     } else if (count == 1) {
-                                        levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                                        levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
                                             if (err) {
                                                 console.error(err);
                                             }
@@ -587,7 +587,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                                     if (err) {
                                         console.error(err);
                                     } else if (count == 1) {
-                                        levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                                        levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
                                             if (err) {
                                                 console.error(err);
                                             }
