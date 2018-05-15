@@ -326,7 +326,13 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                                         });
                                     }
                                     release();
-                                    leave(ctx);
+                                    if (!ctx.session.user.dailySlot || !moment(ctx.session.user.dailySlot).isSame(moment(), 'day')) {
+                                        //Daily free slot run
+                                        ctx.scene.leave();
+                                        ctx.scene.enter('slot');
+                                    } else {
+                                        leave(ctx);
+                                    }
                                 });
                             } else {
                                 release();
@@ -594,7 +600,13 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                                         });
                                     }
                                     release();
-                                    leave(ctx);
+                                    if (!ctx.session.user.dailySlot || !moment(ctx.session.user.dailySlot).isSame(moment(), 'day')) {
+                                        //Daily free slot run
+                                        ctx.scene.leave();
+                                        ctx.scene.enter('slot');
+                                    } else {
+                                        leave(ctx);
+                                    }
                                 });
                             } else {
                                 release();

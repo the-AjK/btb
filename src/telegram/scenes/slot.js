@@ -9,6 +9,7 @@ const Telegraf = require("telegraf"),
     Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     async = require("async"),
+    moment = require("moment"),
     roles = require("../../roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
@@ -28,7 +29,7 @@ class Slot {
         this._col = col;
         this._progress = 0;
         this._position = [];
-        //this._elements = ["🚼", "🚱", "💯", "⚛", "📦", "💰", "💎", "🚀", "🎯", "🎰", "🎱", "☕️", "🍔", "☠️", "⭐️", "⚡️", "🍟", "🌭", "🍕", "🍖", "🍤", "🍣", "🍦", "🍿", "🍫", "🍩", "🍺"];
+        this.isRunning = false;
         this._elements = ["🍔", "🚰", "🍿", "🍕", "🍺"];
         this._colElements = this._elements.length;
         this.initPosition();
@@ -104,6 +105,10 @@ class Slot {
                 if (this.getRelativeRow(i)[0] == "🚰") {
                     return -1;
                 }
+                if (this.getRelativeRow(i)[0] == "🍺") {
+                    //double count for beers!
+                    counter++;
+                }
                 counter++;
             }
         }
@@ -129,24 +134,24 @@ class Slot {
             winningRows = this.isWinningState();
         if (winningRows > 0) {
             slotString += "\n  *  You Win!  *";
-            slotString += "\n    ";
-            switch (winningRows) {
-                case 1:
-                    slotString += "+2 points!";
-                    break;
-                case 2:
-                    slotString += "+5 points!";
-                    break;
-                case 3:
-                    slotString += "+10 points!";
-                    break;
-            }
+            slotString += "\n    +" + this.getPoints(winningRows) + " points!";
         } else {
             slotString += "\n  *  You Lost!  *";
             if (winningRows < 0)
                 slotString += "\n    " + winningRows + " points!";
         }
         return slotString;
+    }
+
+    getPoints(winningRows) {
+        const points = {
+            1: 2,
+            2: 5,
+            3: 10,
+            4: 15,
+            5: 20
+        }
+        return points[winningRows] || 2;
     }
 
     toString(ctx, running, firstTime) {
@@ -172,9 +177,12 @@ class Slot {
             } else {
                 slotString += this.formatProgress();
             }
+        } else {
+            slotString += "\n";
         }
+
         slotString += "\n" + lineDiv;
-        slotString += "\n credits: " + ctx.session.user.points;
+        slotString += "\n credits: " + (ctx.session.user.dailySlotRunning ? "∞" : ctx.session.user.points);
 
         return slotString + "`";
     }
@@ -211,7 +219,18 @@ const scene = new Scene('slot')
 scene.enter((ctx) => {
     ctx.session.slot = new Slot(3, 3);
     ctx.reply(keyboards.slot(ctx).text, keyboards.slot(ctx).opts).then(() => {
-        bot.typingEffect(ctx, "Feeling lucky?", (err, m) => {
+        let message = "Feeling lucky?";
+        //Free daily run
+        if (!ctx.session.user.dailySlot || !moment(ctx.session.user.dailySlot).isSame(moment(), 'day')) {
+            ctx.session.user.dailySlotRunning = true;
+            message = "You got a free run!";
+        }
+        bot.typingEffect(ctx, message, (err, m) => {
+            if (err) {
+                console.error(err);
+            } else {
+                ctx.session.slot_header = m;
+            }
             let inline_keyboard = [
                 [{
                     text: 'Spin',
@@ -251,16 +270,23 @@ function printSlot(ctx) {
     ];
     require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
         parse_mode: "markdown",
-        reply_markup: JSON.stringify({
+        reply_markup: !ctx.session.user.dailySlotRunning ? JSON.stringify({
             inline_keyboard: inline_keyboard
-        })
+        }) : undefined
     }).then((msg) => {
-
+        ctx.session.user.dailySlotRunning = false;
     });
 }
 
 function textManager(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
+
+    if (ctx.session.slot_header) {
+        ctx.deleteMessage(ctx.session.slot_header.message_id);
+        delete ctx.session.slot_header;
+    }
+
+    ctx.session.user.dailySlotRunning = false;
 
     if (ctx.session.slot_message) {
         ctx.deleteMessage(ctx.session.slot_message.message_id);
@@ -272,7 +298,7 @@ function textManager(ctx) {
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
         //back button
         ctx.scene.leave();
-        ctx.scene.enter('settings');
+        ctx.scene.enter('extra');
     } else {
         ctx.scene.leave();
         //fallback to main bot scene
@@ -285,12 +311,13 @@ scene.on("text", textManager);
 function handleResults(ctx) {
     let result = ctx.session.slot.isWinningState();
     if (result > 0) {
-        levels.addPoints(ctx.session.user._id, result, true, (err, points) => {
+        let pointsToAdd = ctx.session.slot.getPoints(result);
+        levels.addPoints(ctx.session.user._id, pointsToAdd, true, (err, points) => {
             if (err) {
                 console.error(err);
             } else {
                 ctx.session.user.points = points;
-                console.log("User: *" + ctx.session.user.email + "* got " + result + " slot points (" + ctx.session.user.points + ")");
+                console.log("User: *" + ctx.session.user.email + "* got " + pointsToAdd + " slot points (" + ctx.session.user.points + ")");
             }
             printSlot(ctx);
         });
@@ -310,57 +337,85 @@ function handleResults(ctx) {
     }
 }
 
+function runSlot(ctx, cb) {
+    ctx.session.slot.isRunning = true;
+    ctx.session.slot.setProgress(0);
+    ctx.session.slot.initSlot();
+    let funList = [],
+        rotations = Math.round(utils.getRandomInt(10, 21)),
+        rotations2 = Math.round(utils.getRandomInt(5, 10));
+
+    for (let i = 0; i < rotations; i++) {
+        funList.push(function () {
+            return (cb) => {
+                ctx.session.slot.fullRotation();
+                ctx.session.slot.setProgress(Math.round((i + 1) * 10 / (rotations + rotations2)));
+                setTimeout(() => {
+                    printRunningSlot(ctx, () => {
+                        cb();
+                    });
+                }, 100);
+            }
+        }());
+    }
+    for (let i = 0; i < rotations2; i++) {
+        funList.push(function () {
+            return (cb) => {
+                ctx.session.slot.randomRotate();
+                ctx.session.slot.setProgress(Math.round((i + rotations + 1) * 10 / (rotations + rotations2)));
+                setTimeout(() => {
+                    printRunningSlot(ctx, () => {
+                        cb();
+                    });
+                }, 400);
+            }
+        }());
+    }
+    async.series(funList, (err, result) => {
+        if (err) {
+            console.error(err);
+        }
+        handleResults(ctx);
+        ctx.session.slot.isRunning = false;
+    });
+}
+
 scene.on("callback_query", ctx => {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     if (ctx.update.callback_query.data == 'spin') {
-        if (ctx.session.user.points == 0) {
+        if (ctx.session.slot.isRunning) {
+            return ctx.answerCbQuery("Running slot... please wait.");
+        } else if (!ctx.session.user.dailySlot || !moment(ctx.session.user.dailySlot).isSame(moment(), 'day')) {
+            //daily free run
+            ctx.session.slot.isRunning = true;
+            console.log("Slot free daily run for user " + ctx.session.user.email);
+            DB.User.findByIdAndUpdate(ctx.session.user._id, {
+                dailySlot: moment().format()
+            }, {
+                new: true
+            }, (err, u) => {
+                if (err || !u) {
+                    console.error(err || "User not found");
+                    ctx.answerCbQuery("Ehm, something went wrong!");
+                    ctx.session.slot.isRunning = false;
+                } else if (u) {
+                    ctx.session.user.dailySlot = u.dailySlot;
+                    ctx.session.user.dailySlotRunning = true;
+                    runSlot(ctx);
+                }
+            });
+        } else if (ctx.session.user.points == 0) {
             return ctx.answerCbQuery("Ehm, You don't have enough credits!");
         } else {
+            ctx.session.slot.isRunning = true;
             levels.removePoints(ctx.session.user._id, 1, true, (err, points) => {
                 if (err) {
                     console.error(err);
+                    ctx.answerCbQuery("Ehm, something went wrong!");
+                    ctx.session.slot.isRunning = false;
                 } else {
                     ctx.session.user.points = points;
-                    ctx.session.slot.setProgress(0);
-                    ctx.session.slot.initSlot();
-                    let funList = [],
-                        rotations = Math.round(utils.getRandomInt(10, 21)),
-                        rotations2 = Math.round(utils.getRandomInt(5, 10));
-
-                    for (let i = 0; i < rotations; i++) {
-                        funList.push(function () {
-                            return (cb) => {
-                                ctx.session.slot.fullRotation();
-                                ctx.session.slot.setProgress(Math.round((i + 1) * 10 / (rotations + rotations2)));
-                                setTimeout(() => {
-                                    printRunningSlot(ctx, () => {
-                                        cb();
-                                    });
-                                }, 100);
-                            }
-                        }());
-                    }
-
-                    for (let i = 0; i < rotations2; i++) {
-                        funList.push(function () {
-                            return (cb) => {
-                                ctx.session.slot.randomRotate();
-                                ctx.session.slot.setProgress(Math.round((i + rotations + 1) * 10 / (rotations + rotations2)));
-                                setTimeout(() => {
-                                    printRunningSlot(ctx, () => {
-                                        cb();
-                                    });
-                                }, 400);
-                            }
-                        }());
-                    }
-
-                    async.series(funList, (err, result) => {
-                        if (err) {
-                            console.error(err);
-                        }
-                        handleResults(ctx)
-                    });
+                    runSlot(ctx);
                 }
             });
         }

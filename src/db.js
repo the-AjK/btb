@@ -127,6 +127,9 @@ const UserSchema = new mongoose.Schema({
   },
   lastLogin: Date,
   lastIp: String,
+  dailySlot: {
+    type: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now
