@@ -93,7 +93,8 @@ exports.login = function (req, res) {
   const email = req.body.email,
     password = req.body.password;
   DB.User.findOne({
-    email: email
+    email: email,
+    deleted: false
   }, function (err, user) {
     if (err) {
       console.error(err);
