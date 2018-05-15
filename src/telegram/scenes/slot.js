@@ -221,7 +221,8 @@ scene.enter((ctx) => {
     ctx.reply(keyboards.slot(ctx).text, keyboards.slot(ctx).opts).then(() => {
         let message = "Feeling lucky?";
         //Free daily run
-        if (!ctx.session.user.dailySlot || !moment(ctx.session.user.dailySlot).isSame(moment(), 'day')) {
+        const dailyFreeRun = !ctx.session.user.dailySlot || !moment(ctx.session.user.dailySlot).isSame(moment(), 'day');
+        if (dailyFreeRun) {
             ctx.session.user.dailySlotRunning = true;
             message = "You got a free run!";
         }
@@ -233,7 +234,7 @@ scene.enter((ctx) => {
             }
             let inline_keyboard = [
                 [{
-                    text: 'Spin',
+                    text: !dailyFreeRun ? 'Spin (1 credit)' : 'Spin',
                     callback_data: 'spin'
                 }]
             ];
@@ -264,7 +265,7 @@ function printRunningSlot(ctx, cb) {
 function printSlot(ctx) {
     let inline_keyboard = [
         [{
-            text: 'Spin',
+            text: !ctx.session.user.dailySlotRunning ? 'Spin (1 credit)' : 'Spin',
             callback_data: 'spin'
         }]
     ];

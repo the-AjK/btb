@@ -591,7 +591,7 @@ module.exports = {
                     keyboard: keyboard
                 })
             },
-            text: "*BTB Slot*",
+            text: "*Welcome to BTB Slot*",
             cmd: cmd
         };
 
