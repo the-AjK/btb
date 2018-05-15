@@ -63,6 +63,7 @@ stage.register(require('./scenes/order').scene)
 stage.register(require('./scenes/order').firstCourse)
 stage.register(require('./scenes/order').secondCourse)
 stage.register(require('./scenes/settings').scene)
+stage.register(require('./scenes/extra').scene)
 stage.register(require('./scenes/register').scene)
 stage.register(require('./scenes/orderRating').scene)
 stage.register(require('./scenes/slot').scene)
@@ -151,58 +152,7 @@ bot.on("callback_query", ctx => {
     ctx.deleteMessage(ctx.session.lastMessage.message_id);
     delete ctx.session.lastMessage;
   }
-  if (ctx.update.callback_query.data == 'statusorders') {
-    if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
-      ctx.reply("Admin stuff. Keep out.");
-      return;
-    } else {
-      DB.getDailyOrderStats(null, (err, stats) => {
-        if (err) {
-          ctx.reply(err);
-        } else {
-          ctx.reply("*Orders status*:" + formatOrderComplete(stats), {
-            parse_mode: "markdown"
-          });
-        }
-      });
-    }
-  } else if (ctx.update.callback_query.data == 'statustables') {
-    if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-      ctx.reply("Admin stuff. Keep out.");
-      return;
-    } else {
-      DB.Table.find({
-        enabled: true,
-        deleted: false
-      }).sort({
-        'name': 1
-      }).exec((err, tables) => {
-        if (err) {
-          console.error(err);
-          ctx.reply("DB error");
-        } else {
-          ctx.reply(formatTables(tables, ctx.session.user), {
-            parse_mode: "markdown"
-          });
-        }
-      });
-    }
-  } else if (ctx.update.callback_query.data == 'userswithoutorder') {
-    if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-      ctx.reply("Admin stuff. Keep out.");
-      return;
-    } else {
-      DB.getNotOrderUsers(null, (err, users) => {
-        if (err) {
-          ctx.reply(err);
-        } else {
-          ctx.reply(formatUsersWithoutOrder(users, ctx.session.user), {
-            parse_mode: "markdown"
-          });
-        }
-      });
-    }
-  } else if (ctx.update.callback_query.data == 'unsubscribe') {
+  if (ctx.update.callback_query.data == 'unsubscribe') {
     require('./scenes/settings').unsubscribe(ctx);
   } else {
     ctx.answerCbQuery("Hmm, this options is not available anymore!");
@@ -325,6 +275,9 @@ function textManager(ctx) {
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.settings) {
     ctx.session.mainCounter = 0;
     ctx.scene.enter('settings');
+  } else if (ctx.message.text == keyboards.btb(ctx).cmd.extra) {
+    ctx.session.mainCounter = 0;
+    ctx.scene.enter('extra');
   } else {
     ctx.session.mainCounter++;
     client.message(ctx.message.text).then((response) => {
@@ -848,6 +801,7 @@ function formatTables(tables, user) {
   }
   return text;
 }
+exports.formatTables = formatTables;
 
 function formatOrderComplete(stats) {
   let text = "";

@@ -39,19 +39,17 @@ module.exports = {
             cmd = {
                 menu: "Menu",
                 order: "Order",
-                status: "📋 Status",
-                settings: "⚙️ Settings"
+                settings: "⚙️ Settings",
+                extra: "🚀 Extra"
             };
         keyboard.push([{
             text: cmd.menu
         }, {
             text: cmd.order
         }]);
-        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || levels.getLevel(ctx.session.user.points) > 1)) {
-            keyboard.push([{
-                text: cmd.status
-            }]);
-        }
+        keyboard.push([{
+            text: cmd.extra
+        }]);
         keyboard.push([{
             text: cmd.settings
         }]);
@@ -67,35 +65,6 @@ module.exports = {
             text: "Btb",
             cmd: cmd
         };
-
-        obj[cmd.status] = () => {
-            let inline_keyboard = [
-                    [{
-                        text: 'Orders',
-                        callback_data: 'statusorders'
-                    }]
-                ],
-                text = "Daily status:";
-            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-                inline_keyboard.push([{
-                    text: 'Tables',
-                    callback_data: 'statustables'
-                }, {
-                    text: 'Users',
-                    callback_data: 'userswithoutorder'
-                }]);
-            }
-            ctx.reply(text, {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: inline_keyboard
-                })
-            }).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
-        }
 
         return obj;
     },
@@ -399,9 +368,7 @@ module.exports = {
             cmd = {
                 back: "◀️ Back",
                 orderDelete: "✖️ Delete Order",
-                beer: "🍺 Beer",
                 unsubscribe: "/unsubscribe",
-                slot: "🎰 BTB Slot",
                 reminders: "⏰ Reminders",
                 about: "ℹ️ About BTB"
             };
@@ -425,20 +392,14 @@ module.exports = {
                 text: cmd.orderDelete
             }]);
         }
-        if(ctx && ctx.session.user && roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-            keyboard.push([{
-                text: cmd.slot
-            }]);
-        }
         keyboard.push([{
-            text: cmd.beer
-        }, {
+            text: cmd.about
+        }]);
+        keyboard.push([{
             text: cmd.reminders
         }]);
         keyboard.push([{
             text: cmd.back
-        }, {
-            text: cmd.about
         }]);
 
         let obj = {
@@ -466,30 +427,6 @@ module.exports = {
                     }]
                 ],
                 text = "Are you sure to delete your daily order?";
-
-            ctx.reply(text, {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: inline_keyboard
-                })
-            }).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
-        }
-
-        obj[cmd.beer] = () => {
-            let inline_keyboard = [
-                    [{
-                        text: 'Pint',
-                        callback_data: 'pint'
-                    }, {
-                        text: 'Half Pint',
-                        callback_data: 'halfPint'
-                    }]
-                ],
-                text = "Send me a beer!";
 
             ctx.reply(text, {
                 parse_mode: "markdown",
@@ -541,10 +478,102 @@ module.exports = {
 
         return obj;
     },
+    extra: function (ctx) {
+        let keyboard = [],
+            cmd = {
+                back: "◀️ Back",
+                beer: "🍺 Beer",
+                status: "📋 Status",
+                slot: "🎰 Slot"
+            };
+
+        keyboard.push([{
+            text: cmd.beer
+        }, {
+            text: cmd.slot
+        }]);
+        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || levels.getLevel(ctx.session.user.points) > 1)) {
+            keyboard.push([{
+                text: cmd.status
+            }]);
+        }
+        keyboard.push([{
+            text: cmd.back
+        }]);
+
+        let obj = {
+            availableCmd: Object.keys(cmd).map(c => cmd[c]),
+            opts: {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    one_time_keyboard: false,
+                    keyboard: keyboard
+                })
+            },
+            text: "*Extra stuff*",
+            cmd: cmd
+        };
+
+        obj[cmd.beer] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'Pint',
+                        callback_data: 'pint'
+                    }, {
+                        text: 'Half Pint',
+                        callback_data: 'halfPint'
+                    }]
+                ],
+                text = "Send me a beer!";
+
+            ctx.reply(text, {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    inline_keyboard: inline_keyboard
+                })
+            }).then((msg) => {
+                //lets save the message to delete it afterward
+                ctx.session.lastMessage = msg;
+            });
+        }
+
+        obj[cmd.status] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'Orders',
+                        callback_data: 'statusorders'
+                    }]
+                ],
+                text = "Daily status:";
+            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+                inline_keyboard.push([{
+                    text: 'Tables',
+                    callback_data: 'statustables'
+                }, {
+                    text: 'Users',
+                    callback_data: 'userswithoutorder'
+                }]);
+            }
+            ctx.reply(text, {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    inline_keyboard: inline_keyboard
+                })
+            }).then((msg) => {
+                //lets save the message to delete it afterward
+                ctx.session.lastMessage = msg;
+            });
+        }
+
+        return obj;
+    },
     slot: function (ctx) {
         let keyboard = [],
             cmd = {
-                back: "◀️ Back to settings"
+                back: "◀️ Back to extra"
             };
 
         keyboard.push([{
