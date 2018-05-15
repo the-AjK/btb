@@ -400,9 +400,9 @@ module.exports = {
                 back: "◀️ Back",
                 orderDelete: "✖️ Delete Order",
                 beer: "🍺 Beer",
+                unsubscribe: "/unsubscribe",
                 slot: "🎰 Lucky Slot",
                 reminders: "⏰ Reminders",
-                leave: "⚠️ Unsubscribe",
                 about: "ℹ️ About BTB"
             };
 
@@ -425,9 +425,6 @@ module.exports = {
                 text: cmd.orderDelete
             }]);
         }
-        keyboard.push([{
-            text: cmd.about
-        }]);
         if(ctx && ctx.session.user && roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
             keyboard.push([{
                 text: cmd.slot
@@ -441,7 +438,7 @@ module.exports = {
         keyboard.push([{
             text: cmd.back
         }, {
-            text: cmd.leave
+            text: cmd.about
         }]);
 
         let obj = {
@@ -506,7 +503,7 @@ module.exports = {
             });
         }
 
-        obj[cmd.leave] = () => {
+        obj[cmd.unsubscribe] = () => {
             let inline_keyboard = [
                     [{
                         text: 'Cancel',
@@ -516,8 +513,8 @@ module.exports = {
                         text: 'Cancel',
                         callback_data: 'cancel'
                     }, {
-                        text: 'Leave',
-                        callback_data: 'leave'
+                        text: 'Unsubscribe',
+                        callback_data: 'unsubscribe'
                     }, {
                         text: 'Cancel',
                         callback_data: 'cancel'
@@ -527,7 +524,7 @@ module.exports = {
                         callback_data: 'cancel'
                     }]
                 ],
-                text = "*WHAT!?*\nDo you really wanna leave?\nYour account will be deleted and you will no longer be able to give me a beer!\nYou should think about it!",
+                text = "*WHAT!?*\nDo you really wanna unsubscribe?\nYour account will be deleted and you will no longer be able to give me a beer!\nYou should think about it!",
                 value = true;
 
             ctx.reply(text, {

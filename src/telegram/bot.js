@@ -203,6 +203,8 @@ bot.on("callback_query", ctx => {
         }
       });
     }
+  } else if (ctx.update.callback_query.data == 'unsubscribe') {
+    require('./scenes/settings').unsubscribe(ctx);
   } else {
     ctx.answerCbQuery("Hmm, this options is not available anymore!");
   }
@@ -316,6 +318,9 @@ function textManager(ctx) {
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.order) {
     ctx.session.mainCounter = 0;
     ctx.scene.enter('order');
+  } else if (ctx.message.text == keyboards.settings(ctx).cmd.unsubscribe) {
+    ctx.session.mainCounter = 0;
+    keyboards.settings(ctx)[ctx.message.text]();
   } else if (keyboards.btb(ctx)[ctx.message.text]) {
     keyboards.btb(ctx)[ctx.message.text]();
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.settings) {
