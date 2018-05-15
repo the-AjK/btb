@@ -401,7 +401,7 @@ module.exports = {
                 orderDelete: "✖️ Delete Order",
                 beer: "🍺 Beer",
                 unsubscribe: "/unsubscribe",
-                slot: "🎰 Lucky Slot",
+                slot: "🎰 BTB Slot",
                 reminders: "⏰ Reminders",
                 about: "ℹ️ About BTB"
             };
@@ -558,10 +558,11 @@ module.exports = {
                 force_reply: true,
                 reply_markup: JSON.stringify({
                     one_time_keyboard: false,
+                    resize_keyboard: true,
                     keyboard: keyboard
                 })
             },
-            text: "*Slot*",
+            text: "*BTB Slot*",
             cmd: cmd
         };
 
