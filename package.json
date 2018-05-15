@@ -1,6 +1,6 @@
 {
   "name": "btb",
-  "version": "1.0.0-RC15",
+  "version": "1.0.0-RC16",
   "description": "BiteTheBot - Smart menu ordering system",
   "main": "index.js",
   "repository": "https://github.com/the-AjK/btb.git",

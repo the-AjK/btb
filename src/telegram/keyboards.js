@@ -39,19 +39,17 @@ module.exports = {
             cmd = {
                 menu: "Menu",
                 order: "Order",
-                status: "📋 Status",
-                settings: "⚙️ Settings"
+                settings: "⚙️ Settings",
+                extra: "🚀 Extra"
             };
         keyboard.push([{
             text: cmd.menu
         }, {
             text: cmd.order
         }]);
-        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || levels.getLevel(ctx.session.user.points) > 1)) {
-            keyboard.push([{
-                text: cmd.status
-            }]);
-        }
+        keyboard.push([{
+            text: cmd.extra
+        }]);
         keyboard.push([{
             text: cmd.settings
         }]);
@@ -68,35 +66,6 @@ module.exports = {
             cmd: cmd
         };
 
-        obj[cmd.status] = () => {
-            let inline_keyboard = [
-                    [{
-                        text: 'Orders',
-                        callback_data: 'statusorders'
-                    }]
-                ],
-                text = "Daily status:";
-            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-                inline_keyboard.push([{
-                    text: 'Tables',
-                    callback_data: 'statustables'
-                }, {
-                    text: 'Users',
-                    callback_data: 'userswithoutorder'
-                }]);
-            }
-            ctx.reply(text, {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: inline_keyboard
-                })
-            }).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
-        }
-
         return obj;
     },
     order: function (ctx) {
@@ -104,7 +73,7 @@ module.exports = {
             cmd = {
                 first: "First course",
                 second: "Second course",
-                cancel: "◀️ Back",
+                back: "◀️ Back",
             };
         keyboard.push([{
             text: cmd.first
@@ -113,7 +82,7 @@ module.exports = {
             text: cmd.second
         }]);
         keyboard.push([{
-            text: cmd.cancel
+            text: cmd.back
         }]);
 
         let obj = {
@@ -399,9 +368,8 @@ module.exports = {
             cmd = {
                 back: "◀️ Back",
                 orderDelete: "✖️ Delete Order",
-                beer: "🍺 Beer",
+                unsubscribe: "/unsubscribe",
                 reminders: "⏰ Reminders",
-                leave: "⚠️ Unsubscribe",
                 about: "ℹ️ About BTB"
             };
 
@@ -428,14 +396,10 @@ module.exports = {
             text: cmd.about
         }]);
         keyboard.push([{
-            text: cmd.beer
-        }, {
             text: cmd.reminders
         }]);
         keyboard.push([{
             text: cmd.back
-        }, {
-            text: cmd.leave
         }]);
 
         let obj = {
@@ -476,6 +440,81 @@ module.exports = {
             });
         }
 
+        obj[cmd.unsubscribe] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'Cancel',
+                        callback_data: 'cancel'
+                    }],
+                    [{
+                        text: 'Cancel',
+                        callback_data: 'cancel'
+                    }, {
+                        text: 'Unsubscribe',
+                        callback_data: 'unsubscribe'
+                    }, {
+                        text: 'Cancel',
+                        callback_data: 'cancel'
+                    }],
+                    [{
+                        text: 'Cancel',
+                        callback_data: 'cancel'
+                    }]
+                ],
+                text = "*WHAT!?*\nDo you really wanna unsubscribe?\nYour account will be deleted and you will no longer be able to give me a beer!\nYou should think about it!",
+                value = true;
+
+            ctx.reply(text, {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    inline_keyboard: inline_keyboard
+                })
+            }).then((msg) => {
+                //lets save the message to delete it afterward
+                ctx.session.lastMessage = msg;
+            });
+        }
+
+        return obj;
+    },
+    extra: function (ctx) {
+        let keyboard = [],
+            cmd = {
+                back: "◀️ Back",
+                beer: "🍺 Beer",
+                status: "📋 Status",
+                slot: "🎰 Slot"
+            };
+
+        keyboard.push([{
+            text: cmd.beer
+        }, {
+            text: cmd.slot
+        }]);
+        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || levels.getLevel(ctx.session.user.points) > 1)) {
+            keyboard.push([{
+                text: cmd.status
+            }]);
+        }
+        keyboard.push([{
+            text: cmd.back
+        }]);
+
+        let obj = {
+            availableCmd: Object.keys(cmd).map(c => cmd[c]),
+            opts: {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    one_time_keyboard: false,
+                    keyboard: keyboard
+                })
+            },
+            text: "*Extra stuff*",
+            cmd: cmd
+        };
+
         obj[cmd.beer] = () => {
             let inline_keyboard = [
                     [{
@@ -500,30 +539,23 @@ module.exports = {
             });
         }
 
-        obj[cmd.leave] = () => {
+        obj[cmd.status] = () => {
             let inline_keyboard = [
                     [{
-                        text: 'Cancel',
-                        callback_data: 'cancel'
-                    }],
-                    [{
-                        text: 'Cancel',
-                        callback_data: 'cancel'
-                    }, {
-                        text: 'Leave',
-                        callback_data: 'leave'
-                    }, {
-                        text: 'Cancel',
-                        callback_data: 'cancel'
-                    }],
-                    [{
-                        text: 'Cancel',
-                        callback_data: 'cancel'
+                        text: 'Orders',
+                        callback_data: 'statusorders'
                     }]
                 ],
-                text = "*WHAT!?*\nDo you really wanna leave?\nYour account will be deleted and you will no longer be able to give me a beer!\nYou should think about it!",
-                value = true;
-
+                text = "Daily status:";
+            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+                inline_keyboard.push([{
+                    text: 'Tables',
+                    callback_data: 'statustables'
+                }, {
+                    text: 'Users',
+                    callback_data: 'userswithoutorder'
+                }]);
+            }
             ctx.reply(text, {
                 parse_mode: "markdown",
                 force_reply: true,
@@ -535,6 +567,33 @@ module.exports = {
                 ctx.session.lastMessage = msg;
             });
         }
+
+        return obj;
+    },
+    slot: function (ctx) {
+        let keyboard = [],
+            cmd = {
+                back: "◀️ Back to extra"
+            };
+
+        keyboard.push([{
+            text: cmd.back
+        }]);
+
+        let obj = {
+            availableCmd: Object.keys(cmd).map(c => cmd[c]),
+            opts: {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    one_time_keyboard: false,
+                    resize_keyboard: true,
+                    keyboard: keyboard
+                })
+            },
+            text: "*Welcome to BTB Slot*",
+            cmd: cmd
+        };
 
         return obj;
     }

@@ -181,7 +181,7 @@ const Profile = inject("ctx")(
                                         alignItems={"stretch"}
                                         spacing={16}
                                     >
-                                        <Grid item xs={12} md={6}>
+                                        {false && <Grid item xs={12} md={6}>
                                             <TextField
                                                 id="username"
                                                 label="Username"
@@ -192,7 +192,7 @@ const Profile = inject("ctx")(
                                                 fullWidth
                                                 margin="normal"
                                             />
-                                        </Grid>
+                                        </Grid>}
                                         <Grid item xs={12} md={6}>
                                             <TextField
                                                 id="email"

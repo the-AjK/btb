@@ -89,7 +89,8 @@ setDrinkingSchedule(60000 * 30);
 
 function addBeer(ctx) {
     if (drunkBot && beerLock.username != ctx.session.user.username) {
-        ctx.reply("😵 [" + lastUserBeer.username + "](tg://user?id=" + lastUserBeer.telegram.id + ") got me drunk!", {
+        const username = "[" + (lastUserBeer.telegram.first_name + (lastUserBeer.telegram.last_name ? (" " + lastUserBeer.telegram.last_name) : "")) + "](tg://user?id=" + lastUserBeer.telegram.id + ")";
+        ctx.reply("😵 " + username + " got me drunk!", {
             parse_mode: "markdown"
         });
         console.log("Drunk beer from: " + ctx.session.user.email);
@@ -107,7 +108,8 @@ function addBeer(ctx) {
                 parse_mode: "markdown"
             });
         } else if (beerLock.username != ctx.session.user.username) {
-            ctx.reply("Wait wait, I can get one beer at time!\nI'm still drinking the [" + beerLock.username + "](tg://user?id=" + beerLock.telegram.id + ")'s one!", {
+            const username = "[" + (beerLock.telegram.first_name + (beerLock.telegram.last_name ? (" " + beerLock.telegram.last_name) : "")) + "](tg://user?id=" + beerLock.telegram.id + ")";
+            ctx.reply("Wait wait, I can get one beer at time!\nI'm still drinking the " + username + "'s one!", {
                 parse_mode: "markdown"
             });
         } else {
@@ -117,7 +119,7 @@ function addBeer(ctx) {
         }
         console.log("Locked beer from: " + ctx.session.user.email);
     } else {
-        if (lastUserBeer && lastUserBeer.email == ctx.session.user.email) {
+        if (lastUserBeer && lastUserBeer.email == ctx.session.user.email && levels.getLevel(ctx.session.user.points) > 0) {
             drunkBot = true;
         } else {
             lastUserBeer = ctx.session.user;
@@ -140,7 +142,7 @@ function addBeer(ctx) {
             setTimeout(() => {
                 if (drunkBot) {
                     ctx.reply("😵 You got me drunk!");
-                    levels.removePoints(ctx.session.user._id, 1, (err, points) => {
+                    levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
                         if (err) {
                             console.error(err);
                             return;
@@ -153,7 +155,7 @@ function addBeer(ctx) {
                     });
                 } else {
                     ctx.reply("Thank you bro!");
-                    levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                    levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
                         if (err) {
                             console.error(err);
                             return;

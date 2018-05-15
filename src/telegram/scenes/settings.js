@@ -38,6 +38,8 @@ function textManager(ctx) {
         keyboards.settings(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.settings(ctx).cmd.reminders) {
         ctx.reply(keyboards.reminders(ctx).text, keyboards.reminders(ctx).opts);
+    } else if (ctx.message.text == keyboards.settings(ctx).cmd.slot) {
+        ctx.scene.enter('slot');
     } else if (keyboards.reminders(ctx)[ctx.message.text]) {
         keyboards.reminders(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.settings(ctx).cmd.about) {
@@ -47,6 +49,9 @@ function textManager(ctx) {
         });
     } else if (ctx.message.text == keyboards.reminders(ctx).cmd.back) {
         //back from reminders
+        ctx.reply(keyboards.settings(ctx).text, keyboards.settings(ctx).opts);
+    } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
+        //back from slot
         ctx.reply(keyboards.settings(ctx).text, keyboards.settings(ctx).opts);
     } else if (ctx.message.text == keyboards.settings(ctx).cmd.back) {
         //back button
@@ -85,8 +90,8 @@ scene.on("callback_query", ctx => {
         setRootReminders(ctx, true);
     } else if (ctx.update.callback_query.data.toLowerCase().indexOf('pint') != -1) {
         beers.addBeer(ctx);
-    } else if (ctx.update.callback_query.data == 'leave') {
-        leave(ctx);
+    } else if (ctx.update.callback_query.data == 'unsubscribe') {
+        unsubscribe(ctx);
     } else {
         ctx.answerCbQuery("Okey! I have nothing to do.");
     }
@@ -113,7 +118,7 @@ function deleteDailyOrder(ctx) {
                 DB.Order.findByIdAndRemove(order._id, (err, deletedOrder) => {
                     if (!err && deletedOrder) {
                         ctx.reply("Your daily order has been deleted!");
-                        levels.removePoints(ctx.session.user._id, 1, (err, points) => {
+                        levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
                             if (err) {
                                 console.error(err);
                             }
@@ -132,7 +137,7 @@ function deleteDailyOrder(ctx) {
     });
 }
 
-function leave(ctx) {
+function unsubscribe(ctx) {
     DB.User.findByIdAndUpdate(ctx.session.user._id, {
         deleted: true,
         updatedAt: new Date()
@@ -154,6 +159,7 @@ function leave(ctx) {
         ctx.scene.leave();
     });
 }
+exports.unsubscribe = unsubscribe;
 
 function setOrderReminderSetting(ctx, status) {
     DB.User.findByIdAndUpdate(ctx.session.user._id, {
@@ -239,6 +245,7 @@ function generateAbout(ctx) {
         "\nYou can use `@tables` to broadcast a message to all the people who already made an order." +
         "\n\n*Do you like BTB?*\n[Give me a real beer](https://www.paypal.me/AlbertoGarbui)" +
         "\n\n*Are you a developer?*\n[Pull Requests are welcome!](https://github.com/the-AjK/btb/pulls)\n\n" +
-        "*License*:\n[BSD-3](https://github.com/the-AjK/btb/blob/" + version + "/LICENSE)";
+        "*License*:\n[BSD-3](https://github.com/the-AjK/btb/blob/" + version + "/LICENSE)" +
+        "\n\nDo you wanna unsubscribe? type `/unsubscribe` and follow the instructions.";
     return about;
 }

@@ -319,7 +319,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                                     if (err) {
                                         console.error(err);
                                     } else if (count == 1) {
-                                        levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                                        levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
                                             if (err) {
                                                 console.error(err);
                                             }
@@ -587,7 +587,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                                     if (err) {
                                         console.error(err);
                                     } else if (count == 1) {
-                                        levels.addPoints(ctx.session.user._id, 1, (err, points) => {
+                                        levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
                                             if (err) {
                                                 console.error(err);
                                             }
@@ -707,6 +707,10 @@ function textManager(ctx) {
         ctx.scene.enter('firstCourseWizard');
     } else if (keyboards.order(ctx).cmd.second == ctx.message.text) {
         ctx.scene.enter('secondCourseWizard');
+    } else if (ctx.message.text == keyboards.order(ctx).cmd.back) {
+        //back button
+        ctx.scene.leave();
+        ctx.reply('ACK', keyboards.btb(ctx).opts);
     } else {
         ctx.scene.leave();
         //fallback to main bot scene

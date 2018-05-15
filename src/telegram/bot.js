@@ -14,7 +14,6 @@ const Telegraf = require("telegraf"),
   request = require('request'),
   moment = require("moment"),
   async = require("async"),
-  delay = require("delay"),
   ReadWriteLock = require("rwlock"),
   bender = require("./bender"),
   keyboards = require('./keyboards'),
@@ -32,10 +31,10 @@ const Telegraf = require("telegraf"),
 
 moment.locale("en");
 
-// Set limit to 1 message per half seconds
+// Set limit to 5 message per seconds
 const limitConfig = {
-  window: 500,
-  limit: 1,
+  window: 1000,
+  limit: 5,
   onLimitExceeded: (ctx, next) => ctx.reply("Hey bro, calm down...")
 };
 
@@ -64,8 +63,10 @@ stage.register(require('./scenes/order').scene)
 stage.register(require('./scenes/order').firstCourse)
 stage.register(require('./scenes/order').secondCourse)
 stage.register(require('./scenes/settings').scene)
+stage.register(require('./scenes/extra').scene)
 stage.register(require('./scenes/register').scene)
 stage.register(require('./scenes/orderRating').scene)
+stage.register(require('./scenes/slot').scene)
 
 bot.use(session());
 bot.use(stage.middleware());
@@ -151,57 +152,8 @@ bot.on("callback_query", ctx => {
     ctx.deleteMessage(ctx.session.lastMessage.message_id);
     delete ctx.session.lastMessage;
   }
-  if (ctx.update.callback_query.data == 'statusorders') {
-    if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
-      ctx.reply("Admin stuff. Keep out.");
-      return;
-    } else {
-      DB.getDailyOrderStats(null, (err, stats) => {
-        if (err) {
-          ctx.reply(err);
-        } else {
-          ctx.reply("*Orders status*:" + formatOrderComplete(stats), {
-            parse_mode: "markdown"
-          });
-        }
-      });
-    }
-  } else if (ctx.update.callback_query.data == 'statustables') {
-    if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-      ctx.reply("Admin stuff. Keep out.");
-      return;
-    } else {
-      DB.Table.find({
-        enabled: true,
-        deleted: false
-      }).sort({
-        'name': 1
-      }).exec((err, tables) => {
-        if (err) {
-          console.error(err);
-          ctx.reply("DB error");
-        } else {
-          ctx.reply(formatTables(tables, ctx.session.user), {
-            parse_mode: "markdown"
-          });
-        }
-      });
-    }
-  } else if (ctx.update.callback_query.data == 'userswithoutorder') {
-    if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-      ctx.reply("Admin stuff. Keep out.");
-      return;
-    } else {
-      DB.getNotOrderUsers(null, (err, users) => {
-        if (err) {
-          ctx.reply(err);
-        } else {
-          ctx.reply(formatUsersWithoutOrder(users, ctx.session.user), {
-            parse_mode: "markdown"
-          });
-        }
-      });
-    }
+  if (ctx.update.callback_query.data == 'unsubscribe') {
+    require('./scenes/settings').unsubscribe(ctx);
   } else {
     ctx.answerCbQuery("Hmm, this options is not available anymore!");
   }
@@ -249,7 +201,7 @@ function sequentialReplies(ctx, interval, messages, opts, callback) {
       console.error(err);
     }
     if (callback)
-      callback();
+      callback(err, result);
   });
 }
 
@@ -287,9 +239,10 @@ function animation(ctx, interval, animations, opts, callback) {
       console.error(err);
     }
     if (callback)
-      callback();
+      callback(err, result);
   });
 }
+exports.animation = animation;
 
 // Sequential message editing with typing effect
 function typingEffect(ctx, text, callback) {
@@ -299,6 +252,7 @@ function typingEffect(ctx, text, callback) {
   }
   animation(ctx, 100, animations, null, callback);
 }
+exports.typingEffect = typingEffect;
 
 function textManager(ctx) {
   ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
@@ -313,11 +267,17 @@ function textManager(ctx) {
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.order) {
     ctx.session.mainCounter = 0;
     ctx.scene.enter('order');
+  } else if (ctx.message.text == keyboards.settings(ctx).cmd.unsubscribe) {
+    ctx.session.mainCounter = 0;
+    keyboards.settings(ctx)[ctx.message.text]();
   } else if (keyboards.btb(ctx)[ctx.message.text]) {
     keyboards.btb(ctx)[ctx.message.text]();
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.settings) {
     ctx.session.mainCounter = 0;
     ctx.scene.enter('settings');
+  } else if (ctx.message.text == keyboards.btb(ctx).cmd.extra) {
+    ctx.session.mainCounter = 0;
+    ctx.scene.enter('extra');
   } else {
     ctx.session.mainCounter++;
     client.message(ctx.message.text).then((response) => {
@@ -370,7 +330,7 @@ function defaultAnswer(ctx) {
     }).then(() => {
       replies(ctx, msg, keyboards.btb(ctx).opts);
     });
-    levels.removePoints(ctx.session.user._id, 1, (err, points) => {
+    levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
       if (err) {
         console.error(err);
       }
@@ -841,6 +801,7 @@ function formatTables(tables, user) {
   }
   return text;
 }
+exports.formatTables = formatTables;
 
 function formatOrderComplete(stats) {
   let text = "";
