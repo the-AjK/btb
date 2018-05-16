@@ -38,8 +38,17 @@ function leave(ctx) {
         });
         delete ctx.session.lastMessage;
     }
-    ctx.scene.leave();
-    ctx.reply('ACK', keyboards.btb(ctx).opts);
+    DB.getDailyUserOrder(null, ctx.session.user._id, (err, dailyOrder) => {
+        let msg = 'ACK';
+        if (err) {
+            console.error(err);
+            msg = 'Something went wrong!';
+        } else if (!dailyOrder) {
+            msg = "NACK";
+        }
+        ctx.reply(msg, keyboards.btb(ctx).opts);
+        ctx.scene.leave();
+    });
 }
 
 function checkReEnter(ctx) {
@@ -188,7 +197,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                 ctx.wizard.next();
             }
         } else {
-            leave(ctx)
+            leave(ctx);
         }
     },
     (ctx) => {
@@ -211,7 +220,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
             sendTables(ctx);
             ctx.wizard.next()
         } else {
-            leave(ctx)
+            leave(ctx);
         }
     },
     (ctx) => {
@@ -251,7 +260,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
             });
             return ctx.wizard.next()
         } else {
-            leave(ctx)
+            leave(ctx);
         }
     },
     (ctx) => {
@@ -282,7 +291,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                         console.error(err);
                         ctx.reply("DB error ehm");
                         release();
-                        return leave(ctx)
+                        return leave(ctx);
                     } else if (tables[ctx.session.order.table].used >= tables[ctx.session.order.table].total) {
                         let tableName = tables[ctx.session.order.table].name,
                             text = "Somebody was faster than you!\n*" + tableName + "* is full. Try again.";
@@ -301,7 +310,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                     } else {
                         const newOrder = new DB.Order(ctx.session.order);
                         newOrder.save((err, order) => {
-                            let text = "*Order confirmed!*";
+                            let text = "✅ *Order confirmed!*";
                             if (err) {
                                 console.error(err)
                                 text = "*Something went wrong!*\nContact the admin for more info.";
@@ -338,11 +347,11 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
             });
             return ctx.wizard.next()
         } else {
-            leave(ctx)
+            leave(ctx);
         }
     },
     (ctx) => {
-        leave(ctx)
+        leave(ctx);
     }
 )
 exports.firstCourse = firstCourseWizard;
@@ -428,7 +437,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             sendAddSideDishesQuery(ctx);
             return ctx.wizard.next()
         } else {
-            leave(ctx)
+            leave(ctx);
         }
     },
     (ctx) => {
@@ -479,7 +488,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             sendTables(ctx);
             ctx.wizard.next()
         } else {
-            leave(ctx)
+            leave(ctx);
         }
     },
     (ctx) => {
@@ -519,7 +528,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             });
             return ctx.wizard.next()
         } else {
-            leave(ctx)
+            leave(ctx);
         }
     },
     (ctx) => {
@@ -569,7 +578,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                     } else {
                         const newOrder = new DB.Order(ctx.session.order);
                         newOrder.save((err, order) => {
-                            let text = "*Order confirmed!*";
+                            let text = "✅ *Order confirmed!*";
                             if (err) {
                                 console.error(err)
                                 text = "*Something went wrong!*\nContact the admin for more info.";
@@ -606,11 +615,11 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             });
             return ctx.wizard.next()
         } else {
-            leave(ctx)
+            leave(ctx);
         }
     },
     (ctx) => {
-        leave(ctx)
+        leave(ctx);
     }
 )
 exports.secondCourse = secondCourseWizard;
@@ -619,7 +628,7 @@ const ratingDeadline = require('./orderRating').ratingDeadline;
 
 const scene = new Scene('order')
 scene.enter((ctx) => {
-    DB.getDailyUserOrder(null, ctx.session.user.id, (err, dailyOrder) => {
+    DB.getDailyUserOrder(null, ctx.session.user._id, (err, dailyOrder) => {
         if (err) {
             ctx.reply(err);
             return ctx.scene.leave();
