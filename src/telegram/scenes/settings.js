@@ -117,7 +117,7 @@ function deleteDailyOrder(ctx) {
             } else {
                 DB.Order.findByIdAndRemove(order._id, (err, deletedOrder) => {
                     if (!err && deletedOrder) {
-                        ctx.reply("Your daily order has been deleted!");
+                        ctx.reply("Your daily order has been deleted!", keyboards.settings(ctx).opts);
                         levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
                             if (err) {
                                 console.error(err);
@@ -246,6 +246,6 @@ function generateAbout(ctx) {
         "\n\n*Do you like BTB?*\n[Give me a real beer](https://www.paypal.me/AlbertoGarbui)" +
         "\n\n*Are you a developer?*\n[Pull Requests are welcome!](https://github.com/the-AjK/btb/pulls)\n\n" +
         "*License*:\n[BSD-3](https://github.com/the-AjK/btb/blob/" + version + "/LICENSE)" +
-        "\n\nDo you wanna unsubscribe? type `/unsubscribe` and follow the instructions.";
+        "\n\nDo you wanna unsubscribe?\nType `/unsubscribe` and follow the instructions.";
     return about;
 }
