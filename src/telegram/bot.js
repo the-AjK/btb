@@ -461,8 +461,8 @@ function decodeWit(ctx, witResponse) {
         if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
           const today = moment(),
             day = today.date(),
-            month = today.month();
-          request('http://numbersapi.com/' + day + '/' + month + '/date', {
+            month = today.month() + 1;
+          request('http://numbersapi.com/' + month + '/' + day + '/date', {
             json: true
           }, (err, res, body) => {
             if (err) {
