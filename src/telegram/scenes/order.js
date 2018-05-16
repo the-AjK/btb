@@ -44,7 +44,7 @@ function leave(ctx) {
             console.error(err);
             msg = 'Something went wrong!';
         } else if (!dailyOrder) {
-            msg = "❌ NACK";
+            msg = "NACK";
         }
         ctx.reply(msg, keyboards.btb(ctx).opts);
         ctx.scene.leave();
@@ -578,7 +578,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                     } else {
                         const newOrder = new DB.Order(ctx.session.order);
                         newOrder.save((err, order) => {
-                            let text = "*Order confirmed!*";
+                            let text = "✅ *Order confirmed!*";
                             if (err) {
                                 console.error(err)
                                 text = "*Something went wrong!*\nContact the admin for more info.";
