@@ -650,22 +650,28 @@ bot.on(['audio', 'voice'], (ctx) => {
 
 function formatMenu(menu) {
   let text =
-    "\n__Daily menu__: *" + moment(menu.day).format("MMMM Do YYYY") + "*" +
-    "\n\n__First courses__:";
-  menu.firstCourse.items.map((fc) => {
-    text = text + "\n\n- *" + fc.value + "*" + (fc.condiments.length > 0 ? ":" : "");
-    fc.condiments.map((c) => {
-      text = text + "\n  -- *" + c + "*"
+    "\n__Daily menu__: *" + moment(menu.day).format("MMMM Do YYYY") + "*";
+  if (menu.firstCourse && menu.firstCourse.items && menu.firstCourse.items.length) {
+    text += "\n\n__First courses__:";
+    menu.firstCourse.items.map((fc) => {
+      text = text + "\n\n- *" + fc.value + "*" + (fc.condiments.length > 0 ? ":" : "");
+      fc.condiments.map((c) => {
+        text = text + "\n  -- *" + c + "*"
+      });
     });
-  });
-  text = text + "\n\n__Second courses__:\n"
-  menu.secondCourse.items.map((sc) => {
-    text = text + "\n - *" + sc + "*"
-  });
-  text = text + "\n\n__Side dishes__:\n"
-  menu.secondCourse.sideDishes.map((sd) => {
-    text = text + "\n - *" + sd + "*"
-  });
+  }
+  if (menu.secondCourse && menu.secondCourse.items && menu.secondCourse.items.length) {
+    text = text + "\n\n__Second courses__:\n"
+    menu.secondCourse.items.map((sc) => {
+      text = text + "\n - *" + sc + "*"
+    });
+  }
+  if (menu.secondCourse && menu.secondCourse.sideDishes && menu.secondCourse.sideDishes.length) {
+    text = text + "\n\n__Side dishes__:\n"
+    menu.secondCourse.sideDishes.map((sd) => {
+      text = text + "\n - *" + sd + "*"
+    });
+  }
   if (menu.additionalInfos && menu.additionalInfos != "") {
     text = text + "\n\n__Additional information__:\n*" + menu.additionalInfos + "*"
   }
