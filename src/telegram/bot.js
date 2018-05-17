@@ -313,7 +313,11 @@ function textManager(ctx) {
 };
 exports.textManager = (ctx) => {
   ctx.session.mainCounter = 0;
-  textManager(ctx);
+  if (parseMention(ctx).length > 0) {
+    mentionHandler(ctx);
+  } else {
+    textManager(ctx);
+  }
 }
 
 function defaultAnswer(ctx) {
@@ -531,19 +535,18 @@ function parseMention(ctx) {
   return mentions;
 }
 
-//Mention handler to broadcast by table
-bot.mention(['@tables', '@table', '@Tables', '@Table'], (ctx) => {
+function mentionHandler(ctx) {
   console.log("From: " + ctx.session.user.email + " Mention: '" + ctx.message.text + "'");
   const mentions = parseMention(ctx);
   for (let idx in mentions) {
     const mention = mentions[idx];
     if (ctx.message.text.replace("@" + mention, "").trim() == "") {
-      ctx.reply("You should write something more!\n(Example: '@" + mention + " ciao!')");
+      ctx.reply("You should write something more!\n(Example: '@" + mention + " ciao!')", keyboards.btb(ctx).opts);
       break;
     }
     DB.getDailyOrders(null, (err, orders) => {
       if (err) {
-        ctx.reply(err);
+        ctx.reply("Cannot broadcast a mention message:\n" + err, keyboards.btb(ctx).opts);
       } else {
         let message = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text,
           userMessage = "Broadcast service",
@@ -594,11 +597,16 @@ bot.mention(['@tables', '@table', '@Tables', '@Table'], (ctx) => {
         if (counter > 0) {
           userMessage = "Message broadcasted to " + counter + " users."
         }
-        ctx.reply(userMessage);
+        ctx.reply(userMessage, keyboards.btb(ctx).opts);
       }
     });
   }
-})
+}
+
+//Mention handler to broadcast by table
+bot.mention(['@tables', '@table', '@Tables', '@Table'], (ctx) => {
+  mentionHandler(ctx);
+});
 
 bot.on("text", textManager);
 
