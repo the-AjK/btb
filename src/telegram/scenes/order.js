@@ -31,44 +31,36 @@ exports.getOrdersLock = function () {
     return ordersLock;
 }
 
-function leave(ctx) {
+function deleteLastMessage(ctx){
     if (ctx.session.lastMessage) {
-        require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "😬", {
-            parse_mode: "markdown"
-        });
+        ctx.deleteMessage(ctx.session.lastMessage.message_id);
         delete ctx.session.lastMessage;
     }
+}
+
+function leave(ctx) {
+    deleteLastMessage(ctx);
     DB.getDailyUserOrder(null, ctx.session.user._id, (err, dailyOrder) => {
-        let msg = 'ACK';
+        let msg = "✅ *Order confirmed!*";
         if (err) {
             console.error(err);
             msg = 'Something went wrong!';
         } else if (!dailyOrder) {
-            msg = "NACK";
+            msg = "✖️ Order not placed";
         }
-        ctx.reply(msg, keyboards.btb(ctx).opts);
         ctx.scene.leave();
+        ctx.reply(msg, keyboards.btb(ctx).opts);
     });
 }
 
 function checkReEnter(ctx) {
     if (ctx.message) {
         if (keyboards.order(ctx).cmd.first == ctx.message.text) {
-            if (ctx.session.lastMessage) {
-                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "😬", {
-                    parse_mode: "markdown"
-                });
-                delete ctx.session.lastMessage;
-            }
+            deleteLastMessage(ctx);
             ctx.scene.enter('firstCourseWizard');
             return true;
         } else if (keyboards.order(ctx).cmd.second == ctx.message.text) {
-            if (ctx.session.lastMessage) {
-                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "😬", {
-                    parse_mode: "markdown"
-                });
-                delete ctx.session.lastMessage;
-            }
+            deleteLastMessage(ctx);
             ctx.scene.enter('secondCourseWizard');
             return true;
         }
@@ -85,7 +77,7 @@ function sendTables(ctx) {
                 console.error(err);
                 ctx.reply("DB error ehm");
                 release();
-                return leave(ctx)
+                return leave(ctx);
             } else {
                 //lets find the available tables
                 let inline_keyboard = ctx.session.dailyMenu.tables.map((t) => {
@@ -310,19 +302,12 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                     } else {
                         const newOrder = new DB.Order(ctx.session.order);
                         newOrder.save((err, order) => {
-                            let text = "✅ *Order confirmed!*";
                             if (err) {
-                                console.error(err)
-                                text = "*Something went wrong!*\nContact the admin for more info.";
+                                console.error(err);
                             } else if (!checkUser(ctx.session.user.role, userRoles.root)) {
                                 bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
                             }
-                            if (ctx.session.lastMessage) {
-                                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
-                                    parse_mode: "markdown"
-                                });
-                                delete ctx.session.lastMessage;
-                            }
+                            deleteLastMessage(ctx);
                             if (!err) {
                                 DB.getDailyOrdersCount(null, (err, count) => {
                                     if (err) {
@@ -471,19 +456,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             sendAddSideDishesQuery(ctx);
 
         } else if (ctx.update.callback_query && ctx.update.callback_query.data == "skipcontinue") {
-            let choosenSD = "";
-            ctx.session.dailyMenu.secondCourse.sideDishes.map(sd => {
-                if (md5(sd) == ctx.update.callback_query.data) {
-                    choosenSD = sd;
-                }
-            });
-            if (ctx.session.lastMessage) {
-                let text = (ctx.update.callback_query.data != "skipcontinue" ? ("Side dish: *" + choosenSD + "*") : "😬");
-                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
-                    parse_mode: "markdown"
-                });
-                delete ctx.session.lastMessage;
-            }
+            deleteLastMessage(ctx);
             //no more side dishes to add, go ahead...
             sendTables(ctx);
             ctx.wizard.next()
@@ -578,19 +551,12 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                     } else {
                         const newOrder = new DB.Order(ctx.session.order);
                         newOrder.save((err, order) => {
-                            let text = "✅ *Order confirmed!*";
                             if (err) {
-                                console.error(err)
-                                text = "*Something went wrong!*\nContact the admin for more info.";
+                                console.error(err);
                             } else if (!checkUser(ctx.session.user.role, userRoles.root)) {
                                 bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
                             }
-                            if (ctx.session.lastMessage) {
-                                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
-                                    parse_mode: "markdown"
-                                });
-                                delete ctx.session.lastMessage;
-                            }
+                            deleteLastMessage(ctx);
                             if (!err) {
                                 DB.getDailyOrdersCount(null, (err, count) => {
                                     if (err) {
@@ -706,12 +672,7 @@ scene.enter((ctx) => {
 
 function textManager(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-
-    if (ctx.session.lastMessage) {
-        ctx.deleteMessage(ctx.session.lastMessage.message_id);
-        delete ctx.session.lastMessage;
-    }
-
+    deleteLastMessage(ctx);
     if (keyboards.order(ctx).cmd.first == ctx.message.text) {
         ctx.scene.enter('firstCourseWizard');
     } else if (keyboards.order(ctx).cmd.second == ctx.message.text) {
@@ -719,7 +680,7 @@ function textManager(ctx) {
     } else if (ctx.message.text == keyboards.order(ctx).cmd.back) {
         //back button
         ctx.scene.leave();
-        ctx.reply('ACK', keyboards.btb(ctx).opts);
+        ctx.reply('️✖️ ️️️️️️Order not placed', keyboards.btb(ctx).opts);
     } else {
         ctx.scene.leave();
         //fallback to main bot scene
