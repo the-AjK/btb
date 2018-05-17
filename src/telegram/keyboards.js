@@ -75,12 +75,28 @@ module.exports = {
                 second: "Second course",
                 back: "◀️ Back",
             };
-        keyboard.push([{
-            text: cmd.first
-        }]);
-        keyboard.push([{
-            text: cmd.second
-        }]);
+
+        let done = false,
+            dailyMenu;
+        db.getDailyMenu(null, (err, m) => {
+            if (!err && m) {
+                dailyMenu = m;
+            }
+            done = true;
+        });
+        require('deasync').loopWhile(function () {
+            return !done;
+        });
+        if (dailyMenu.firstCourse && dailyMenu.firstCourse.items && dailyMenu.firstCourse.items.length) {
+            keyboard.push([{
+                text: cmd.first
+            }]);
+        }
+        if (dailyMenu.secondCourse && dailyMenu.secondCourse.items && dailyMenu.secondCourse.items.length) {
+            keyboard.push([{
+                text: cmd.second
+            }]);
+        }
         keyboard.push([{
             text: cmd.back
         }]);
@@ -94,7 +110,7 @@ module.exports = {
                     keyboard: keyboard
                 })
             },
-            text: "Choose first or second course:",
+            text: "Choose one course:",
             cmd: cmd
         };
 

@@ -313,7 +313,11 @@ function textManager(ctx) {
 };
 exports.textManager = (ctx) => {
   ctx.session.mainCounter = 0;
-  textManager(ctx);
+  if (parseMention(ctx).length > 0) {
+    mentionHandler(ctx);
+  } else {
+    textManager(ctx);
+  }
 }
 
 function defaultAnswer(ctx) {
@@ -531,19 +535,18 @@ function parseMention(ctx) {
   return mentions;
 }
 
-//Mention handler to broadcast by table
-bot.mention(['@tables', '@table', '@Tables', '@Table'], (ctx) => {
+function mentionHandler(ctx) {
   console.log("From: " + ctx.session.user.email + " Mention: '" + ctx.message.text + "'");
   const mentions = parseMention(ctx);
   for (let idx in mentions) {
     const mention = mentions[idx];
     if (ctx.message.text.replace("@" + mention, "").trim() == "") {
-      ctx.reply("You should write something more!\n(Example: '@" + mention + " ciao!')");
+      ctx.reply("You should write something more!\n(Example: '@" + mention + " ciao!')", keyboards.btb(ctx).opts);
       break;
     }
     DB.getDailyOrders(null, (err, orders) => {
       if (err) {
-        ctx.reply(err);
+        ctx.reply("Cannot broadcast a mention message:\n" + err, keyboards.btb(ctx).opts);
       } else {
         let message = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text,
           userMessage = "Broadcast service",
@@ -594,11 +597,16 @@ bot.mention(['@tables', '@table', '@Tables', '@Table'], (ctx) => {
         if (counter > 0) {
           userMessage = "Message broadcasted to " + counter + " users."
         }
-        ctx.reply(userMessage);
+        ctx.reply(userMessage, keyboards.btb(ctx).opts);
       }
     });
   }
-})
+}
+
+//Mention handler to broadcast by table
+bot.mention(['@tables', '@table', '@Tables', '@Table'], (ctx) => {
+  mentionHandler(ctx);
+});
 
 bot.on("text", textManager);
 
@@ -642,22 +650,28 @@ bot.on(['audio', 'voice'], (ctx) => {
 
 function formatMenu(menu) {
   let text =
-    "\n__Daily menu__: *" + moment(menu.day).format("MMMM Do YYYY") + "*" +
-    "\n\n__First courses__:";
-  menu.firstCourse.items.map((fc) => {
-    text = text + "\n\n- *" + fc.value + "*" + (fc.condiments.length > 0 ? ":" : "");
-    fc.condiments.map((c) => {
-      text = text + "\n  -- *" + c + "*"
+    "\n__Daily menu__: *" + moment(menu.day).format("MMMM Do YYYY") + "*";
+  if (menu.firstCourse && menu.firstCourse.items && menu.firstCourse.items.length) {
+    text += "\n\n__First courses__:";
+    menu.firstCourse.items.map((fc) => {
+      text = text + "\n\n- *" + fc.value + "*" + (fc.condiments.length > 0 ? ":" : "");
+      fc.condiments.map((c) => {
+        text = text + "\n  -- *" + c + "*"
+      });
     });
-  });
-  text = text + "\n\n__Second courses__:\n"
-  menu.secondCourse.items.map((sc) => {
-    text = text + "\n - *" + sc + "*"
-  });
-  text = text + "\n\n__Side dishes__:\n"
-  menu.secondCourse.sideDishes.map((sd) => {
-    text = text + "\n - *" + sd + "*"
-  });
+  }
+  if (menu.secondCourse && menu.secondCourse.items && menu.secondCourse.items.length) {
+    text = text + "\n\n__Second courses__:\n"
+    menu.secondCourse.items.map((sc) => {
+      text = text + "\n - *" + sc + "*"
+    });
+  }
+  if (menu.secondCourse && menu.secondCourse.sideDishes && menu.secondCourse.sideDishes.length) {
+    text = text + "\n\n__Side dishes__:\n"
+    menu.secondCourse.sideDishes.map((sd) => {
+      text = text + "\n - *" + sd + "*"
+    });
+  }
   if (menu.additionalInfos && menu.additionalInfos != "") {
     text = text + "\n\n__Additional information__:\n*" + menu.additionalInfos + "*"
   }

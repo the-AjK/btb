@@ -311,6 +311,7 @@ scene.on("text", textManager);
 
 function handleResults(ctx) {
     let result = ctx.session.slot.isWinningState();
+    console.log("Slot " + (ctx.session.user.dailySlotRunning ? "free daily" : "") + " run for user " + ctx.session.user.email);
     if (result > 0) {
         let pointsToAdd = ctx.session.slot.getPoints(result);
         levels.addPoints(ctx.session.user._id, pointsToAdd, true, (err, points) => {
@@ -334,7 +335,6 @@ function handleResults(ctx) {
             printSlot(ctx);
         });
     } else {
-        console.log("User " + ctx.session.user.email + " slot run");
         printSlot(ctx);
     }
 }
@@ -390,7 +390,6 @@ scene.on("callback_query", ctx => {
         } else if (!ctx.session.user.dailySlot || !moment(ctx.session.user.dailySlot).isSame(moment(), 'day')) {
             //daily free run
             ctx.session.slot.isRunning = true;
-            console.log("Slot free daily run for user " + ctx.session.user.email);
             DB.User.findByIdAndUpdate(ctx.session.user._id, {
                 dailySlot: moment().format()
             }, {

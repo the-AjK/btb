@@ -103,7 +103,7 @@ const FirstCourse = observer(
                                 showChipDelete={true}
                                 multiple={false}
                             />
-                            <hr/>
+                            {this.focus && this.props.data.value && <hr/>}
                         </Grid>
                         <Grid item xs={12}>
                             <MultipleSelect

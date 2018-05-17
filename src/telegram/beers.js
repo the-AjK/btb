@@ -150,9 +150,9 @@ function addBeer(ctx) {
                         //update user session points
                         ctx.session.user.points = points;
                         if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                            //bot.broadcastMessage("New drunk beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
+                            bot.broadcastMessage("New drunk beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
                         }
-                        console.log("New drunk beer from: " + ctx.session.user.email + " (" + points + ")");
+                        //console.log("New drunk beer from: " + ctx.session.user.email + " (" + points + ")");
                     });
                 } else {
                     ctx.reply("Thank you bro!");
@@ -164,9 +164,9 @@ function addBeer(ctx) {
                         //update user session points
                         ctx.session.user.points = points;
                         if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                            //bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
-                            console.log("New beer from: " + ctx.session.user.email + " (" + points + ")");
+                            bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
                         }
+                        //console.log("New beer from: " + ctx.session.user.email + " (" + points + ")");
                     });
                 }
             }, type == 'pint' ? 3000 : 2000)

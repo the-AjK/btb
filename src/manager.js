@@ -352,12 +352,12 @@ function menuIsValid(menu) {
 let dailyMenuNotificationTimeout;
 
 function notifyDailyMenu(menu) {
-    const timeout = 3; //minutes
-    console.log("Daily menu will be broadcasted in " + timeout + " mins.");
+    const timeout = 30; //seconds
+    console.log("Daily menu will be broadcasted in " + timeout + " seconds.");
     clearTimeout(dailyMenuNotificationTimeout);
     dailyMenuNotificationTimeout = setTimeout(() => {
         botNotifications.dailyMenu(menu);
-    }, 60000 * timeout);
+    }, 1000 * timeout);
 }
 
 function _addMenu(req, res) {
