@@ -100,16 +100,17 @@ const Menu = inject("ctx")(
                         if (err) {
                             alert(err)
                         } else {
+                            menu.additionalInfos = menu.additionalInfos || '';
+                            menu.label = menu.label || '';
+                            menu.deadline = moment(menu.deadline).format("HH:mm");
+                            menu.day = moment(menu.day).format("YYYY-MM-DD");
+                            this.firstCoursesPanels = [];
+                            this.menu = menu;
                             for (let i = 0; i < menu.firstCourse.items.length; i++) {
                                 if (i > 1)
                                     this.firstCoursesPanels.push(i)
                                 menu.firstCourse.items[i].key = i;
                             }
-                            menu.additionalInfos = menu.additionalInfos || '';
-                            menu.label = menu.label || '';
-                            menu.deadline = moment(menu.deadline).format("HH:mm");
-                            menu.day = moment(menu.day).format("YYYY-MM-DD");
-                            this.menu = menu;
                             this.props.ctx.tables.fetch(action((err, tables) => {
                                 if (err) {
                                     console.error(err);
@@ -198,7 +199,7 @@ const Menu = inject("ctx")(
                             condimentSuggestions={this.condimentSuggestions}
                             suggestions={this.suggestions}
                             data={this.menu.firstCourse.items[i]}
-                            remove={i === 0 ? false : this.removeFirstCourse(i)}
+                            remove={i === 0 && this.menu.firstCourse.items.length > 1 ? false : this.removeFirstCourse(i)}
                             onChange={(v, c) => this.handleChangeFirstCourse(i)(v, c)}
                             clone={() => this.handleCloneFirstCoursePanel(this.menu.firstCourse.items[i])}
                         />
@@ -261,12 +262,21 @@ const Menu = inject("ctx")(
                     cb("Invalid menu firstCourse");
                     return false;
                 }
+                if (this.menu.firstCourse && this.menu.firstCourse.items && this.menu.firstCourse.items.length === 0 &&
+                    this.menu.secondCourse && this.menu.secondCourse.items && this.menu.secondCourse.items.length === 0
+                ) {
+                    cb("Invalid empty menu");
+                    return false;
+                }
                 cb();
             }
 
             handleSave = () => {
                 let message = "Are you sure to save the changes?",
                     warnings = "";
+                if (this.menu.firstCourse.items.length === 0) {
+                    warnings += "\n - First courses list is empty!";
+                }
                 if (this.menu.secondCourse.items.length === 0) {
                     warnings += "\n - Second courses list is empty!";
                 }
