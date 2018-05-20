@@ -500,14 +500,18 @@ module.exports = {
                 back: "◀️ Back",
                 beer: "🍺 Beer",
                 status: "📋 Status",
-                slot: "🎰 Slot"
+                slot: "🎰 Slot",
+                nim: "🎱 NIM"
             };
 
         keyboard.push([{
             text: cmd.beer
         }, {
             text: cmd.slot
+        }, {
+            text: cmd.nim
         }]);
+
         if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || levels.getLevel(ctx.session.user.points) > 1)) {
             keyboard.push([{
                 text: cmd.status
@@ -608,6 +612,33 @@ module.exports = {
                 })
             },
             text: "*Welcome to BTB Slot*",
+            cmd: cmd
+        };
+
+        return obj;
+    },
+    nim: function (ctx) {
+        let keyboard = [],
+            cmd = {
+                back: "◀️ Back to extra"
+            };
+
+        keyboard.push([{
+            text: cmd.back
+        }]);
+
+        let obj = {
+            availableCmd: Object.keys(cmd).map(c => cmd[c]),
+            opts: {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    one_time_keyboard: false,
+                    resize_keyboard: true,
+                    keyboard: keyboard
+                })
+            },
+            text: "*NIM Game*",
             cmd: cmd
         };
 
