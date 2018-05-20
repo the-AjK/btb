@@ -322,6 +322,9 @@ function selectUserToBomb(ctx) {
         "_id": {
             "$ne": ctx.session.user._id
         },
+        "telegram.id": {
+            "$ne": process.env.ROOT_TELEGRAM_ID
+        },
         "telegram.enabled": true,
         "telegram.banned": false,
         points: {
