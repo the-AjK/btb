@@ -508,9 +508,9 @@ module.exports = {
             text: cmd.beer
         }, {
             text: cmd.slot
-        }, {
+        }/*, {
             text: cmd.nim
-        }]);
+        }*/]);
 
         if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || levels.getLevel(ctx.session.user.points) > 1)) {
             keyboard.push([{
