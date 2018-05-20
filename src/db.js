@@ -640,7 +640,10 @@ exports.getTopTenUsers = (cb) => {
   let query = {
           "telegram.enabled": true,
           "telegram.banned": false,
-          "deleted": false
+          "deleted": false,
+          "telegram.id": {
+            "$ne": process.env.ROOT_TELEGRAM_ID
+          }
       },
       select = {
           username: 1,
