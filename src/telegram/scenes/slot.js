@@ -10,6 +10,7 @@ const Telegraf = require("telegraf"),
     keyboards = require('../keyboards'),
     async = require("async"),
     moment = require("moment"),
+    PaginatedInlineKeyboard = require("../tools/paginatedInlineKeyboard").PaginatedInlineKeyboard,
     roles = require("../../roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
@@ -22,6 +23,13 @@ const Telegraf = require("telegraf"),
     bot = require('../bot'),
     ACTIONS = bot.ACTIONS;
 
+function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
 
 class Slot {
     constructor(row, col, colElements) {
@@ -30,7 +38,7 @@ class Slot {
         this._progress = 0;
         this._position = [];
         this.isRunning = false;
-        this._elements = ["🍔", "🚰", "🍿", "🍕", "🍺"];
+        this._elements = ["🍔", "🚰", "💣", "🍕", "🍺"];
         this._colElements = this._elements.length;
         this.initPosition();
         this.initSlot();
@@ -51,6 +59,7 @@ class Slot {
                     j--;
                 }
             }
+            shuffle(this._slot[i]);
         }
     }
 
@@ -102,17 +111,29 @@ class Slot {
         let counter = 0;
         for (let i = 0; i < this._row; i++) {
             if (this.isWinningRow(i)) {
+                counter += 1;
                 if (this.getRelativeRow(i)[0] == "🚰") {
-                    return -1;
+                    //water is not so healthy
+                    counter -= 2;
                 }
                 if (this.getRelativeRow(i)[0] == "🍺") {
                     //double count for beers!
-                    counter++;
+                    counter += 1;
                 }
-                counter++;
             }
         }
         return counter;
+    }
+
+    isWinningBomb() {
+        for (let i = 0; i < this._row; i++) {
+            if (this.isWinningRow(i)) {
+                if (this.getRelativeRow(i)[0] == "💣") {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     formatProgress() {
@@ -152,6 +173,15 @@ class Slot {
             5: 20
         }
         return points[winningRows] || 2;
+    }
+
+    bombPoints() {
+        let winningRows = this.isWinningState();
+        if (winningRows > 0) {
+            return this.getPoints(winningRows) * 3;
+        } else {
+            return 0;
+        }
     }
 
     toString(ctx, running, firstTime) {
@@ -269,30 +299,73 @@ function printSlot(ctx) {
             callback_data: 'spin'
         }]
     ];
+    const bombWin = ctx.session.slot.isWinningBomb() && ctx.session.slot.bombPoints() > 0;
     require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
         parse_mode: "markdown",
-        reply_markup: !ctx.session.user.dailySlotRunning ? JSON.stringify({
+        reply_markup: !ctx.session.user.dailySlotRunning && !bombWin ? JSON.stringify({
             inline_keyboard: inline_keyboard
         }) : undefined
     }).then((msg) => {
         ctx.session.user.dailySlotRunning = false;
+        if (bombWin) {
+            selectUserToBomb(ctx);
+        }
+    });
+}
+
+function selectUserToBomb(ctx) {
+    DB.User.find({
+        "_id": {
+            "$ne": ctx.session.user._id
+        },
+        "telegram.enabled": true,
+        "telegram.banned": false,
+        points: {
+            "$gt": 0
+        },
+        deleted: false
+    }, (err, users) => {
+        if (err) {
+            console.error(err);
+        } else {
+            let data = users.map(u => {
+                    return {
+                        text: u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "") + " (" + u.points + ")",
+                        callback_data: "user_" + String(u.telegram.id)
+                    };
+                }),
+                options = {
+                    columns: 2,
+                    pageSize: 6
+                };
+            ctx.session.users_inline_keyboard = new PaginatedInlineKeyboard(data, options);
+            let result = ctx.session.slot.isWinningState();
+            const bombPoints = ctx.session.slot.getPoints(result);
+            console.log("User: " + ctx.session.user.email + " won " + ctx.session.slot.bombPoints() + " bombs");
+            ctx.reply("You won " + ctx.session.slot.bombPoints() + " bombs 💣 !\nWho do you want to send them to?", {
+                parse_mode: "markdown",
+                reply_markup: JSON.stringify({
+                    inline_keyboard: ctx.session.users_inline_keyboard.render()
+                })
+            }).then((m) => {
+                ctx.session.lastMessage = m;
+            });
+        }
     });
 }
 
 function textManager(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-
     if (ctx.session.slot_header) {
         ctx.deleteMessage(ctx.session.slot_header.message_id);
         delete ctx.session.slot_header;
     }
-
     ctx.session.user.dailySlotRunning = false;
-
     if (ctx.session.slot_message) {
         ctx.deleteMessage(ctx.session.slot_message.message_id);
         delete ctx.session.slot_message;
     }
+    deleteLastMessage(ctx);
 
     if (keyboards.slot(ctx)[ctx.message.text]) {
         keyboards.slot(ctx)[ctx.message.text]();
@@ -311,7 +384,7 @@ scene.on("text", textManager);
 
 function handleResults(ctx) {
     let result = ctx.session.slot.isWinningState();
-    console.log("Slot " + (ctx.session.user.dailySlotRunning ? "free daily" : "") + " run for user " + ctx.session.user.email);
+    console.log("Slot " + (ctx.session.user.dailySlotRunning ? "free daily " : "") + "run for user " + ctx.session.user.email);
     if (result > 0) {
         let pointsToAdd = ctx.session.slot.getPoints(result);
         levels.addPoints(ctx.session.user._id, pointsToAdd, true, (err, points) => {
@@ -382,6 +455,21 @@ function runSlot(ctx, cb) {
     });
 }
 
+function updateUsersKeyboard(ctx) {
+    require('../bot').bot.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
+        inline_keyboard: ctx.session.users_inline_keyboard.render()
+    }).then((m) => {
+        ctx.session.lastMessage = m;
+    });
+}
+
+function deleteLastMessage(ctx) {
+    if (ctx.session.lastMessage) {
+        ctx.deleteMessage(ctx.session.lastMessage.message_id);
+        delete ctx.session.lastMessage;
+    }
+}
+
 scene.on("callback_query", ctx => {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     if (ctx.update.callback_query.data == 'spin') {
@@ -420,6 +508,41 @@ scene.on("callback_query", ctx => {
                 }
             });
         }
+    } else if (ctx.update.callback_query.data == ctx.session.users_inline_keyboard.previousCallbackData()) {
+        ctx.session.users_inline_keyboard.previous();
+        updateUsersKeyboard(ctx);
+    } else if (ctx.update.callback_query.data == ctx.session.users_inline_keyboard.nextCallbackData()) {
+        ctx.session.users_inline_keyboard.next();
+        updateUsersKeyboard(ctx);
+    } else if (ctx.update.callback_query.data.indexOf("user_") == 0) {
+        const userTelegramID = parseInt(ctx.update.callback_query.data.substring(5));
+        if (isNaN(userTelegramID)) {
+            console.error("Wrong callback data");
+            return ctx.answerCbQuery("Something went wrong!");
+        }
+        DB.User.findOne({
+            "telegram.id": userTelegramID
+        }, (err, bombUser) => {
+            if (err || !bombUser) {
+                console.error(err || "Slot bomb user not found");
+                return ctx.answerCbQuery("Something went wrong!");
+            }
+            deleteLastMessage(ctx);
+            ctx.answerCbQuery("Sending bomb to " + bombUser.telegram.first_name + "...");
+            const sender = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + ")",
+                message = "Boom! " + sender + " just sent you " + ctx.session.slot.bombPoints() + " bombs 💣 !";
+            require('../bot').bot.telegram.sendMessage(bombUser.telegram.id, message, {
+                parse_mode: "markdown"
+            }).then(() => {
+                const points = ctx.session.slot.bombPoints();
+                levels.removePoints(bombUser._id, points, false, () => {
+                    const bombedUser = "[" + (bombUser.telegram.first_name + (bombUser.telegram.last_name ? (" " + bombUser.telegram.last_name) : "")) + "](tg://user?id=" + bombUser.telegram.id + ")";
+                    ctx.reply(bombedUser + " got your bombs and lost " + points + " points 😬 !", {
+                        parse_mode: "markdown"
+                    });
+                });
+            });
+        });
     } else {
         ctx.answerCbQuery("Okey! I have nothing to do.");
     }
