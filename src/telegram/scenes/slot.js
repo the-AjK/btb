@@ -281,14 +281,18 @@ scene.enter((ctx) => {
 });
 
 function printRunningSlot(ctx, cb) {
-    require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx, true), {
-        parse_mode: "markdown",
-    }).then((msg) => {
-        cb(null, msg);
-    }, (err) => {
-        //nothing to do
-        cb(err);
-    });
+    if (ctx.session.slot_message) {
+        require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx, true), {
+            parse_mode: "markdown",
+        }).then((msg) => {
+            cb(null, msg);
+        }, (err) => {
+            //nothing to do
+            cb(err);
+        });
+    } else {
+        cb("Cannot update slot message");
+    }
 
 }
 
