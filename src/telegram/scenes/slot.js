@@ -293,7 +293,6 @@ function printRunningSlot(ctx, cb) {
     } else {
         cb("Cannot update slot message");
     }
-
 }
 
 function printSlot(ctx) {
@@ -304,17 +303,19 @@ function printSlot(ctx) {
         }]
     ];
     const bombWin = ctx.session.slot.isWinningBomb() && ctx.session.slot.bombPoints() > 0;
-    require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
-        parse_mode: "markdown",
-        reply_markup: !ctx.session.user.dailySlotRunning && !bombWin ? JSON.stringify({
-            inline_keyboard: inline_keyboard
-        }) : undefined
-    }).then((msg) => {
-        ctx.session.user.dailySlotRunning = false;
-        if (bombWin) {
-            selectUserToBomb(ctx);
-        }
-    });
+    if (ctx.session.slot_message) {
+        require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
+            parse_mode: "markdown",
+            reply_markup: !ctx.session.user.dailySlotRunning && !bombWin ? JSON.stringify({
+                inline_keyboard: inline_keyboard
+            }) : undefined
+        }).then((msg) => {
+            ctx.session.user.dailySlotRunning = false;
+            if (bombWin) {
+                selectUserToBomb(ctx);
+            }
+        });
+    }
 }
 
 function selectUserToBomb(ctx) {
