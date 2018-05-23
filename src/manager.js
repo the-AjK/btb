@@ -191,10 +191,10 @@ function _updateUser(req, res) {
         }
         if (!user.telegram.enabled && data.$set && data.$set["telegram.enabled"] == true && data.sendNotification) {
             botNotifications.accountEnabledDisabled(user, true);
-            bot.broadcastMessage("User *" + user.email + "* enabled by *" + req.user.email + "*", accessLevels.root, null, true);
+            bot.broadcastMessage("User *" + user.email + "* enabled by *" + req.user.email + "*", accessLevels.admin, null, true);
         } else if (user.telegram.enabled && data.$set && data.$set["telegram.enabled"] == false && data.sendNotification) {
             botNotifications.accountEnabledDisabled(user, false);
-            bot.broadcastMessage("User *" + user.email + "* disabled by *" + req.user.email + "*", accessLevels.root, null, true);
+            bot.broadcastMessage("User *" + user.email + "* disabled by *" + req.user.email + "*", accessLevels.admin, null, true);
         }
         res.sendStatus(200);
     });
