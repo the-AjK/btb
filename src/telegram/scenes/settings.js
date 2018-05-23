@@ -18,7 +18,6 @@ const Telegraf = require("telegraf"),
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
     levels = require('../../levels'),
-    beers = require('../beers'),
     bot = require('../bot'),
     DB = require("../../db"),
     ACTIONS = bot.ACTIONS;
@@ -88,8 +87,6 @@ scene.on("callback_query", ctx => {
         setRootReminders(ctx, false);
     } else if (ctx.update.callback_query.data == 'rootreminderson') {
         setRootReminders(ctx, true);
-    } else if (ctx.update.callback_query.data.toLowerCase().indexOf('pint') != -1) {
-        beers.addBeer(ctx);
     } else if (ctx.update.callback_query.data == 'unsubscribe') {
         unsubscribe(ctx);
     } else {
