@@ -41,6 +41,19 @@ class Session {
         return ctx.from && ctx.chat && this._keygen(ctx.from.id, ctx.chat.id);
     }
 
+    getSessions() {
+        const now = new Date().getTime();
+        let sessions = [];
+        this.store.forEach((val, key) => {
+            if (key.expires && key.expires < now) {
+                //expired session
+            } else {
+                sessions.push(val.session)
+            }
+        });
+        return sessions;
+    }
+
     deleteSession(userID, chatID) {
         const key = this._keygen(userID, chatID);
         return this.store.delete(key);
