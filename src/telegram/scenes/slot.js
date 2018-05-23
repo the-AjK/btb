@@ -405,6 +405,9 @@ function handleResults(ctx) {
             } else {
                 ctx.session.user.points = points;
                 console.log("User: " + ctx.session.user.email + " got " + pointsToAdd + " slot points (" + ctx.session.user.points + ")");
+                if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                    bot.broadcastMessage("User *" + ctx.session.user.email + "* got " + pointsToAdd + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
+                }
             }
             printSlot(ctx);
         });
@@ -416,6 +419,9 @@ function handleResults(ctx) {
             } else {
                 ctx.session.user.points = points;
                 console.log("User: " + ctx.session.user.email + " lost " + result + " slot points (" + ctx.session.user.points + ")");
+                if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                    bot.broadcastMessage("User *" + ctx.session.user.email + "* lost " + result + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
+                }
             }
             printSlot(ctx);
         });
@@ -552,6 +558,9 @@ scene.on("callback_query", ctx => {
                     ctx.reply(bombedUser + " got your bombs and lost " + points + " points 😬 !", {
                         parse_mode: "markdown"
                     });
+                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                        bot.broadcastMessage("User *" + ctx.session.user.email + "* sent " + ctx.session.slot.bombPoints() + " bombs to *" + bombedUser.email + "*", accessLevels.root, null, true);
+                    }
                 });
             });
         });
