@@ -331,6 +331,10 @@ function selectUserToBomb(ctx) {
             "$gt": 0
         },
         deleted: false
+    }, null, {
+        sort: {
+            points: -1
+        }
     }, (err, users) => {
         if (err) {
             console.error(err);
