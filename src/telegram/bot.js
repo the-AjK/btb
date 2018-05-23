@@ -6,7 +6,7 @@
 "use strict";
 
 const Telegraf = require("telegraf"),
-  session = require("telegraf/session"),
+  Session = require('./session'),
   Stage = require('telegraf/stage'),
   rateLimit = require("telegraf-ratelimit"),
   uuidv1 = require('uuid/v1'),
@@ -54,7 +54,7 @@ const ACTIONS = {
 exports.ACTIONS = ACTIONS;
 
 bot.catch(err => {
-  console.log("Ooops", err);
+  console.error("Ooops", err);
 });
 
 // Scene manager
@@ -69,21 +69,22 @@ stage.register(require('./scenes/orderRating').scene)
 stage.register(require('./scenes/slot').scene)
 stage.register(require('./scenes/nim').scene)
 
-bot.use(session());
+const session = new Session({
+  ttl: 2 * 60 * 60000 //2h
+});
+
+bot.use(session.middleware());
 bot.use(stage.middleware());
 
 // Authorization middleware
 bot.use((ctx, next) => {
 
-  ctx.session.counter = ctx.session.counter || 0;
-  ctx.session.counter++;
-  ctx.session.user = null;
-
-  if (ctx.session.lastMessage) {
-    ctx.deleteMessage(ctx.session.lastMessage.message_id);
-    delete ctx.session.lastMessage;
+  if (ctx.session && ctx.session.user) {
+    //there is a user session, lets skip the auth procedure
+    return next();
   }
 
+  //Unknow user, let's authenticate the request
   const newUser = ctx.from;
   if (newUser && !newUser.is_bot) {
     DB.User.findOne({
@@ -958,6 +959,8 @@ exports.init = function (expressApp) {
   if (process.env.NODE_ENV === "production") {
     broadcastMessage("BTB has started!", accessLevels.root, null, true);
   }
+  //init beers auto drink
+  require('./beers').init();
 }
 
 exports.bot = bot;
