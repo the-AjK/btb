@@ -283,7 +283,7 @@ scene.enter((ctx) => {
 
 scene.leave((ctx) => {
     const bombPoints = ctx.session.slot.bombPoints();
-    if (bombPoints > 0 && !ctx.session.slot.bombSent) {
+    if (ctx.session.slot.isWinningBomb() && bombPoints > 0 && !ctx.session.slot.bombSent) {
         //User won some bombs, but didn't get rid of them
         console.log("User " + ctx.session.user.email + " dint't get rid of his " + bombPoints + " bombs");
         ctx.reply("You didn't get rid of your " + bombPoints + " bombs!").then(() => {
