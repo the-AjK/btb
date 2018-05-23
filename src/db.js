@@ -166,6 +166,26 @@ const BeerSchema = new mongoose.Schema({
   }
 });
 
+const SlotSchema = new mongoose.Schema({
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  bet: {
+    type: Number,
+    required: true
+  },
+  points: {
+    type: Number,
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const MenuSchema = new mongoose.Schema({
   owner: {
     type: mongoose.Schema.Types.ObjectId,
@@ -338,12 +358,14 @@ UserSchema.pre('save', function (next) {
 
 const User = mongoose.model("User", UserSchema),
   Beer = mongoose.model("Beer", BeerSchema),
+  Slot = mongoose.model("Slot", SlotSchema),
   Menu = mongoose.model("Menu", MenuSchema),
   Order = mongoose.model("Order", OrderSchema),
   Table = mongoose.model("Table", TableSchema);
 
 exports.User = User;
 exports.Beer = Beer;
+exports.Slot = Slot;
 exports.Menu = Menu;
 exports.Order = Order;
 exports.Table = Table;

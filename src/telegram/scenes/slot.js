@@ -397,6 +397,17 @@ scene.on("text", textManager);
 function handleResults(ctx) {
     let result = ctx.session.slot.isWinningState();
     console.log("Slot " + (ctx.session.user.dailySlotRunning ? "free daily " : "") + "run for user " + ctx.session.user.email);
+    //Save slot result
+    const newSlotRun = new DB.Slot({
+        owner: ctx.session.user._id,
+        bet: ctx.session.user.dailySlotRunning ? 0 : 1,
+        points: result
+    });
+    newSlotRun.save((err, s) => {
+        if (err) {
+            console.error(err);
+        }
+    });
     if (result > 0) {
         let pointsToAdd = ctx.session.slot.getPoints(result);
         levels.addPoints(ctx.session.user._id, pointsToAdd, true, (err, points) => {
