@@ -6,7 +6,7 @@
 "use strict";
 
 const Telegraf = require("telegraf"),
-  session = require("telegraf/session"),
+  Session = require('./session'),
   Stage = require('telegraf/stage'),
   rateLimit = require("telegraf-ratelimit"),
   uuidv1 = require('uuid/v1'),
@@ -54,7 +54,7 @@ const ACTIONS = {
 exports.ACTIONS = ACTIONS;
 
 bot.catch(err => {
-  console.log("Ooops", err);
+  console.error("Ooops", err);
 });
 
 // Scene manager
@@ -69,7 +69,11 @@ stage.register(require('./scenes/orderRating').scene)
 stage.register(require('./scenes/slot').scene)
 stage.register(require('./scenes/nim').scene)
 
-bot.use(session());
+const session = new Session({
+  ttl: 2 * 60 * 60000 //2h
+});
+
+bot.use(session.middleware());
 bot.use(stage.middleware());
 
 // Authorization middleware
@@ -77,13 +81,13 @@ bot.use((ctx, next) => {
 
   ctx.session.counter = ctx.session.counter || 0;
   ctx.session.counter++;
-  ctx.session.user = null;
 
-  if (ctx.session.lastMessage) {
-    ctx.deleteMessage(ctx.session.lastMessage.message_id);
-    delete ctx.session.lastMessage;
+  if (ctx.session && ctx.session.user) {
+    //there is a user session, lets skip the auth procedure
+    return next();
   }
 
+  //Unknow user, let's authenticate the request
   const newUser = ctx.from;
   if (newUser && !newUser.is_bot) {
     DB.User.findOne({
@@ -256,6 +260,10 @@ function typingEffect(ctx, text, callback) {
 exports.typingEffect = typingEffect;
 
 function textManager(ctx) {
+
+  if (parseMention(ctx).length > 0)
+    return mentionHandler(ctx);
+
   ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
 
   ctx.session.mainCounter = ctx.session.mainCounter || 0;
@@ -312,14 +320,7 @@ function textManager(ctx) {
     });
   }
 };
-exports.textManager = (ctx) => {
-  ctx.session.mainCounter = 0;
-  if (parseMention(ctx).length > 0) {
-    mentionHandler(ctx);
-  } else {
-    textManager(ctx);
-  }
-}
+exports.textManager = textManager;
 
 function defaultAnswer(ctx) {
   // answer politely
@@ -361,6 +362,29 @@ function decodeWit(ctx, witResponse) {
           ctx.reply(text || err, keyboards.btb(ctx).opts);
         });
         break;
+      case "activesessions":
+        if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+          msg = "401 - Unauthorized";
+        } else {
+          const activeSessions = session.getSessions();
+          //sort by active users
+          activeSessions.sort((t1, t2) => {
+            if (t1.counter > t2.counter) {
+              return 1
+            } else if (t1.counter < t2.counter) {
+              return -1
+            } else {
+              return 0;
+            }
+          });
+          msg = "Active sessions: *" + activeSessions.length + "*\nActive users in the last 2h:";
+          for (let i = 0; i < activeSessions.length; i++) {
+            const s = activeSessions[i];
+            let userLink = "[" + (s.user.telegram.first_name + (s.user.telegram.last_name ? (" " + s.user.telegram.last_name) : "")) + "](tg://user?id=" + s.user.telegram.id + ") (" + s.counter + ")";
+            msg += "\n- " + userLink;
+          }
+        }
+        return ctx.replyWithMarkdown(msg);
       case "order":
         ctx.scene.enter('order');
         break;
@@ -526,6 +550,9 @@ function decodeWit(ctx, witResponse) {
 
 function parseMention(ctx) {
   //ctx.message.entities = [ { offset: 0, length: 7, type: 'mention' } ]
+  if (ctx.message.text.toLowerCase().indexOf('@all ') >= 0) {
+    return ['all'];
+  }
   let mentions = [];
   for (let idx in ctx.message.entities) {
     const entity = ctx.message.entities[idx];
@@ -544,6 +571,15 @@ function mentionHandler(ctx) {
     if (ctx.message.text.replace("@" + mention, "").trim() == "") {
       ctx.reply("You should write something more!\n(Example: '@" + mention + " ciao!')", keyboards.btb(ctx).opts);
       break;
+    }
+    if (mention.toLowerCase() == 'all') {
+      let message = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text;
+      broadcastMessage(message, accessLevels.user, null, false, {
+        _id: {
+          "$ne": ctx.session.user._id
+        }
+      }, true);
+      return ctx.reply("Message broadcasted!", keyboards.btb(ctx).opts);
     }
     DB.getDailyOrders(null, (err, orders) => {
       if (err) {
@@ -605,7 +641,7 @@ function mentionHandler(ctx) {
 }
 
 //Mention handler to broadcast by table
-bot.mention(['@tables', '@table', '@Tables', '@Table'], (ctx) => {
+bot.mention(['@tables', '@table', '@Tables', '@Table', '@all', '@All'], (ctx) => {
   mentionHandler(ctx);
 });
 
@@ -869,7 +905,7 @@ function _getDailyMenu(cb) {
   });
 }
 
-function broadcastMessage(message, accessLevel, opts, silent) {
+function broadcastMessage(message, accessLevel, opts, silent, additionalQuery, noLogs) {
   let _options = opts || {
     parse_mode: "markdown"
   };
@@ -878,14 +914,20 @@ function broadcastMessage(message, accessLevel, opts, silent) {
     _options.disable_notification = true;
   }
 
-  const query = {
+  let query = {
     "telegram.enabled": true,
     "telegram.banned": false,
     "deleted": false
   }
 
+  if (additionalQuery) {
+    Object.assign(query, additionalQuery);
+  }
+
   let logText,
     _message;
+
+  //console.log("Broadcasting message: '" + message.substring(0, 100) + "...'");
 
   DB.User.find(query, (err, users) => {
     if (err) {
@@ -905,7 +947,7 @@ function broadcastMessage(message, accessLevel, opts, silent) {
             _message = "(ADMIN) " + _message;
             logText = logText + "ADMIN";
           }
-          logText = logText + "] message: '" + _message.substring(0, 50) + "...'";
+          logText = logText + "] message: '" + _message.substring(0, 100) + "...'";
         }
         if (roles.compareAccessLevel(accessLevel, roles.accessLevels.admin)) {
           // root or admins who set the admin reminder setting off, skip
@@ -920,9 +962,11 @@ function broadcastMessage(message, accessLevel, opts, silent) {
           user.settings.rootReminders == false) {
           continue;
         }
-        console.log(logText);
+        if (!noLogs)
+          console.log(logText);
         bot.telegram.sendMessage(user.telegram.id, _message, _options).then(() => {
-          console.log("Message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
+          if (!noLogs)
+            console.log("Message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
         });
       }
     }
@@ -958,6 +1002,8 @@ exports.init = function (expressApp) {
   if (process.env.NODE_ENV === "production") {
     broadcastMessage("BTB has started!", accessLevels.root, null, true);
   }
+  //init beers auto drink
+  require('./beers').init();
 }
 
 exports.bot = bot;

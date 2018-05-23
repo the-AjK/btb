@@ -12,7 +12,6 @@ const passport = require("passport"),
   crypto = require("crypto"),
   JwtStrategy = require("passport-jwt").Strategy,
   ExtractJwt = require("passport-jwt").ExtractJwt,
-  bot = require("./telegram/bot"),
   roles = require("./roles"),
   checkUserAccessLevel = roles.checkUserAccessLevel,
   accessLevels = roles.accessLevels,
@@ -125,16 +124,16 @@ exports.login = function (req, res) {
         });
         //notify root users
         if (!roles.checkUser(user.role, userRoles.root)) {
-          bot.broadcastMessage("User login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, null, true);
+          require("./telegram/bot").broadcastMessage("User login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, null, true);
         }
       } else {
         //user found but wrong password
-        bot.broadcastMessage("User wrong login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, null, true);
+        require("./telegram/bot").broadcastMessage("User wrong login: " + user.email + "\nip: " + req.clientIp, accessLevels.root, null, true);
         res.sendStatus(401);
       }
     } else {
       //user not found!
-      bot.broadcastMessage("Failed login attempt:\n" + email + "\n" + password + "\nip: " + req.clientIp, accessLevels.root, null, true);
+      require("./telegram/bot").broadcastMessage("Failed login attempt:\n" + email + "\n" + password + "\nip: " + req.clientIp, accessLevels.root, null, true);
       res.sendStatus(401);
     }
   });

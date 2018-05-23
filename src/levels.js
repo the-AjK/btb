@@ -16,17 +16,26 @@ const bot = require("./telegram/bot"),
 const pointsLevels = {
     10: 1,
     50: 2,
-    150: 3,
-    300: 4,
-    600: 5,
-    1200: 6
+    200: 3,
+    600: 4,
+    1500: 5,
+    5000: 6,
+    10000: 7,
+    50000: 8,
+    100000: 9
 };
 
 function getLevelFeatures(level) {
     const features = {
         1: "- Rate your lunch\n- Top ten users\n- Joke bot\n- Audio bot",
         2: "- Check orders status\n- Check tables status\n- Check users without orders",
-        3: "- Secret stuff"
+        3: "- Secret stuff",
+        4: "- Secret stuff",
+        5: "- Secret stuff",
+        6: "- Secret stuff",
+        7: "- Secret stuff",
+        8: "- Secret stuff",
+        9: "- Secret stuff"
     };
     return features[level] || "";
 }

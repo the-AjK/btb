@@ -248,6 +248,7 @@ class Slot {
 const scene = new Scene('slot')
 scene.enter((ctx) => {
     ctx.session.slot = new Slot(3, 3);
+    ctx.session.slot.bombSent = false;
     ctx.reply(keyboards.slot(ctx).text, keyboards.slot(ctx).opts).then(() => {
         let message = "Feeling lucky?";
         //Free daily run
@@ -280,6 +281,21 @@ scene.enter((ctx) => {
     });
 });
 
+scene.leave((ctx) => {
+    const bombPoints = ctx.session.slot.bombPoints();
+    if (bombPoints > 0 && !ctx.session.slot.bombSent) {
+        //User won some bombs, but didn't get rid of them
+        console.log("User " + ctx.session.user.email + " dint't get rid of his " + bombPoints + " bombs");
+        ctx.reply("You didn't get rid of your " + bombPoints + " bombs!").then(() => {
+            levels.removePoints(ctx.session.user._id, bombPoints, false, (err, points) => {
+                if (err) {
+                    console.error(err);
+                }
+            });
+        });
+    }
+});
+
 function printRunningSlot(ctx, cb) {
     if (ctx.session.slot_message) {
         require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx, true), {
@@ -293,7 +309,6 @@ function printRunningSlot(ctx, cb) {
     } else {
         cb("Cannot update slot message");
     }
-
 }
 
 function printSlot(ctx) {
@@ -304,17 +319,19 @@ function printSlot(ctx) {
         }]
     ];
     const bombWin = ctx.session.slot.isWinningBomb() && ctx.session.slot.bombPoints() > 0;
-    require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
-        parse_mode: "markdown",
-        reply_markup: !ctx.session.user.dailySlotRunning && !bombWin ? JSON.stringify({
-            inline_keyboard: inline_keyboard
-        }) : undefined
-    }).then((msg) => {
-        ctx.session.user.dailySlotRunning = false;
-        if (bombWin) {
-            selectUserToBomb(ctx);
-        }
-    });
+    if (ctx.session.slot_message) {
+        require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
+            parse_mode: "markdown",
+            reply_markup: !ctx.session.user.dailySlotRunning && !bombWin ? JSON.stringify({
+                inline_keyboard: inline_keyboard
+            }) : undefined
+        }).then((msg) => {
+            ctx.session.user.dailySlotRunning = false;
+            if (bombWin) {
+                selectUserToBomb(ctx);
+            }
+        });
+    }
 }
 
 function selectUserToBomb(ctx) {
@@ -331,6 +348,10 @@ function selectUserToBomb(ctx) {
             "$gt": 0
         },
         deleted: false
+    }, null, {
+        sort: {
+            points: -1
+        }
     }, (err, users) => {
         if (err) {
             console.error(err);
@@ -346,8 +367,6 @@ function selectUserToBomb(ctx) {
                     pageSize: 6
                 };
             ctx.session.users_inline_keyboard = new PaginatedInlineKeyboard(data, options);
-            let result = ctx.session.slot.isWinningState();
-            const bombPoints = ctx.session.slot.getPoints(result);
             console.log("User: " + ctx.session.user.email + " won " + ctx.session.slot.bombPoints() + " bombs");
             ctx.reply("You won " + ctx.session.slot.bombPoints() + " bombs 💣 !\nWho do you want to send them to?", {
                 parse_mode: "markdown",
@@ -378,7 +397,6 @@ function textManager(ctx) {
         keyboards.slot(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
         //back button
-        ctx.scene.leave();
         ctx.scene.enter('extra');
     } else {
         ctx.scene.leave();
@@ -392,6 +410,17 @@ scene.on("text", textManager);
 function handleResults(ctx) {
     let result = ctx.session.slot.isWinningState();
     console.log("Slot " + (ctx.session.user.dailySlotRunning ? "free daily " : "") + "run for user " + ctx.session.user.email);
+    //Save slot result
+    const newSlotRun = new DB.Slot({
+        owner: ctx.session.user._id,
+        bet: ctx.session.user.dailySlotRunning ? 0 : 1,
+        points: result
+    });
+    newSlotRun.save((err, s) => {
+        if (err) {
+            console.error(err);
+        }
+    });
     if (result > 0) {
         let pointsToAdd = ctx.session.slot.getPoints(result);
         levels.addPoints(ctx.session.user._id, pointsToAdd, true, (err, points) => {
@@ -400,6 +429,9 @@ function handleResults(ctx) {
             } else {
                 ctx.session.user.points = points;
                 console.log("User: " + ctx.session.user.email + " got " + pointsToAdd + " slot points (" + ctx.session.user.points + ")");
+                if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                    bot.broadcastMessage("User *" + ctx.session.user.email + "* got " + pointsToAdd + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
+                }
             }
             printSlot(ctx);
         });
@@ -411,6 +443,9 @@ function handleResults(ctx) {
             } else {
                 ctx.session.user.points = points;
                 console.log("User: " + ctx.session.user.email + " lost " + result + " slot points (" + ctx.session.user.points + ")");
+                if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                    bot.broadcastMessage("User *" + ctx.session.user.email + "* lost " + result + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
+                }
             }
             printSlot(ctx);
         });
@@ -420,6 +455,7 @@ function handleResults(ctx) {
 }
 
 function runSlot(ctx, cb) {
+    ctx.session.slot.bombSent = false;
     ctx.session.slot.isRunning = true;
     ctx.session.slot.setProgress(0);
     ctx.session.slot.initSlot();
@@ -547,6 +583,10 @@ scene.on("callback_query", ctx => {
                     ctx.reply(bombedUser + " got your bombs and lost " + points + " points 😬 !", {
                         parse_mode: "markdown"
                     });
+                    ctx.session.slot.bombSent = true;
+                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                        bot.broadcastMessage("User *" + ctx.session.user.email + "* sent " + ctx.session.slot.bombPoints() + " bombs to *" + bombedUser.email + "*", accessLevels.root, null, true);
+                    }
                 });
             });
         });
