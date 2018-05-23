@@ -370,14 +370,14 @@ function decodeWit(ctx, witResponse) {
           //sort by active users
           activeSessions.sort((t1, t2) => {
             if (t1.counter > t2.counter) {
-              return 1
-            } else if (t1.counter < t2.counter) {
               return -1
+            } else if (t1.counter < t2.counter) {
+              return 1
             } else {
               return 0;
             }
           });
-          msg = "Active sessions: *" + activeSessions.length + "*\nActive users in the last 2h:";
+          msg = "Active sessions: *" + activeSessions.length + "*\nUsers:";
           for (let i = 0; i < activeSessions.length; i++) {
             const s = activeSessions[i];
             let userLink = "[" + (s.user.telegram.first_name + (s.user.telegram.last_name ? (" " + s.user.telegram.last_name) : "")) + "](tg://user?id=" + s.user.telegram.id + ") (" + s.counter + ")";
