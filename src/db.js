@@ -14,6 +14,7 @@ const mongoose = require("mongoose"),
   db = mongoose.connection;
 
 exports.init = function (cb) {
+  console.log("DB connecting...");
   mongoose.connect(process.env.MONGODB_URI);
   db.on("error", console.error.bind(console, "connection error:"));
   db.once("open", function () {
@@ -638,24 +639,24 @@ exports.getNotOrderUsers = (day, cb) => {
 
 exports.getTopTenUsers = (cb) => {
   let query = {
-          "telegram.enabled": true,
-          "telegram.banned": false,
-          "deleted": false,
-          "telegram.id": {
-            "$ne": process.env.ROOT_TELEGRAM_ID
-          }
+      "telegram.enabled": true,
+      "telegram.banned": false,
+      "deleted": false,
+      "telegram.id": {
+        "$ne": process.env.ROOT_TELEGRAM_ID
+      }
+    },
+    select = {
+      username: 1,
+      email: 1,
+      telegram: 1,
+      points: 1
+    },
+    options = {
+      sort: {
+        points: -1
       },
-      select = {
-          username: 1,
-          email: 1,
-          telegram: 1,
-          points: 1
-      },
-      options = {
-          sort: {
-              points: -1
-          },
-          limit: 10
-      };
+      limit: 10
+    };
   User.find(query, select, options, cb);
 }

@@ -84,9 +84,6 @@ function autoDrink() {
     }
 }
 
-//randomly set beerLock during the day, acting like the bot is drinking time to time
-setDrinkingSchedule(60000 * 30);
-
 function addBeer(ctx) {
     if (drunkBot && beerLock.username != ctx.session.user.username) {
         const username = "[" + (lastUserBeer.telegram.first_name + (lastUserBeer.telegram.last_name ? (" " + lastUserBeer.telegram.last_name) : "")) + "](tg://user?id=" + lastUserBeer.telegram.id + ")";
@@ -181,3 +178,8 @@ function addBeer(ctx) {
     }
 }
 exports.addBeer = addBeer;
+
+exports.init = function () {
+    //randomly set beerLock during the day, acting like the bot is drinking time to time
+    setDrinkingSchedule(60000 * 30);
+}

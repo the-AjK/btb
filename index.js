@@ -5,10 +5,34 @@
  */
 "use strict";
 
+const express = require("express"),
+	bodyParser = require("body-parser"),
+	Raven = require('raven'),
+	path = require("path"),
+	cors = require("cors"),
+	app = express(),
+	moment = require("moment"),
+	requestIp = require('request-ip'),
+	packageJSON = require('./package.json'),
+	apiRouter = require("./src/api"),
+	auth = require("./src/auth"),
+	db = require("./src/db");
+
 if (process.env.NODE_ENV !== "production") {
-	console.log("DEVELOPMENT");
+	console.log("Loading DEV enviroment...");
 	require("dotenv").load();
-} else {
+}
+
+console.log(
+	"***********************************************************\n*\n" +
+	"*      BiteTheBot v" + packageJSON.version + "\n" +
+	"*      enviroment: " + process.env.NODE_ENV + "\n" +
+	"*      port: " + process.env.PORT + "\n*\n" +
+	"***********************************************************\n"
+);
+
+if (process.env.NODE_ENV == "production") {
+	console.log("Setting up heroku dyno keepAwake request...");
 	//keepAwake heroku dyno
 	var https = require("https");
 	setInterval(function () {
@@ -16,16 +40,13 @@ if (process.env.NODE_ENV !== "production") {
 	}, 15 * 60000);
 }
 
-const express = require("express"),
-	bodyParser = require("body-parser"),
-	Raven = require('raven'),
-	path = require("path"),
-	cors = require("cors"),
-	auth = require("./src/auth"),
-	app = express(),
-	apiRouter = require("./src/api"),
-	moment = require("moment"),
-	requestIp = require('request-ip');
+let dbConnected = false;
+db.init(() => {
+	dbConnected = true;
+});
+require('deasync').loopWhile(function () {
+	return !dbConnected;
+});
 
 auth.init(app);
 apiRouter.init(app);
@@ -100,12 +121,6 @@ app.use("/api", apiRouter.api);
 app.use("/", express.static(path.join(__dirname, "dashboard/build")));
 app.get('*', function (req, res) {
 	res.sendFile(path.join(__dirname, "dashboard/build/index.html"));
-});
-
-console.log("DB connecting...");
-const db = require("./src/db");
-db.init(() => {
-
 });
 
 require("./src/reminder").init();
