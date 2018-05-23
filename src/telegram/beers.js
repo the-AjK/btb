@@ -124,6 +124,8 @@ function addBeer(ctx) {
         } else {
             lastUserBeer = ctx.session.user;
         }
+        //set the addBeer flag
+        ctx.session.addBeer = true;
         drinkBeer(ctx.session.user);
         const type = ctx.update.callback_query.data,
             newBeer = new DB.Beer({
@@ -133,6 +135,7 @@ function addBeer(ctx) {
         newBeer.save((err, beer) => {
             if (err) {
                 console.error(err);
+                ctx.session.addBeer = false;
                 ctx.reply("Something went wrong...");
                 return;
             }
@@ -144,6 +147,7 @@ function addBeer(ctx) {
                     ctx.reply("😵 You got me drunk!");
                     levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
                         if (err) {
+                            ctx.session.addBeer = false;
                             console.error(err);
                             return;
                         }
@@ -152,12 +156,14 @@ function addBeer(ctx) {
                         if (!checkUser(ctx.session.user.role, userRoles.root)) {
                             bot.broadcastMessage("New drunk beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
                         }
+                        ctx.session.addBeer = false;
                         //console.log("New drunk beer from: " + ctx.session.user.email + " (" + points + ")");
                     });
                 } else {
                     ctx.reply("Thank you bro!");
                     levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
                         if (err) {
+                            ctx.session.addBeer = false;
                             console.error(err);
                             return;
                         }
@@ -166,6 +172,7 @@ function addBeer(ctx) {
                         if (!checkUser(ctx.session.user.role, userRoles.root)) {
                             bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
                         }
+                        ctx.session.addBeer = false;
                         //console.log("New beer from: " + ctx.session.user.email + " (" + points + ")");
                     });
                 }

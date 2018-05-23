@@ -26,13 +26,16 @@ const Telegraf = require("telegraf"),
 const scene = new Scene('extra')
 scene.enter((ctx) => ctx.reply(keyboards.extra(ctx).text, keyboards.extra(ctx).opts))
 
-function textManager(ctx) {
-    ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-
+function deleteLastMessage(ctx) {
     if (ctx.session.lastMessage) {
         ctx.deleteMessage(ctx.session.lastMessage.message_id);
         delete ctx.session.lastMessage;
     }
+}
+
+function textManager(ctx) {
+    ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
+    deleteLastMessage(ctx);
 
     if (keyboards.extra(ctx)[ctx.message.text]) {
         keyboards.extra(ctx)[ctx.message.text]();
@@ -57,14 +60,14 @@ function textManager(ctx) {
 scene.on("text", textManager);
 
 scene.on("callback_query", ctx => {
-    ctx.deleteMessage(ctx.message_id);
-    delete ctx.session.lastMessage;
+    deleteLastMessage(ctx);
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     if (ctx.update.callback_query.data == 'statusorders') {
         if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
             ctx.reply("Admin stuff. Keep out.");
             return;
-        } else {
+        } else if (!ctx.session.getDailyOrderStats) {
+            ctx.session.getDailyOrderStats = true;
             DB.getDailyOrderStats(null, (err, stats) => {
                 if (err) {
                     ctx.reply(err);
@@ -73,13 +76,17 @@ scene.on("callback_query", ctx => {
                         parse_mode: "markdown"
                     });
                 }
+                ctx.session.getDailyOrderStats = false;
             });
+        } else {
+            ctx.answerCbQuery("Operation already in progress. Please wait...");
         }
     } else if (ctx.update.callback_query.data == 'statustables') {
         if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
             ctx.reply("Admin stuff. Keep out.");
             return;
-        } else {
+        } else if (!ctx.session.getTableStatus) {
+            ctx.session.getTableStatus = true;
             DB.Table.find({
                 enabled: true,
                 deleted: false
@@ -94,13 +101,17 @@ scene.on("callback_query", ctx => {
                         parse_mode: "markdown"
                     });
                 }
+                ctx.session.getTableStatus = false;
             });
+        } else {
+            ctx.answerCbQuery("Operation already in progress. Please wait...");
         }
     } else if (ctx.update.callback_query.data == 'userswithoutorder') {
         if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
             ctx.reply("Admin stuff. Keep out.");
             return;
-        } else {
+        } else if (!ctx.session.getNotOrderUsers) {
+            ctx.session.getNotOrderUsers = true;
             DB.getNotOrderUsers(null, (err, users) => {
                 if (err) {
                     ctx.reply(err);
@@ -109,10 +120,17 @@ scene.on("callback_query", ctx => {
                         parse_mode: "markdown"
                     });
                 }
+                ctx.session.getNotOrderUsers = false;
             });
+        } else {
+            ctx.answerCbQuery("Operation already in progress. Please wait...");
         }
     } else if (ctx.update.callback_query.data.toLowerCase().indexOf('pint') != -1) {
-        beers.addBeer(ctx);
+        if (!ctx.session.addBeer) {
+            beers.addBeer(ctx);
+        } else {
+            ctx.answerCbQuery("Operation already in progress. Please wait...");
+        }
     } else {
         ctx.answerCbQuery("Okey! I have nothing to do.");
     }
