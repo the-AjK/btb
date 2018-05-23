@@ -70,7 +70,7 @@ stage.register(require('./scenes/slot').scene)
 stage.register(require('./scenes/nim').scene)
 
 const session = new Session({
-  ttl: 2 * 60 * 60000 //2h
+  ttl: 24 * 60 * 60000 //24h
 });
 
 bot.use(session.middleware());
