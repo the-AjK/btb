@@ -260,6 +260,10 @@ function typingEffect(ctx, text, callback) {
 exports.typingEffect = typingEffect;
 
 function textManager(ctx) {
+
+  if (parseMention(ctx).length > 0)
+    return mentionHandler(ctx);
+
   ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
 
   ctx.session.mainCounter = ctx.session.mainCounter || 0;
@@ -316,14 +320,7 @@ function textManager(ctx) {
     });
   }
 };
-exports.textManager = (ctx) => {
-  ctx.session.mainCounter = 0;
-  if (parseMention(ctx).length > 0) {
-    mentionHandler(ctx);
-  } else {
-    textManager(ctx);
-  }
-}
+exports.textManager = textManager;
 
 function defaultAnswer(ctx) {
   // answer politely
@@ -553,6 +550,9 @@ function decodeWit(ctx, witResponse) {
 
 function parseMention(ctx) {
   //ctx.message.entities = [ { offset: 0, length: 7, type: 'mention' } ]
+  if (ctx.message.text.toLowerCase().indexOf('@all ') >= 0) {
+    return ['all'];
+  }
   let mentions = [];
   for (let idx in ctx.message.entities) {
     const entity = ctx.message.entities[idx];
@@ -571,6 +571,15 @@ function mentionHandler(ctx) {
     if (ctx.message.text.replace("@" + mention, "").trim() == "") {
       ctx.reply("You should write something more!\n(Example: '@" + mention + " ciao!')", keyboards.btb(ctx).opts);
       break;
+    }
+    if (mention.toLowerCase() == 'all') {
+      let message = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text;
+      broadcastMessage(message, accessLevels.user, null, false, {
+        _id: {
+          "$ne": ctx.session.user._id
+        }
+      }, true);
+      return ctx.reply("Message broadcasted!", keyboards.btb(ctx).opts);
     }
     DB.getDailyOrders(null, (err, orders) => {
       if (err) {
@@ -632,7 +641,7 @@ function mentionHandler(ctx) {
 }
 
 //Mention handler to broadcast by table
-bot.mention(['@tables', '@table', '@Tables', '@Table'], (ctx) => {
+bot.mention(['@tables', '@table', '@Tables', '@Table', '@all', '@All'], (ctx) => {
   mentionHandler(ctx);
 });
 
@@ -896,7 +905,7 @@ function _getDailyMenu(cb) {
   });
 }
 
-function broadcastMessage(message, accessLevel, opts, silent) {
+function broadcastMessage(message, accessLevel, opts, silent, additionalQuery, noLogs) {
   let _options = opts || {
     parse_mode: "markdown"
   };
@@ -905,14 +914,20 @@ function broadcastMessage(message, accessLevel, opts, silent) {
     _options.disable_notification = true;
   }
 
-  const query = {
+  let query = {
     "telegram.enabled": true,
     "telegram.banned": false,
     "deleted": false
   }
 
+  if (additionalQuery) {
+    Object.assign(query, additionalQuery);
+  }
+
   let logText,
     _message;
+
+  //console.log("Broadcasting message: '" + message.substring(0, 100) + "...'");
 
   DB.User.find(query, (err, users) => {
     if (err) {
@@ -932,7 +947,7 @@ function broadcastMessage(message, accessLevel, opts, silent) {
             _message = "(ADMIN) " + _message;
             logText = logText + "ADMIN";
           }
-          logText = logText + "] message: '" + _message.substring(0, 50) + "...'";
+          logText = logText + "] message: '" + _message.substring(0, 100) + "...'";
         }
         if (roles.compareAccessLevel(accessLevel, roles.accessLevels.admin)) {
           // root or admins who set the admin reminder setting off, skip
@@ -947,9 +962,11 @@ function broadcastMessage(message, accessLevel, opts, silent) {
           user.settings.rootReminders == false) {
           continue;
         }
-        console.log(logText);
+        if (!noLogs)
+          console.log(logText);
         bot.telegram.sendMessage(user.telegram.id, _message, _options).then(() => {
-          console.log("Message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
+          if (!noLogs)
+            console.log("Message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
         });
       }
     }
