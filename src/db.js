@@ -619,6 +619,8 @@ exports.getMenuSuggestions = (cb) => {
 
 exports.getNotOrderUsers = (day, cb) => {
   const query = {
+      "telegram.enabled": true,
+      "telegram.banned": false,
       "deleted": false
     },
     select = {
