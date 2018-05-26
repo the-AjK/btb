@@ -676,7 +676,7 @@ scene.on("callback_query", ctx => {
             deleteLastMessage(ctx);
             ctx.answerCbQuery("Stealing beercoins from " + robbedUser.telegram.first_name + "...");
             const sender = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + ")",
-                message = "Ops! " + sender + " just stole " + ctx.session.slot.bombPoints() + " beercoins 💰 !";
+                message = "Ops! " + sender + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
             require('../bot').bot.telegram.sendMessage(robbedUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
