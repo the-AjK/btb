@@ -148,8 +148,6 @@ function addBeer(ctx) {
                             console.error(err);
                             return;
                         }
-                        //update user session points
-                        ctx.session.user.points = points;
                         if (!checkUser(ctx.session.user.role, userRoles.root)) {
                             bot.broadcastMessage("New drunk beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
                         }
@@ -164,8 +162,6 @@ function addBeer(ctx) {
                             console.error(err);
                             return;
                         }
-                        //update user session points
-                        ctx.session.user.points = points;
                         if (!checkUser(ctx.session.user.role, userRoles.root)) {
                             bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
                         }

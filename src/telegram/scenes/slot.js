@@ -427,7 +427,6 @@ function handleResults(ctx) {
             if (err) {
                 console.error(err);
             } else {
-                ctx.session.user.points = points;
                 console.log("User: " + ctx.session.user.email + " got " + pointsToAdd + " slot points (" + ctx.session.user.points + ")");
                 if (!checkUser(ctx.session.user.role, userRoles.root)) {
                     bot.broadcastMessage("User *" + ctx.session.user.email + "* got " + pointsToAdd + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
@@ -441,7 +440,6 @@ function handleResults(ctx) {
             if (err) {
                 console.error(err);
             } else {
-                ctx.session.user.points = points;
                 console.log("User: " + ctx.session.user.email + " lost " + result + " slot points (" + ctx.session.user.points + ")");
                 if (!checkUser(ctx.session.user.role, userRoles.root)) {
                     bot.broadcastMessage("User *" + ctx.session.user.email + "* lost " + result + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
@@ -546,7 +544,6 @@ scene.on("callback_query", ctx => {
                     ctx.answerCbQuery("Ehm, something went wrong!");
                     ctx.session.slot.isRunning = false;
                 } else {
-                    ctx.session.user.points = points;
                     runSlot(ctx);
                 }
             });
@@ -578,7 +575,11 @@ scene.on("callback_query", ctx => {
                 parse_mode: "markdown"
             }).then(() => {
                 const points = ctx.session.slot.bombPoints();
-                levels.removePoints(bombUser._id, points, false, () => {
+                levels.removePoints(bombUser._id, points, false, (err, _points) => {
+                    if (err) {
+                        ctx.reply("Something went wrong!");
+                        return console.error(err);
+                    }
                     const bombedUser = "[" + (bombUser.telegram.first_name + (bombUser.telegram.last_name ? (" " + bombUser.telegram.last_name) : "")) + "](tg://user?id=" + bombUser.telegram.id + ")";
                     ctx.reply(bombedUser + " got your bombs and lost " + points + " points 😬 !", {
                         parse_mode: "markdown"

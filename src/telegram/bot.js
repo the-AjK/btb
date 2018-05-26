@@ -72,6 +72,7 @@ stage.register(require('./scenes/nim').scene)
 const session = new Session({
   ttl: 24 * 60 * 60000 //24h
 });
+exports.session = session;
 
 bot.use(session.middleware());
 bot.use(stage.middleware());
