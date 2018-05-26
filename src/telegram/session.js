@@ -5,6 +5,16 @@
  */
 "use strict";
 
+//Set a nested JSON value
+const set = (obj, path, val) => {
+    const keys = path.split('.');
+    const lastKey = keys.pop();
+    const lastObj = keys.reduce((obj, key) =>
+        obj[key] = obj[key] || {},
+        obj);
+    lastObj[lastKey] = val;
+};
+
 class Session {
 
     constructor(opts) {
@@ -53,10 +63,10 @@ class Session {
     setSessionParam(userID, param, value) {
         const store = this.store.get(userID);
         if (!store) {
-            console.warning("setSessionParam user not found. Skipping")
+            console.warn("setSessionParam userID: " + userID + " not found. Skipping")
             return;
         }
-        store.session[param] = value;
+        set(store.session, param, value);
         this._setSession(userID, store.session);
     }
 

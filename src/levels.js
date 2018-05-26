@@ -73,12 +73,12 @@ exports.removePoints = function (userID, points, silent, cb) {
                 cb(null, 0)
             } else {
                 user.points = Math.max(0, user.points - points);
-                user.save((err, _user) => {
+                user.save((err) => {
                     if (err) {
                         cb(err);
                     } else {
                         //Update bot user session
-                        bot.session.setSessionParam(user.telegram.id, "user.points", _user.points);
+                        bot.session.setSessionParam(user.telegram.id, "user.points", user.points);
                         if (!silent) {
                             let message = "💩 Ops!\n\nYou lost *" + points + "* point" + (points > 1 ? "s" : "") + "!";
                             require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
