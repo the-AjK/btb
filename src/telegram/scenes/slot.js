@@ -38,7 +38,7 @@ class Slot {
         this._progress = 0;
         this._position = [];
         this.isRunning = false;
-        this._elements = ["🍔", "🚰", "💣", "🍕", "🍺"];
+        this._elements = ["🍔", "🚰", "💣", "💰", "🍺"];
         this._colElements = this._elements.length;
         this.initPosition();
         this.initSlot();
@@ -136,6 +136,17 @@ class Slot {
         return false;
     }
 
+    isWinningRob() {
+        for (let i = 0; i < this._row; i++) {
+            if (this.isWinningRow(i)) {
+                if (this.getRelativeRow(i)[0] == "💰") {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     formatProgress() {
         let slotString = "";
         slotString += "\n  |";
@@ -176,6 +187,15 @@ class Slot {
     }
 
     bombPoints() {
+        let winningRows = this.isWinningState();
+        if (winningRows > 0) {
+            return this.getPoints(winningRows) * 3;
+        } else {
+            return 0;
+        }
+    }
+
+    robPoints() {
         let winningRows = this.isWinningState();
         if (winningRows > 0) {
             return this.getPoints(winningRows) * 3;
@@ -318,18 +338,20 @@ function printSlot(ctx) {
             callback_data: 'spin'
         }]
     ];
-    const bombWin = ctx.session.slot.isWinningBomb() && ctx.session.slot.bombPoints() > 0;
+    const bombWin = ctx.session.slot.isWinningBomb() && ctx.session.slot.bombPoints() > 0,
+        robWin = ctx.session.slot.isWinningRob() && ctx.session.slot.robPoints() > 0;
     if (ctx.session.slot_message) {
         require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
             parse_mode: "markdown",
-            reply_markup: !ctx.session.user.dailySlotRunning && !bombWin ? JSON.stringify({
+            reply_markup: !ctx.session.user.dailySlotRunning && !bombWin && !robWin ? JSON.stringify({
                 inline_keyboard: inline_keyboard
             }) : undefined
         }).then((msg) => {
             ctx.session.user.dailySlotRunning = false;
-            if (bombWin) {
-                selectUserToBomb(ctx);
-            }
+            if (robWin)
+                return selectUserToRob(ctx);
+            if (bombWin)
+                return selectUserToBomb(ctx);
         });
     }
 }
@@ -359,7 +381,7 @@ function selectUserToBomb(ctx) {
             let data = users.map(u => {
                     return {
                         text: u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "") + " (" + u.points + ")",
-                        callback_data: "user_" + String(u.telegram.id)
+                        callback_data: "userbomb_" + String(u.telegram.id)
                     };
                 }),
                 options = {
@@ -368,7 +390,54 @@ function selectUserToBomb(ctx) {
                 };
             ctx.session.users_inline_keyboard = new PaginatedInlineKeyboard(data, options);
             console.log("User: " + ctx.session.user.email + " won " + ctx.session.slot.bombPoints() + " bombs");
-            ctx.reply("You won " + ctx.session.slot.bombPoints() + " bombs 💣 !\nWho do you want to send them to?", {
+            ctx.reply("You won " + ctx.session.slot.bombPoints() + " bombs 💣 !\nGet rid of them or they will explode here!\nWho do you want to send them to?", {
+                parse_mode: "markdown",
+                reply_markup: JSON.stringify({
+                    inline_keyboard: ctx.session.users_inline_keyboard.render()
+                })
+            }).then((m) => {
+                ctx.session.lastMessage = m;
+            });
+        }
+    });
+}
+
+function selectUserToRob(ctx) {
+    DB.User.find({
+        "_id": {
+            "$ne": ctx.session.user._id
+        },
+        "telegram.id": {
+            "$ne": process.env.ROOT_TELEGRAM_ID
+        },
+        "telegram.enabled": true,
+        "telegram.banned": false,
+        points: {
+            "$gt": 0
+        },
+        deleted: false
+    }, null, {
+        sort: {
+            points: -1
+        }
+    }, (err, users) => {
+        if (err) {
+            console.error(err);
+        } else {
+            let data = users.map(u => {
+                    return {
+                        text: u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "") + " (" + u.points + ")",
+                        callback_data: "userrob_" + String(u.telegram.id)
+                    };
+                }),
+                options = {
+                    columns: 2,
+                    pageSize: 6
+                };
+            ctx.session.users_inline_keyboard = new PaginatedInlineKeyboard(data, options);
+            const beercoins = ctx.session.slot.robPoints();
+            console.log("User: " + ctx.session.user.email + " won " + beercoins + " beercoins");
+            ctx.reply("You can steal " + beercoins + " beercoins 💰 !\nWho do you want to rob?", {
                 parse_mode: "markdown",
                 reply_markup: JSON.stringify({
                     inline_keyboard: ctx.session.users_inline_keyboard.render()
@@ -554,8 +623,8 @@ scene.on("callback_query", ctx => {
     } else if (ctx.update.callback_query.data == ctx.session.users_inline_keyboard.nextCallbackData()) {
         ctx.session.users_inline_keyboard.next();
         updateUsersKeyboard(ctx);
-    } else if (ctx.update.callback_query.data.indexOf("user_") == 0) {
-        const userTelegramID = parseInt(ctx.update.callback_query.data.substring(5));
+    } else if (ctx.update.callback_query.data.indexOf("userbomb_") == 0) {
+        const userTelegramID = parseInt(ctx.update.callback_query.data.substring(9));
         if (isNaN(userTelegramID)) {
             console.error("Wrong callback data");
             return ctx.answerCbQuery("Something went wrong!");
@@ -586,7 +655,48 @@ scene.on("callback_query", ctx => {
                     });
                     ctx.session.slot.bombSent = true;
                     if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                        bot.broadcastMessage("User *" + ctx.session.user.email + "* sent " + ctx.session.slot.bombPoints() + " bombs to *" + bombUser.email + "*", accessLevels.root, null, true);
+                        bot.broadcastMessage("User *" + ctx.session.user.email + "* sent " + points + " bombs to *" + bombUser.email + "*", accessLevels.root, null, true);
+                    }
+                });
+            });
+        });
+    } else if (ctx.update.callback_query.data.indexOf("userrob_") == 0) {
+        const userTelegramID = parseInt(ctx.update.callback_query.data.substring(8));
+        if (isNaN(userTelegramID)) {
+            console.error("Wrong callback data");
+            return ctx.answerCbQuery("Something went wrong!");
+        }
+        DB.User.findOne({
+            "telegram.id": userTelegramID
+        }, (err, robbedUser) => {
+            if (err || !robbedUser) {
+                console.error(err || "Slot rob user not found");
+                return ctx.answerCbQuery("Something went wrong!");
+            }
+            deleteLastMessage(ctx);
+            ctx.answerCbQuery("Stealing beercoins from " + robbedUser.telegram.first_name + "...");
+            const sender = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + ")",
+                message = "Ops! " + sender + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
+            require('../bot').bot.telegram.sendMessage(robbedUser.telegram.id, message, {
+                parse_mode: "markdown"
+            }).then(() => {
+                const beercoins = ctx.session.slot.robPoints();
+                levels.removePoints(robbedUser._id, beercoins, false, (err, _points) => {
+                    if (err) {
+                        ctx.reply("Something went wrong!");
+                        return console.error(err);
+                    }
+                    const robUser = "[" + (robbedUser.telegram.first_name + (robbedUser.telegram.last_name ? (" " + robbedUser.telegram.last_name) : "")) + "](tg://user?id=" + robbedUser.telegram.id + ")";
+                    ctx.reply("You stole " + beercoins + " beercoins from " + robUser + " 😬 !", {
+                        parse_mode: "markdown"
+                    }).then(() => {
+                        levels.addPoints(ctx.session.user._id, beercoins, false, (err)=>{
+                            if(err)
+                                console.error(err);
+                        });
+                    });
+                    if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                        bot.broadcastMessage("User *" + ctx.session.user.email + "* stole " + beercoins + " beercoins from *" + robbedUser.email + "*", accessLevels.root, null, true);
                     }
                 });
             });
