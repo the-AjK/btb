@@ -29,16 +29,8 @@ class Session {
         };
     }
 
-    _getSession(key) {
-        return this._getStore(key).session;
-    }
-
-    _keygen(userID, chatID) {
-        return `${userID}:${chatID}`;
-    }
-
     _getSessionKey(ctx) {
-        return ctx.from && ctx.chat && this._keygen(ctx.from.id, ctx.chat.id);
+        return ctx.from && ctx.from.id;
     }
 
     getSessions() {
@@ -54,16 +46,18 @@ class Session {
         return sessions;
     }
 
-    deleteSession(userID, chatID) {
-        const key = this._keygen(userID, chatID);
-        return this.store.delete(key);
+    deleteSession(userID) {
+        return this.store.delete(userID);
     }
 
-    setSessionParam(userID, chatID, param, value) {
-        const key = this._keygen(userID, chatID);
-        let session = this._getSession(key);
-        session[param] = value;
-        this._setSession(key, session);
+    setSessionParam(userID, param, value) {
+        const store = this.store.get(userID);
+        if (!store) {
+            console.warning("setSessionParam user not found. Skipping")
+            return;
+        }
+        store.session[param] = value;
+        this._setSession(userID, store.session);
     }
 
     middleware() {
