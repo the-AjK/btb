@@ -586,7 +586,7 @@ scene.on("callback_query", ctx => {
                     });
                     ctx.session.slot.bombSent = true;
                     if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                        bot.broadcastMessage("User *" + ctx.session.user.email + "* sent " + ctx.session.slot.bombPoints() + " bombs to *" + bombedUser.email + "*", accessLevels.root, null, true);
+                        bot.broadcastMessage("User *" + ctx.session.user.email + "* sent " + ctx.session.slot.bombPoints() + " bombs to *" + bombUser.email + "*", accessLevels.root, null, true);
                     }
                 });
             });
