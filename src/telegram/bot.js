@@ -295,17 +295,32 @@ function textManager(ctx) {
       if (response.entities && !response.entities.intent && response.entities.number && response.entities.number.length >= 0) {
         const number = response.entities.number[0].value;
         console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [-number-]");
-        request('http://numbersapi.com/' + number, {
-          json: true
-        }, (err, res, body) => {
-          if (err) {
-            return console.error(err);
-          } else if (res && res.statusCode == 200) {
-            replies(ctx, ["About number *" + number + "*...", body], keyboards.btb(ctx).opts);
+        if (ctx.message.text.indexOf("coin") >= 0) {
+          if (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+            levels.addPoints(ctx.session.user._id, number, true, (err) => {
+              if (err) {
+                console.error(err);
+              } else {
+                ctx.reply(number + " beercoins added!", keyboards.btb(ctx).opts);
+              }
+            });
+            return;
           } else {
-            replies(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
+            return ctx.reply("401 - Unauthorized", keyboards.btb(ctx).opts);
           }
-        });
+        } else {
+          request('http://numbersapi.com/' + number, {
+            json: true
+          }, (err, res, body) => {
+            if (err) {
+              return console.error(err);
+            } else if (res && res.statusCode == 200) {
+              replies(ctx, ["About number *" + number + "*...", body], keyboards.btb(ctx).opts);
+            } else {
+              replies(ctx, ["I've got some problems!", "Try again later"], keyboards.btb(ctx).opts);
+            }
+          });
+        }
       } else if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
         ctx.session.mainCounter = 0;
         console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [" + response.entities.intent[0].value + "]");
@@ -385,7 +400,7 @@ function decodeWit(ctx, witResponse) {
             msg += "\n- " + userLink;
           }
         }
-        return ctx.replyWithMarkdown(msg);
+        return ctx.reply(msg, keyboards.btb(ctx).opts);
       case "order":
         ctx.scene.enter('order');
         break;
@@ -467,6 +482,9 @@ function decodeWit(ctx, witResponse) {
           });
           msg = ["Let's see if I remember...", "Oh yes", "You gave me " + userBeers + " beers in total."];
         }
+        break;
+      case "sendnudes":
+        msg = ["7777", "33", "66", "3", "66", "88", "3", "33"];
         break;
       case "joke":
         msg = ["401 - Unauthorized", "This feature is reserved for level >= 1 users"];
