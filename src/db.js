@@ -666,9 +666,9 @@ exports.getTopTenUsers = (cb) => {
       "telegram.enabled": true,
       "telegram.banned": false,
       "deleted": false,
-      "telegram.id": {
+      /*"telegram.id": {
         "$ne": process.env.ROOT_TELEGRAM_ID
-      }
+      }*/
     },
     select = {
       username: 1,
