@@ -127,6 +127,7 @@ function addBeer(ctx) {
         const type = ctx.update.callback_query.data,
             newBeer = new DB.Beer({
                 owner: ctx.session.user._id,
+                drunk: drunkBot,
                 type: (type == 'pint' ? 1 : 0)
             });
         newBeer.save((err, beer) => {

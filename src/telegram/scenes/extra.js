@@ -8,6 +8,7 @@
 const Telegraf = require("telegraf"),
     schedule = require('node-schedule'),
     moment = require('moment'),
+    async = require("async"),
     Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     packageJSON = require('../../../package.json'),
@@ -43,6 +44,8 @@ function textManager(ctx) {
         ctx.scene.enter('slot');
     } else if (ctx.message.text == keyboards.extra(ctx).cmd.nim) {
         ctx.scene.enter('nim');
+    } else if (ctx.message.text == keyboards.extra(ctx).cmd.news) {
+        sendNews(ctx);
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
         //back from slot
         ctx.reply(keyboards.extra(ctx).text, keyboards.extra(ctx).opts);
@@ -137,3 +140,93 @@ scene.on("callback_query", ctx => {
 });
 
 exports.scene = scene;
+
+function formatNews(news) {
+    let text = "*Latest BTB News*\n",
+        newsListLenght = 15,
+        limit = news.length > newsListLenght ? newsListLenght : news.length;
+    for (let i = 0; i < limit; i++) {
+        let n = news[i],
+            user = "[" + (n.owner.telegram.first_name + (n.owner.telegram.last_name ? (" " + n.owner.telegram.last_name) : "")) + "](tg://user?id=" + n.owner.telegram.id + ")";
+        text += "\n_" + moment(n.createdAt).format('MMMM Do, HH:mm') + "_\n   " + user;
+        if (n.points != undefined) {
+            //slot stuff
+            if (n.bet != undefined && n.bet == 0) {
+                text += " got a free daily run and";
+            }
+            if (n.points < 0) {
+                text += " lost " + (n.points * -1) + " slot points";
+            } else {
+                if (n.robbedUser != undefined) {
+                    user = "[" + (n.robbedUser.telegram.first_name + (n.robbedUser.telegram.last_name ? (" " + n.robbedUser.telegram.last_name) : "")) + "](tg://user?id=" + n.robbedUser.telegram.id + ")";
+                    text += " stole " + n.points + " beercoins from " + user;
+                } else if (n.bombedUser != undefined) {
+                    user = "[" + (n.bombedUser.telegram.first_name + (n.bombedUser.telegram.last_name ? (" " + n.bombedUser.telegram.last_name) : "")) + "](tg://user?id=" + n.bombedUser.telegram.id + ")";
+                    text += " sent " + n.points + " bombs to " + user;
+                } else {
+                    text += " won " + n.points + " slot points"
+                }
+            }
+        } else if (n.type != undefined) {
+            //beer stuff
+            text += " gave a beer to the bot"
+            if (n.drunk) {
+                text += " and made him drunk"
+            }
+        }
+    }
+    return text;
+}
+
+function sendNews(ctx) {
+
+    console.log("News request from user: " + ctx.session.user.email)
+    let funList = [];
+
+    funList.push(function () {
+        return (cb) => {
+            DB.Beer.find(null, null, {
+                sort: {
+                    createdAt: -1
+                },
+                limit: 100
+            }).populate('owner').exec(cb);
+        }
+    }());
+
+    funList.push(function () {
+        return (cb) => {
+            DB.Slot.find({
+                points: {
+                    "$ne": 0
+                }
+            }, null, {
+                sort: {
+                    createdAt: -1
+                },
+                limit: 100
+            }).populate('owner').populate('bombedUser').populate('robbedUser').exec(cb);
+        }
+    }());
+
+    async.parallel(funList, (err, result) => {
+        if (err) {
+            console.error(err);
+        } else {
+            const results = result[0].concat(result[1]);
+            //desc createdAt sorting
+            results.sort((t1, t2) => {
+                if (t1.createdAt > t2.createdAt) {
+                    return -1
+                } else if (t1.createdAt < t2.createdAt) {
+                    return 1
+                } else {
+                    return 0;
+                }
+            });
+            ctx.reply(formatNews(results), {
+                parse_mode: "markdown"
+            });
+        }
+    });
+}

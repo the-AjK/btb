@@ -477,41 +477,32 @@ function textManager(ctx) {
 scene.on("text", textManager);
 
 function handleResults(ctx) {
-    let result = ctx.session.slot.isWinningState();
+    let result = ctx.session.slot.isWinningState(),
+        points = 0;
     console.log("Slot " + (ctx.session.user.dailySlotRunning ? "free daily " : "") + "run for user " + ctx.session.user.email);
-    //Save slot result
-    const newSlotRun = new DB.Slot({
-        owner: ctx.session.user._id,
-        bet: ctx.session.user.dailySlotRunning ? 0 : 1,
-        points: result
-    });
-    newSlotRun.save((err, s) => {
-        if (err) {
-            console.error(err);
-        }
-    });
     if (result > 0) {
-        let pointsToAdd = ctx.session.slot.getPoints(result);
-        levels.addPoints(ctx.session.user._id, pointsToAdd, true, (err, points) => {
+        points = ctx.session.slot.getPoints(result);
+        levels.addPoints(ctx.session.user._id, points, true, (err, _points) => {
             if (err) {
                 console.error(err);
             } else {
-                console.log("User: " + ctx.session.user.email + " got " + pointsToAdd + " slot points (" + ctx.session.user.points + ")");
+                console.log("User: " + ctx.session.user.email + " got " + points + " slot points (" + ctx.session.user.points + ")");
                 if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                    bot.broadcastMessage("User *" + ctx.session.user.email + "* got " + pointsToAdd + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
+                    bot.broadcastMessage("User *" + ctx.session.user.email + "* got " + points + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
                 }
             }
             printSlot(ctx);
         });
     } else if (result < 0) {
-        result *= -1;
-        levels.removePoints(ctx.session.user._id, result, true, (err, points) => {
+        points = result;
+        pointsToRemove = result * -1; 
+        levels.removePoints(ctx.session.user._id, pointsToRemove, true, (err, _points) => {
             if (err) {
                 console.error(err);
             } else {
-                console.log("User: " + ctx.session.user.email + " lost " + result + " slot points (" + ctx.session.user.points + ")");
+                console.log("User: " + ctx.session.user.email + " lost " + pointsToRemove + " slot points (" + ctx.session.user.points + ")");
                 if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                    bot.broadcastMessage("User *" + ctx.session.user.email + "* lost " + result + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
+                    bot.broadcastMessage("User *" + ctx.session.user.email + "* lost " + pointsToRemove + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
                 }
             }
             printSlot(ctx);
@@ -519,6 +510,17 @@ function handleResults(ctx) {
     } else {
         printSlot(ctx);
     }
+    //Save slot result
+    const newSlotRun = new DB.Slot({
+        owner: ctx.session.user._id,
+        bet: ctx.session.user.dailySlotRunning ? 0 : 1,
+        points: points
+    });
+    newSlotRun.save((err, s) => {
+        if (err) {
+            console.error(err);
+        }
+    });
 }
 
 function runSlot(ctx, cb) {
@@ -657,6 +659,17 @@ scene.on("callback_query", ctx => {
                     if (!checkUser(ctx.session.user.role, userRoles.root)) {
                         bot.broadcastMessage("User *" + ctx.session.user.email + "* sent " + points + " bombs to *" + bombUser.email + "*", accessLevels.root, null, true);
                     }
+                    //Save slot event
+                    const slotRun = new DB.Slot({
+                        owner: ctx.session.user._id,
+                        bombedUser: bombUser._id,
+                        points: points
+                    });
+                    slotRun.save((err, s) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                    });
                 });
             });
         });
@@ -690,14 +703,25 @@ scene.on("callback_query", ctx => {
                     ctx.reply("You stole " + beercoins + " beercoins from " + robUser + " 😬 !", {
                         parse_mode: "markdown"
                     }).then(() => {
-                        levels.addPoints(ctx.session.user._id, beercoins, false, (err)=>{
-                            if(err)
+                        levels.addPoints(ctx.session.user._id, beercoins, false, (err) => {
+                            if (err)
                                 console.error(err);
                         });
                     });
                     if (!checkUser(ctx.session.user.role, userRoles.root)) {
                         bot.broadcastMessage("User *" + ctx.session.user.email + "* stole " + beercoins + " beercoins from *" + robbedUser.email + "*", accessLevels.root, null, true);
                     }
+                    //Save slot event
+                    const slotRun = new DB.Slot({
+                        owner: ctx.session.user._id,
+                        robbedUser: robbedUser._id,
+                        points: beercoins
+                    });
+                    slotRun.save((err, s) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                    });
                 });
             });
         });
