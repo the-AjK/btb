@@ -160,6 +160,10 @@ const BeerSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  drunk: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -173,8 +177,15 @@ const SlotSchema = new mongoose.Schema({
     required: true
   },
   bet: {
-    type: Number,
-    required: true
+    type: Number
+  },
+  bombedUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  robbedUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
   },
   points: {
     type: Number,
@@ -666,9 +677,9 @@ exports.getTopTenUsers = (cb) => {
       "telegram.enabled": true,
       "telegram.banned": false,
       "deleted": false,
-      "telegram.id": {
+      /*"telegram.id": {
         "$ne": process.env.ROOT_TELEGRAM_ID
-      }
+      }*/
     },
     select = {
       username: 1,

@@ -501,6 +501,7 @@ module.exports = {
                 beer: "🍺 Beer",
                 status: "📋 Status",
                 slot: "🎰 Slot",
+                news: "🗞 News",
                 nim: "🎱 NIM"
             };
 
@@ -516,6 +517,15 @@ module.exports = {
             keyboard.push([{
                 text: cmd.status
             }]);
+            if (levels.getLevel(ctx.session.user.points) > 0) {
+                /*keyboard[keyboard.length - 1].push({
+                    text: cmd.news
+                });*/
+            }
+        } else if (levels.getLevel(ctx.session.user.points) > 0) {
+            /*keyboard.push([{
+                text: cmd.news
+            }]);*/
         }
         keyboard.push([{
             text: cmd.back
