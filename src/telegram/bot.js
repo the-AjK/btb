@@ -292,10 +292,10 @@ function textManager(ctx) {
     ctx.session.mainCounter++;
     client.message(ctx.message.text).then((response) => {
       //console.log(JSON.stringify(response))
-      if (response.entities && !response.entities.intent && response.entities.number && response.entities.number.length >= 0) {
+      if (response.entities && response.entities.number && response.entities.number.length >= 0) {
         const number = response.entities.number[0].value;
         console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [-number-]");
-        if (ctx.message.text.indexOf("coin") >= 0) {
+        if (response.entities.intent && response.entities.intent.length >= 0 && response.entities.intent[0].value == 'insertcoins') {
           if (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
             levels.addPoints(ctx.session.user._id, number, true, (err) => {
               if (err) {
