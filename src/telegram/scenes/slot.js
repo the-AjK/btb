@@ -495,7 +495,7 @@ function handleResults(ctx) {
         });
     } else if (result < 0) {
         points = result;
-        pointsToRemove = result * -1; 
+        let pointsToRemove = result * -1; 
         levels.removePoints(ctx.session.user._id, pointsToRemove, true, (err, _points) => {
             if (err) {
                 console.error(err);
