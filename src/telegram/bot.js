@@ -67,6 +67,7 @@ stage.register(require('./scenes/extra').scene)
 stage.register(require('./scenes/register').scene)
 stage.register(require('./scenes/orderRating').scene)
 stage.register(require('./scenes/slot').scene)
+stage.register(require('./scenes/shop').scene)
 stage.register(require('./scenes/nim').scene)
 
 const session = new Session({
