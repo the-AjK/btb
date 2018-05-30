@@ -56,6 +56,21 @@ class Session {
         return sessions;
     }
 
+    getTopSessions() {
+        let s = this.getSessions();
+        //sort by active users
+        s.sort((t1, t2) => {
+            if (t1.counter > t2.counter) {
+                return -1
+            } else if (t1.counter < t2.counter) {
+                return 1
+            } else {
+                return 0;
+            }
+        });
+        return s;
+    }
+
     deleteSession(userID) {
         return this.store.delete(userID);
     }

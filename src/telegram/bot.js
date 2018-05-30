@@ -382,17 +382,7 @@ function decodeWit(ctx, witResponse) {
         if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
           msg = "401 - Unauthorized";
         } else {
-          const activeSessions = session.getSessions();
-          //sort by active users
-          activeSessions.sort((t1, t2) => {
-            if (t1.counter > t2.counter) {
-              return -1
-            } else if (t1.counter < t2.counter) {
-              return 1
-            } else {
-              return 0;
-            }
-          });
+          const activeSessions = session.getTopSessions();
           msg = "Active sessions: *" + activeSessions.length + "*\nUsers:";
           for (let i = 0; i < activeSessions.length; i++) {
             const s = activeSessions[i];
