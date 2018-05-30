@@ -128,10 +128,10 @@ function updateUsersKeyboard(ctx) {
 
 scene.on("callback_query", ctx => {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-    if (ctx.update.callback_query.data == ctx.session.users_inline_keyboard.previousCallbackData()) {
+    if (ctx.session.users_inline_keyboard && ctx.update.callback_query.data == ctx.session.users_inline_keyboard.previousCallbackData()) {
         ctx.session.users_inline_keyboard.previous();
         updateUsersKeyboard(ctx);
-    } else if (ctx.update.callback_query.data == ctx.session.users_inline_keyboard.nextCallbackData()) {
+    } else if (ctx.session.users_inline_keyboard && ctx.update.callback_query.data == ctx.session.users_inline_keyboard.nextCallbackData()) {
         ctx.session.users_inline_keyboard.next();
         updateUsersKeyboard(ctx);
     } else if (ctx.update.callback_query.data.indexOf("user_") == 0) {
