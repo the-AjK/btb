@@ -103,7 +103,7 @@ scene.on("callback_query", ctx => {
             deleteLastMessage(ctx);
             ctx.answerCbQuery("Sending gift to " + giftUser.telegram.first_name + "...");
             const sender = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + ")",
-                message = "You got a gift! " + sender + " just sent you 1 beercoin 💰 !";
+                message = "*You got a gift!*\n" + sender + " just sent you 1 beercoin 💰 !";
             require('../bot').bot.telegram.sendMessage(giftUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {

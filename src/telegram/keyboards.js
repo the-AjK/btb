@@ -743,7 +743,7 @@ module.exports = {
                     ctx.session.lastMessage = msg;
                 });
             } else {
-                ctx.reply("This item is available only for level 3 users");
+                ctx.reply(text + "\nThis item is available only for level 3 users");
             }
         }
 
@@ -768,7 +768,7 @@ module.exports = {
                     ctx.session.lastMessage = msg;
                 });
             } else {
-                ctx.reply("This item is available only for level 3 users");
+                ctx.reply(text + "\nThis item is available only for level 3 users");
             }
         }
 
