@@ -70,7 +70,7 @@ function setDrinkingSchedule(minimumToWait) {
 
 function autoDrink() {
     if (beerLock) {
-        console.log("Locked beer from: btb@btb.com");
+        console.log("Locked beer from: btb@btb.com [" + beerLock.email + "]");
         //bot.broadcastMessage("I wish to drink but I can't", accessLevels.root, null, true);
         setDrinkingSchedule(beerLockTimeout);
     } else {
@@ -114,7 +114,7 @@ function addBeer(ctx) {
                 parse_mode: "markdown"
             });
         }
-        console.log("Locked beer from: " + ctx.session.user.email);
+        console.log("Locked beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
     } else {
         if (lastUserBeer && lastUserBeer.email == ctx.session.user.email && levels.getLevel(ctx.session.user.points) > 0) {
             drunkBot = true;

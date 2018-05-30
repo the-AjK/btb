@@ -495,7 +495,7 @@ function handleResults(ctx) {
         });
     } else if (result < 0) {
         points = result;
-        pointsToRemove = result * -1; 
+        let pointsToRemove = result * -1; 
         levels.removePoints(ctx.session.user._id, pointsToRemove, true, (err, _points) => {
             if (err) {
                 console.error(err);
@@ -619,10 +619,10 @@ scene.on("callback_query", ctx => {
                 }
             });
         }
-    } else if (ctx.update.callback_query.data == ctx.session.users_inline_keyboard.previousCallbackData()) {
+    } else if (ctx.session.users_inline_keyboard && ctx.update.callback_query.data == ctx.session.users_inline_keyboard.previousCallbackData()) {
         ctx.session.users_inline_keyboard.previous();
         updateUsersKeyboard(ctx);
-    } else if (ctx.update.callback_query.data == ctx.session.users_inline_keyboard.nextCallbackData()) {
+    } else if (ctx.session.users_inline_keyboard && ctx.update.callback_query.data == ctx.session.users_inline_keyboard.nextCallbackData()) {
         ctx.session.users_inline_keyboard.next();
         updateUsersKeyboard(ctx);
     } else if (ctx.update.callback_query.data.indexOf("userbomb_") == 0) {

@@ -501,7 +501,7 @@ module.exports = {
                 beer: "🍺 Beer",
                 status: "📋 Status",
                 slot: "🎰 Slot",
-                news: "🗞 News",
+                shop: "🛍 Shop",
                 nim: "🎱 NIM"
             };
 
@@ -509,24 +509,33 @@ module.exports = {
             text: cmd.beer
         }, {
             text: cmd.slot
-        }/*, {
-            text: cmd.nim
-        }*/]);
+        }]);
+
+        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root) || levels.getLevel(ctx.session.user.points) > 3)) {
+            //Level 4 or root 
+            keyboard[keyboard.length - 1].push({
+                text: cmd.nim
+            });
+        }
 
         if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || levels.getLevel(ctx.session.user.points) > 1)) {
+            // level 2 or admin
             keyboard.push([{
                 text: cmd.status
             }]);
-            if (levels.getLevel(ctx.session.user.points) > 0) {
-                /*keyboard[keyboard.length - 1].push({
-                    text: cmd.news
-                });*/
+            if (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root) || levels.getLevel(ctx.session.user.points) > 0) {
+                //level 1 admin
+                keyboard[keyboard.length - 1].push({
+                    text: cmd.shop
+                });
             }
         } else if (levels.getLevel(ctx.session.user.points) > 0) {
-            /*keyboard.push([{
-                text: cmd.news
-            }]);*/
+            //level 1 user
+            keyboard.push([{
+                text: cmd.shop
+            }]);
         }
+
         keyboard.push([{
             text: cmd.back
         }]);
@@ -624,6 +633,144 @@ module.exports = {
             text: "*Welcome to BTB Slot*",
             cmd: cmd
         };
+
+        return obj;
+    },
+    shop: function (ctx) {
+        let keyboard = [],
+            cmd = {
+                news: "🗞 Newspaper",
+                shield: "🛡 Bomb Shield",
+                gun: "🔫 Anti-Thief WaterGun",
+                gift: "💰 Gift",
+                back: "◀️ Back to extra"
+            };
+
+        keyboard.push([{
+            text: cmd.news
+        }]);
+
+        keyboard.push([{
+            text: cmd.shield
+        }, {
+            text: cmd.gun
+        }]);
+
+        keyboard.push([{
+            text: cmd.gift
+        }]);
+
+        keyboard.push([{
+            text: cmd.back
+        }]);
+
+        let obj = {
+            availableCmd: Object.keys(cmd).map(c => cmd[c]),
+            opts: {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    one_time_keyboard: false,
+                    resize_keyboard: true,
+                    keyboard: keyboard
+                })
+            },
+            text: "*BTB Shop*",
+            cmd: cmd
+        };
+
+        obj[cmd.news] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'Free',
+                        callback_data: 'news'
+                    }, {
+                        text: 'Premium (1 credit)',
+                        callback_data: 'newspremium'
+                    }]
+                ],
+                text = "Get latest BTB news";
+            ctx.reply(text, {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    inline_keyboard: inline_keyboard
+                })
+            }).then((msg) => {
+                //lets save the message to delete it afterward
+                ctx.session.lastMessage = msg;
+            });
+        }
+
+        obj[cmd.gift] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'Send (1 credit)',
+                        callback_data: 'gift'
+                    }]
+                ],
+                text = "Give a beercoin to a friend!";
+            ctx.reply(text, {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    inline_keyboard: inline_keyboard
+                })
+            }).then((msg) => {
+                //lets save the message to delete it afterward
+                ctx.session.lastMessage = msg;
+            });
+        }
+
+        obj[cmd.shield] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'Buy a bombshield (1 credit)',
+                        callback_data: 'shield'
+                    }]
+                ],
+                text = "Protect yourself from bombs!";
+            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 2) || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+                //Level 3 user or root
+                ctx.reply(text, {
+                    parse_mode: "markdown",
+                    force_reply: true,
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: inline_keyboard
+                    })
+                }).then((msg) => {
+                    //lets save the message to delete it afterward
+                    ctx.session.lastMessage = msg;
+                });
+            } else {
+                ctx.reply("This item is available only for level 3 users");
+            }
+        }
+
+        obj[cmd.gun] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'Buy a watergun (1 credit)',
+                        callback_data: 'gun'
+                    }]
+                ],
+                text = "Protect yourself from thieves!";
+            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 2) || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+                //Level 3 user or root
+                ctx.reply(text, {
+                    parse_mode: "markdown",
+                    force_reply: true,
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: inline_keyboard
+                    })
+                }).then((msg) => {
+                    //lets save the message to delete it afterward
+                    ctx.session.lastMessage = msg;
+                });
+            } else {
+                ctx.reply("This item is available only for level 3 users");
+            }
+        }
 
         return obj;
     },

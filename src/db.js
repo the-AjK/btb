@@ -409,6 +409,10 @@ exports.getDailyOrders = (day, cb) => {
       Order.find({
         deleted: false,
         menu: menu._id
+      }, null, {
+        sort: {
+          createdAt: 1
+        }
       }).populate('owner').populate('menu').populate('table').exec(cb)
     }
   });

@@ -27,10 +27,10 @@ const pointsLevels = {
 
 function getLevelFeatures(level) {
     const features = {
-        1: "- Rate your lunch\n- Top ten users\n- Joke bot\n- Audio bot",
+        1: "- Rate your lunch\n- Top ten users\n- Joke bot\n- Audio bot\n- Shop",
         2: "- Check orders status\n- Check tables status\n- Check users without orders",
-        3: "- Secret stuff",
-        4: "- Secret stuff",
+        3: "- Shield + Gun shop items",
+        4: "- Nim game",
         5: "- Secret stuff",
         6: "- Secret stuff",
         7: "- Secret stuff",
@@ -110,12 +110,14 @@ exports.addPoints = function (userID, points, silent, cb) {
                 } else {
                     //Update bot user session
                     bot.session.setSessionParam(user.telegram.id, "user.points", _user.points);
+                    let message = "🏅 Congratulations!\n\nYou got *" + points + "* point" + (points > 1 ? "s" : "") + "!";
+                    if (getLevel(_user.points) > initialLevel) {
+                        //In case of levelUp, forse silent to false
+                        silent = false;
+                        message = "You collected *" + _user.points + "* points!" +
+                            "\n\n⭐️ Level Up!\n\n*Unlocked features*:\n" + getLevelFeatures(getLevel(_user.points));
+                    }
                     if (!silent) {
-                        let message = "🏅 Congratulations!\n\nYou got *" + points + "* point" + (points > 1 ? "s" : "") + "!";
-                        if (getLevel(_user.points) > initialLevel) {
-                            message = "You collected *" + _user.points + "* points!" +
-                                "\n\n⭐️ Level Up!\n\n*Unlocked features*:\n" + getLevelFeatures(getLevel(_user.points));
-                        }
                         require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
                             parse_mode: "markdown"
                         }).then(() => {
