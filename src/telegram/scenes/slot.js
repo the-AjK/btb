@@ -575,7 +575,7 @@ function isWinningRun(ctx, run) {
     return (result > 0) ? ctx.session.test_slot.getPoints(result) : 0;
 }
 
-//Check if the user always lost in the last 5 runs
+//Check if the user always lost in the last 10 runs
 function isUserLoser(userID, cb) {
     DB.Slot.find({
         owner: userID
@@ -583,11 +583,11 @@ function isUserLoser(userID, cb) {
         sort: {
             createdAt: -1
         },
-        limit: 5
+        limit: 10
     }, (err, slotruns) => {
         if (err) {
             cb(err);
-        } else if (slotruns && slotruns.length == 5) {
+        } else if (slotruns && slotruns.length == 10) {
             for (let i = 0; i < slotruns.length; i++) {
                 if (slotruns[i].points > 0) {
                     return cb(null, false);
