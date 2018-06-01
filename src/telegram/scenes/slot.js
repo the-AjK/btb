@@ -258,9 +258,8 @@ class Slot {
         }
     }
 
-    //Rotate by 1 one random column
-    randomRotate(dir) {
-        this.rotate(Math.round(utils.getRandomInt(0, this._col)), 1), dir;
+    singleRotation(col, dir) {
+        this.rotate(col, 1, dir);
     }
 
 }
@@ -268,6 +267,7 @@ class Slot {
 const scene = new Scene('slot')
 scene.enter((ctx) => {
     ctx.session.slot = new Slot(3, 3);
+    ctx.session.test_slot = new Slot(3, 3);
     ctx.session.slot.bombSent = false;
     ctx.reply(keyboards.slot(ctx).text, keyboards.slot(ctx).opts).then(() => {
         let message = "Feeling lucky?";
@@ -304,12 +304,25 @@ scene.enter((ctx) => {
 scene.leave((ctx) => {
     const bombPoints = ctx.session.slot.bombPoints();
     if (ctx.session.slot.isWinningBomb() && bombPoints > 0 && !ctx.session.slot.bombSent) {
+        ctx.session.slot.bombSent = true;
         //User won some bombs, but didn't get rid of them
         console.log("User " + ctx.session.user.email + " dint't get rid of his " + bombPoints + " bombs");
         ctx.reply("You didn't get rid of your " + bombPoints + " bombs!").then(() => {
             levels.removePoints(ctx.session.user._id, bombPoints, false, (err, points) => {
                 if (err) {
                     console.error(err);
+                } else {
+                    //Save slot event
+                    const slotRun = new DB.Slot({
+                        owner: ctx.session.user._id,
+                        bombedUser: ctx.session.user._id,
+                        points: bombPoints
+                    });
+                    slotRun.save((err, s) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                    });
                 }
             });
         });
@@ -495,7 +508,7 @@ function handleResults(ctx) {
         });
     } else if (result < 0) {
         points = result;
-        let pointsToRemove = result * -1; 
+        let pointsToRemove = result * -1;
         levels.removePoints(ctx.session.user._id, pointsToRemove, true, (err, _points) => {
             if (err) {
                 console.error(err);
@@ -523,20 +536,103 @@ function handleResults(ctx) {
     });
 }
 
-function runSlot(ctx, cb) {
+// Generate a random run for the slot
+function generateRandomRun(slot) {
+    let run = {
+        fullSteps: Math.round(utils.getRandomInt(10, 21)), //full rotations
+        single: 0,
+        singleColumns: []
+    }
+    for (let i = 0; i < slot._col; i++) {
+        run.singleColumns[i] = Math.round(utils.getRandomInt(3, 6));
+        run.single += run.singleColumns[i];
+    }
+    run.totalSteps = run.single + run.fullSteps;
+    return run;
+}
+
+//calculate if the run is a winning one
+function isWinningRun(ctx, run) {
+    //set up test slot
+    ctx.session.test_slot._slot = JSON.parse(JSON.stringify(ctx.session.slot._slot));
+    ctx.session.test_slot._position = JSON.parse(JSON.stringify(ctx.session.slot._position));
+    //run full rotations
+    for (let i = 0; i < run.fullSteps; i++)
+        ctx.session.test_slot.fullRotation();
+    //run single columns rotations
+    const singleColumns = JSON.parse(JSON.stringify(run.singleColumns));
+    while (singleColumns.reduce((acc, val) => {
+            return acc + val;
+        }) > 0) {
+        for (let i = 0; i < ctx.session.test_slot._col; i++) {
+            if (singleColumns[i] > 0) {
+                singleColumns[i] -= 1;
+                ctx.session.test_slot.singleRotation(i);
+            }
+        }
+    }
+    let result = ctx.session.test_slot.isWinningState();
+    return (result > 0) ? ctx.session.test_slot.getPoints(result) : 0;
+}
+
+//Check if the user always lost in the last 5 runs
+function isUserLoser(userID, cb) {
+    DB.Slot.find({
+        owner: userID
+    }, null, {
+        sort: {
+            createdAt: -1
+        },
+        limit: 5
+    }, (err, slotruns) => {
+        if (err) {
+            cb(err);
+        } else if (slotruns && slotruns.length == 5) {
+            for (let i = 0; i < slotruns.length; i++) {
+                if (slotruns[i].points > 0) {
+                    return cb(null, false);
+                }
+            }
+            cb(null, true);
+        } else {
+            //No previous slot runs found. Skipping
+            cb(null, false);
+        }
+    });
+}
+
+function runSlot(ctx) {
     ctx.session.slot.bombSent = false;
     ctx.session.slot.isRunning = true;
     ctx.session.slot.setProgress(0);
     ctx.session.slot.initSlot();
     let funList = [],
-        rotations = Math.round(utils.getRandomInt(10, 21)),
-        rotations2 = Math.round(utils.getRandomInt(5, 10));
+        slotRun = generateRandomRun(ctx.session.slot),
+        runResult = isWinningRun(ctx, slotRun),
+        loserCheck = false;
 
-    for (let i = 0; i < rotations; i++) {
+    isUserLoser(ctx.session.user._id, (err, isLoser) => {
+        if (err) {
+            console.error(err);
+        } else if (isLoser) {
+            console.log("Loser user -> forceWin slot")
+            while (runResult != 2) {
+                slotRun = generateRandomRun(ctx.session.slot);
+                runResult = isWinningRun(ctx, slotRun);
+            }
+        }
+        loserCheck = true;
+    });
+
+    require('deasync').loopWhile(function () {
+        return !loserCheck;
+    });
+
+    for (let i = 0; i < slotRun.fullSteps; i++) {
         funList.push(function () {
             return (cb) => {
                 ctx.session.slot.fullRotation();
-                ctx.session.slot.setProgress(Math.round((i + 1) * 10 / (rotations + rotations2)));
+                ctx.session.slot.setProgress(Math.round((i + 1) * 10 / slotRun.totalSteps));
                 setTimeout(() => {
                     printRunningSlot(ctx, () => {
                         cb();
@@ -545,19 +641,31 @@ function runSlot(ctx, cb) {
             }
         }());
     }
-    for (let i = 0; i < rotations2; i++) {
-        funList.push(function () {
-            return (cb) => {
-                ctx.session.slot.randomRotate();
-                ctx.session.slot.setProgress(Math.round((i + rotations + 1) * 10 / (rotations + rotations2)));
-                setTimeout(() => {
-                    printRunningSlot(ctx, () => {
-                        cb();
-                    });
-                }, 400);
+
+    let progressCounter = slotRun.fullSteps + 1;
+    while (slotRun.singleColumns.reduce((acc, val) => {
+            return acc + val;
+        }) > 0) {
+        for (let i = 0; i < ctx.session.slot._col; i++) {
+            if (slotRun.singleColumns[i] > 0) {
+                slotRun.singleColumns[i] -= 1;
+
+                funList.push(function (col, p_counter, total_steps) {
+                    return (cb) => {
+                        ctx.session.slot.singleRotation(col);
+                        ctx.session.slot.setProgress(Math.round(p_counter * 10 / total_steps));
+                        setTimeout(() => {
+                            printRunningSlot(ctx, () => {
+                                cb();
+                            });
+                        }, 400);
+                    }
+                }(i, progressCounter, slotRun.totalSteps));
+                progressCounter += 1;
             }
-        }());
+        }
     }
+
     async.series(funList, (err, result) => {
         if (err) {
             console.error(err);
