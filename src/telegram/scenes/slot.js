@@ -304,12 +304,25 @@ scene.enter((ctx) => {
 scene.leave((ctx) => {
     const bombPoints = ctx.session.slot.bombPoints();
     if (ctx.session.slot.isWinningBomb() && bombPoints > 0 && !ctx.session.slot.bombSent) {
+        ctx.session.slot.bombSent = true;
         //User won some bombs, but didn't get rid of them
         console.log("User " + ctx.session.user.email + " dint't get rid of his " + bombPoints + " bombs");
         ctx.reply("You didn't get rid of your " + bombPoints + " bombs!").then(() => {
             levels.removePoints(ctx.session.user._id, bombPoints, false, (err, points) => {
                 if (err) {
                     console.error(err);
+                } else {
+                    //Save slot event
+                    const slotRun = new DB.Slot({
+                        owner: ctx.session.user._id,
+                        bombedUser: ctx.session.user._id,
+                        points: bombPoints
+                    });
+                    slotRun.save((err, s) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                    });
                 }
             });
         });
@@ -495,7 +508,7 @@ function handleResults(ctx) {
         });
     } else if (result < 0) {
         points = result;
-        let pointsToRemove = result * -1; 
+        let pointsToRemove = result * -1;
         levels.removePoints(ctx.session.user._id, pointsToRemove, true, (err, _points) => {
             if (err) {
                 console.error(err);
