@@ -475,7 +475,10 @@ function textManager(ctx) {
     }
     deleteLastMessage(ctx);
 
-    if (keyboards.slot(ctx)[ctx.message.text]) {
+    if (ctx.session.slot.isWinningBomb() && ctx.message.text.toLowerCase() == 'neutralize') {
+        ctx.session.slot.bombSent = true;
+        ctx.scene.enter('extra');
+    } else if (keyboards.slot(ctx)[ctx.message.text]) {
         keyboards.slot(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
         //back button
