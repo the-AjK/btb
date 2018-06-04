@@ -25,9 +25,15 @@ const Telegraf = require("telegraf"),
 
 const scene = new Scene('shop')
 scene.enter((ctx) => {
-    ctx.reply(keyboards.shop(ctx).text, keyboards.shop(ctx).opts).then(() => {
+    if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+        //authorized user
+        ctx.reply(keyboards.shop(ctx).text, keyboards.shop(ctx).opts).then(() => {
 
-    });
+        });
+    } else {
+        //unauthorized user -> back to extra
+        ctx.scene.enter('extra');
+    }
 });
 
 scene.leave((ctx) => {
@@ -68,6 +74,12 @@ function updateUsersKeyboard(ctx) {
 }
 
 scene.on("callback_query", ctx => {
+
+    if (levels.getLevel(ctx.session.user.points) < 1 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+        //unauthorized user -> back to extra
+        return ctx.scene.enter('extra');
+    }
+
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     if (ctx.session.users_inline_keyboard && ctx.update.callback_query.data == ctx.session.users_inline_keyboard.previousCallbackData()) {
         ctx.session.users_inline_keyboard.previous();
