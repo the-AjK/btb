@@ -310,7 +310,12 @@ function sendNews(ctx, premium) {
 
     funList.push(function () {
         return (cb) => {
-            DB.getDailyOrders(null, cb);
+            DB.getDailyOrders(null, (err, res) => {
+                if (err) {
+                    console.error(err);
+                }
+                cb(null, res || []);
+            });
         }
     }());
 
