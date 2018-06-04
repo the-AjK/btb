@@ -25,9 +25,15 @@ const Telegraf = require("telegraf"),
 
 const scene = new Scene('shop')
 scene.enter((ctx) => {
-    ctx.reply(keyboards.shop(ctx).text, keyboards.shop(ctx).opts).then(() => {
+    if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+        //authorized user
+        ctx.reply(keyboards.shop(ctx).text, keyboards.shop(ctx).opts).then(() => {
 
-    });
+        });
+    } else {
+        //unauthorized user -> back to extra
+        ctx.scene.enter('extra');
+    }
 });
 
 scene.leave((ctx) => {
@@ -68,6 +74,12 @@ function updateUsersKeyboard(ctx) {
 }
 
 scene.on("callback_query", ctx => {
+
+    if (levels.getLevel(ctx.session.user.points) < 1 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+        //unauthorized user -> back to extra
+        return ctx.scene.enter('extra');
+    }
+
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     if (ctx.session.users_inline_keyboard && ctx.update.callback_query.data == ctx.session.users_inline_keyboard.previousCallbackData()) {
         ctx.session.users_inline_keyboard.previous();
@@ -187,12 +199,12 @@ function formatNews(news, topUsers, dailyOrders, premium) {
     if (dailyOrders && dailyOrders.length) {
         let dailyWinner = dailyOrders[0].owner,
             dailyOrderWinnerLink = "[" + (dailyWinner.telegram.first_name + (dailyWinner.telegram.last_name ? (" " + dailyWinner.telegram.last_name) : "")) + "](tg://user?id=" + dailyWinner.telegram.id + ")";
-        text += "\n\n*Daily winner*: 🍺 " + dailyOrderWinnerLink;
+        text += "\n\n*Daily winner*: 🍺 " + dailyOrderWinnerLink + " was the first to place the daily order!";
 
         if (!moment().isBefore(moment(dailyOrders[0].menu.deadline))) {
             let dailyLooser = dailyOrders[dailyOrders.length - 1].owner,
                 dailyOrderLooserLink = "[" + (dailyLooser.telegram.first_name + (dailyLooser.telegram.last_name ? (" " + dailyLooser.telegram.last_name) : "")) + "](tg://user?id=" + dailyLooser.telegram.id + ")";
-            text += "\n\n*Daily looser*: 💩 " + dailyOrderLooserLink;
+            text += "\n\n*Daily loser*: 💩 " + dailyOrderLooserLink + " was the last to place the daily order!";
         }
     }
 
@@ -310,7 +322,12 @@ function sendNews(ctx, premium) {
 
     funList.push(function () {
         return (cb) => {
-            DB.getDailyOrders(null, cb);
+            DB.getDailyOrders(null, (err, res) => {
+                if (err) {
+                    console.error(err);
+                }
+                cb(null, res || []);
+            });
         }
     }());
 

@@ -25,6 +25,10 @@ class Session {
         this.store = new Map();
     }
 
+    reset() {
+        this.store.clear();
+    }
+
     _setSession(key, session) {
         const now = new Date().getTime();
         this.store.set(key, {

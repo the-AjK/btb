@@ -392,6 +392,14 @@ function decodeWit(ctx, witResponse) {
           }
         }
         return ctx.reply(msg, keyboards.btb(ctx).opts);
+      case "resetsessions":
+        if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+          msg = "401 - Unauthorized";
+        } else {
+          session.reset();
+          msg = "Sessions reset complete!";
+        }
+        return ctx.reply(msg, keyboards.btb(ctx).opts);
       case "order":
         ctx.scene.enter('order');
         break;

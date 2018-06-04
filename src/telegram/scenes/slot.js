@@ -361,10 +361,10 @@ function printSlot(ctx) {
             }) : undefined
         }).then((msg) => {
             ctx.session.user.dailySlotRunning = false;
-            if (robWin)
-                return selectUserToRob(ctx);
             if (bombWin)
                 return selectUserToBomb(ctx);
+            if (robWin)
+                return selectUserToRob(ctx);
         });
     }
 }
@@ -475,7 +475,10 @@ function textManager(ctx) {
     }
     deleteLastMessage(ctx);
 
-    if (keyboards.slot(ctx)[ctx.message.text]) {
+    if (ctx.session.slot.isWinningBomb() && ctx.message.text.toLowerCase() == 'neutralize') {
+        ctx.session.slot.bombSent = true;
+        ctx.scene.enter('extra');
+    } else if (keyboards.slot(ctx)[ctx.message.text]) {
         keyboards.slot(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
         //back button
@@ -575,7 +578,7 @@ function isWinningRun(ctx, run) {
     return (result > 0) ? ctx.session.test_slot.getPoints(result) : 0;
 }
 
-//Check if the user always lost in the last 10 runs
+//Check if the user always lost in the last 15 runs
 function isUserLoser(userID, cb) {
     DB.Slot.find({
         owner: userID
@@ -583,11 +586,11 @@ function isUserLoser(userID, cb) {
         sort: {
             createdAt: -1
         },
-        limit: 10
+        limit: 15
     }, (err, slotruns) => {
         if (err) {
             cb(err);
-        } else if (slotruns && slotruns.length == 10) {
+        } else if (slotruns && slotruns.length == 15) {
             for (let i = 0; i < slotruns.length; i++) {
                 if (slotruns[i].points > 0) {
                     return cb(null, false);
