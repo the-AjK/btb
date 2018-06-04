@@ -361,10 +361,10 @@ function printSlot(ctx) {
             }) : undefined
         }).then((msg) => {
             ctx.session.user.dailySlotRunning = false;
-            if (robWin)
-                return selectUserToRob(ctx);
             if (bombWin)
                 return selectUserToBomb(ctx);
+            if (robWin)
+                return selectUserToRob(ctx);
         });
     }
 }
