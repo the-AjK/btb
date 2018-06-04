@@ -199,12 +199,12 @@ function formatNews(news, topUsers, dailyOrders, premium) {
     if (dailyOrders && dailyOrders.length) {
         let dailyWinner = dailyOrders[0].owner,
             dailyOrderWinnerLink = "[" + (dailyWinner.telegram.first_name + (dailyWinner.telegram.last_name ? (" " + dailyWinner.telegram.last_name) : "")) + "](tg://user?id=" + dailyWinner.telegram.id + ")";
-        text += "\n\n*Daily winner*: 🍺 " + dailyOrderWinnerLink;
+        text += "\n\n*Daily winner*: 🍺 " + dailyOrderWinnerLink + " was the first to place the daily order!";
 
         if (!moment().isBefore(moment(dailyOrders[0].menu.deadline))) {
             let dailyLooser = dailyOrders[dailyOrders.length - 1].owner,
                 dailyOrderLooserLink = "[" + (dailyLooser.telegram.first_name + (dailyLooser.telegram.last_name ? (" " + dailyLooser.telegram.last_name) : "")) + "](tg://user?id=" + dailyLooser.telegram.id + ")";
-            text += "\n\n*Daily looser*: 💩 " + dailyOrderLooserLink;
+            text += "\n\n*Daily loser*: 💩 " + dailyOrderLooserLink + " was the last to place the daily order!";
         }
     }
 
