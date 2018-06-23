@@ -29,7 +29,7 @@ const Messages = inject("ctx")(
                 super(props);
                 extendObservable(this, {
                     data: {
-                        email: null,
+                        email: this.props.ctx.auth.user.email,
                         message: ""
                     }
                 });
