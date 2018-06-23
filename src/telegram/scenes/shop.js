@@ -273,7 +273,7 @@ function sendNews(ctx, premium) {
 
     funList.push(function () {
         return (cb) => {
-            DB.Beer.find(null, null, {
+            DB.BeerEvent.find(null, null, {
                 sort: {
                     createdAt: -1
                 },
@@ -284,7 +284,7 @@ function sendNews(ctx, premium) {
 
     funList.push(function () {
         return (cb) => {
-            DB.Slot.find({
+            DB.SlotEvent.find({
                 points: {
                     "$ne": 0
                 }

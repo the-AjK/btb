@@ -125,7 +125,7 @@ function addBeer(ctx) {
         ctx.session.addBeer = true;
         drinkBeer(ctx.session.user);
         const type = ctx.update.callback_query.data,
-            newBeer = new DB.Beer({
+            newBeer = new DB.BeerEvent({
                 owner: ctx.session.user._id,
                 drunk: drunkBot,
                 type: (type == 'pint' ? 1 : 0)

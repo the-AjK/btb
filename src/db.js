@@ -150,53 +150,6 @@ const UserSchema = new mongoose.Schema({
   }
 });
 
-const BeerSchema = new mongoose.Schema({
-  owner: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  type: {
-    type: Number,
-    default: 0
-  },
-  drunk: {
-    type: Boolean,
-    default: false
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
-
-const SlotSchema = new mongoose.Schema({
-  owner: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  bet: {
-    type: Number
-  },
-  bombedUser: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  robbedUser: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  points: {
-    type: Number,
-    required: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
-
 const MenuSchema = new mongoose.Schema({
   owner: {
     type: mongoose.Schema.Types.ObjectId,
@@ -356,6 +309,87 @@ const TableSchema = new mongoose.Schema({
   }
 });
 
+const eventOptions = {
+  discriminatorKey: 'kind'
+};
+
+const GenericEventSchema = new mongoose.Schema({
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  description: {
+    type: String
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+}, eventOptions);
+
+const BeerEventSchema = new mongoose.Schema({
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  type: {
+    type: Number,
+    default: 0
+  },
+  drunk: {
+    type: Boolean,
+    default: false
+  }
+}, eventOptions);
+
+const SlotEventSchema = new mongoose.Schema({
+  bet: {
+    type: Number
+  },
+  bombedUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  robbedUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  points: {
+    type: Number,
+    required: true
+  }
+}, eventOptions);
+
+const TradeEventSchema = new mongoose.Schema({
+  recipient: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  quantity: {
+    type: Number,
+    required: true
+  }
+}, eventOptions);
+
+const RatingEventSchema = new mongoose.Schema({
+  rating: {
+    type: Number,
+    min: 0,
+    max: 10,
+    required: true
+  }
+}, eventOptions);
+
+const LevelEventSchema = new mongoose.Schema({
+  level: {
+    type: Number,
+    required: true
+  }
+}, eventOptions);
+
 //Root user utility presave function
 UserSchema.pre('save', function (next) {
   if (process.env.ROOT_TELEGRAM_ID && this.telegram.id === parseInt(process.env.ROOT_TELEGRAM_ID)) {
@@ -368,18 +402,26 @@ UserSchema.pre('save', function (next) {
 });
 
 const User = mongoose.model("User", UserSchema),
-  Beer = mongoose.model("Beer", BeerSchema),
-  Slot = mongoose.model("Slot", SlotSchema),
   Menu = mongoose.model("Menu", MenuSchema),
   Order = mongoose.model("Order", OrderSchema),
-  Table = mongoose.model("Table", TableSchema);
+  Table = mongoose.model("Table", TableSchema),
+  GenericEvent = mongoose.model("Event", GenericEventSchema),
+  LevelEvent = GenericEvent.discriminator('LevelEvent', LevelEventSchema),
+  RatingEvent = GenericEvent.discriminator('RatingEvent', RatingEventSchema),
+  BeerEvent = GenericEvent.discriminator('BeerEvent', BeerEventSchema),
+  SlotEvent = GenericEvent.discriminator('SlotEvent', SlotEventSchema),
+  TradeEvent = GenericEvent.discriminator('TradeEvent', TradeEventSchema);
 
 exports.User = User;
-exports.Beer = Beer;
-exports.Slot = Slot;
 exports.Menu = Menu;
 exports.Order = Order;
 exports.Table = Table;
+exports.GenericEvent = GenericEvent;
+exports.LevelEvent = LevelEvent;
+exports.RatingEvent = RatingEvent;
+exports.BeerEvent = BeerEvent;
+exports.SlotEvent = SlotEvent;
+exports.TradeEvent = TradeEvent;
 
 function getDailyMenu(day, cb) {
   const today = moment(day || moment()).startOf("day"),
@@ -593,7 +635,7 @@ exports.getUserBeers = (userID, type, callback) => {
   };
   if (type)
     query.type = type;
-  Beer.find(query).exec(callback);
+  BeerEvent.find(query).exec(callback);
 };
 
 function removeDuplicates(arr) {

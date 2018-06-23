@@ -313,7 +313,7 @@ scene.leave((ctx) => {
                     console.error(err);
                 } else {
                     //Save slot event
-                    const slotRun = new DB.Slot({
+                    const slotRun = new DB.SlotEvent({
                         owner: ctx.session.user._id,
                         bombedUser: ctx.session.user._id,
                         points: bombPoints
@@ -527,7 +527,7 @@ function handleResults(ctx) {
         printSlot(ctx);
     }
     //Save slot result
-    const newSlotRun = new DB.Slot({
+    const newSlotRun = new DB.SlotEvent({
         owner: ctx.session.user._id,
         bet: ctx.session.user.dailySlotRunning ? 0 : 1,
         points: points
@@ -580,7 +580,7 @@ function isWinningRun(ctx, run) {
 
 //Check if the user always lost in the last 15 runs
 function isUserLoser(userID, cb) {
-    DB.Slot.find({
+    DB.SlotEvent.find({
         owner: userID
     }, null, {
         sort: {
@@ -771,7 +771,7 @@ scene.on("callback_query", ctx => {
                         bot.broadcastMessage("User *" + ctx.session.user.email + "* sent " + points + " bombs to *" + bombUser.email + "*", accessLevels.root, null, true);
                     }
                     //Save slot event
-                    const slotRun = new DB.Slot({
+                    const slotRun = new DB.SlotEvent({
                         owner: ctx.session.user._id,
                         bombedUser: bombUser._id,
                         points: points
@@ -823,7 +823,7 @@ scene.on("callback_query", ctx => {
                         bot.broadcastMessage("User *" + ctx.session.user.email + "* stole " + beercoins + " beercoins from *" + robbedUser.email + "*", accessLevels.root, null, true);
                     }
                     //Save slot event
-                    const slotRun = new DB.Slot({
+                    const slotRun = new DB.SlotEvent({
                         owner: ctx.session.user._id,
                         robbedUser: robbedUser._id,
                         points: beercoins
