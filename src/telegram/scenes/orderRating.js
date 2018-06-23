@@ -65,18 +65,12 @@ scene.on("callback_query", ctx => {
     if (ctx.update.callback_query.data == 'add') {
         if (ctx.session.rating < 10) {
             ctx.session.rating += 1;
-            ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, keyboards.orderRating(ctx).text, keyboards.orderRating(ctx).opts).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
+            ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, keyboards.orderRating(ctx).text, keyboards.orderRating(ctx).opts);
         }
     } else if (ctx.update.callback_query.data == 'remove') {
         if (ctx.session.rating > 1) {
             ctx.session.rating -= 1;
-            ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, keyboards.orderRating(ctx).text, keyboards.orderRating(ctx).opts).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
+            ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, keyboards.orderRating(ctx).text, keyboards.orderRating(ctx).opts);
         }
     } else if (ctx.update.callback_query.data == 'rateit') {
         setOrderRating(ctx);

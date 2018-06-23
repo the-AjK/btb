@@ -330,8 +330,8 @@ function printRunningSlot(ctx, cb) {
     if (ctx.session.slot_message) {
         ctx.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx, true), {
             parse_mode: "markdown",
-        }).then((msg) => {
-            cb(null, msg);
+        }).then(() => {
+            cb(null);
         }, (err) => {
             //nothing to do
             cb(err);
@@ -356,7 +356,7 @@ function printSlot(ctx, cb) {
             reply_markup: !ctx.session.user.dailySlotRunning && !bombWin && !robWin ? JSON.stringify({
                 inline_keyboard: inline_keyboard
             }) : undefined
-        }).then((msg) => {
+        }).then(() => {
             ctx.session.user.dailySlotRunning = false;
             cb();
             if (bombWin)
@@ -698,8 +698,6 @@ function runSlot(ctx) {
 function updateUsersKeyboard(ctx) {
     ctx.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
         inline_keyboard: ctx.session.users_inline_keyboard.render()
-    }).then((m) => {
-        ctx.session.lastMessage = m;
     });
 }
 

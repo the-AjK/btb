@@ -65,7 +65,7 @@ function selectUser(ctx) {
                     pageSize: 6
                 };
             ctx.session.users_inline_keyboard = new PaginatedInlineKeyboard(data, options);
-            ctx.reply("Beercoins trading! 💰\nSelect the recipient:", {
+            ctx.reply("*Beercoins trading!* 💰\nSend beercoins to your friends!\nSelect the recipient:", {
                 parse_mode: "markdown",
                 reply_markup: JSON.stringify({
                     inline_keyboard: ctx.session.users_inline_keyboard.render()
@@ -117,12 +117,9 @@ function sendBeerCoins(ctx) {
     });
 }
 
-
 function updateUsersKeyboard(ctx) {
     ctx.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
         inline_keyboard: ctx.session.users_inline_keyboard.render()
-    }).then((m) => {
-        ctx.session.lastMessage = m;
     });
 }
 
