@@ -80,11 +80,11 @@ exports.removePoints = function (userID, points, silent, cb) {
                         //Update bot user session
                         bot.session.setSessionParam(user.telegram.id, "user.points", user.points);
                         if (!silent) {
-                            let message = "💩 Ops!\n\nYou lost *" + points + "* point" + (points > 1 ? "s" : "") + "!";
+                            let message = "💩 Ops!\n\nYou lost *" + points + "* beercoin" + (points > 1 ? "s" : "") + "!";
                             require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
                                 parse_mode: "markdown"
                             }).then(() => {
-                                console.log("User: *" + user.email + "* lost " + points + " points (" + user.points + ")");
+                                console.log("User: *" + user.email + "* lost " + points + " beercoins (" + user.points + ")");
                             });
                         }
                         cb(null, user.points);
@@ -110,12 +110,12 @@ exports.addPoints = function (userID, points, silent, cb) {
                 } else {
                     //Update bot user session
                     bot.session.setSessionParam(user.telegram.id, "user.points", _user.points);
-                    let message = "🏅 Congratulations!\n\nYou got *" + points + "* point" + (points > 1 ? "s" : "") + "!",
+                    let message = "🏅 Congratulations!\n\nYou got *" + points + "* beercoin" + (points > 1 ? "s" : "") + "!",
                         level = getLevel(_user.points);
                     if (level > initialLevel) {
                         //In case of levelUp, forse silent to false
                         silent = false;
-                        message = "You collected *" + _user.points + "* points!" +
+                        message = "You collected *" + _user.points + "* beercoins!" +
                             "\n\n⭐️ Level Up! 🔝\n\n*Unlocked features*:\n" + getLevelFeatures(level);
                         //Save event
                         const event = new DB.LevelEvent({
@@ -132,7 +132,7 @@ exports.addPoints = function (userID, points, silent, cb) {
                         require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
                             parse_mode: "markdown"
                         }).then(() => {
-                            console.log("User: " + user.email + " got " + points + " points (" + _user.points + ")");
+                            console.log("User: " + user.email + " got " + points + " beercoins (" + _user.points + ")");
                         });
                     }
                     cb(null, _user.points);
