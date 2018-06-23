@@ -23,7 +23,7 @@ const express = require("express"),
 	db = require("./src/db");
 
 console.log(
-	"***********************************************************\n*\n" +
+	"\n***********************************************************\n*\n" +
 	"*      BiteTheBot v" + packageJSON.version + "\n" +
 	"*      enviroment: " + process.env.NODE_ENV + "\n" +
 	"*      port: " + process.env.PORT + "\n*\n" +
