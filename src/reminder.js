@@ -7,7 +7,6 @@
 
 const schedule = require('node-schedule'),
     moment = require('moment'),
-    async = require('async'),
     roles = require("./roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,

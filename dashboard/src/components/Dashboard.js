@@ -7,15 +7,17 @@
 import React from "react";
 import { observer, inject } from "mobx-react";
 import PropTypes from "prop-types";
-import { withStyles } from "material-ui/styles";
-import Drawer from "material-ui/Drawer";
-import AppBar from "material-ui/AppBar";
-import Toolbar from "material-ui/Toolbar";
-import List, { ListItem, ListItemIcon } from "material-ui/List";
-import Typography from "material-ui/Typography";
-import IconButton from "material-ui/IconButton";
-import Hidden from "material-ui/Hidden";
-import Divider from "material-ui/Divider";
+import { withStyles } from "@material-ui/core/styles";
+import Drawer from "@material-ui/core/Drawer";
+import AppBar from "@material-ui/core/AppBar";
+import Toolbar from "@material-ui/core/Toolbar";
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import Typography from "@material-ui/core/Typography";
+import IconButton from "@material-ui/core/IconButton";
+import Hidden from "@material-ui/core/Hidden";
+import Divider from "@material-ui/core/Divider";
 import MenuIcon from "@material-ui/icons/Menu";
 import AssignmentIcon from "@material-ui/icons/Assignment";
 import HomeIcon from "@material-ui/icons/Home";
@@ -27,9 +29,10 @@ import AboutIcon from "@material-ui/icons/Info";
 import MessageIcon from "@material-ui/icons/Message";
 import LogoutIcon from "@material-ui/icons/Launch"
 import SettingsIcon from "@material-ui/icons/Settings"
-import AccountCircle from '@material-ui/icons/AccountCircle';
-import Menu, { MenuItem } from 'material-ui/Menu';
-import Grid from "material-ui/Grid";
+import AccountCircle from "@material-ui/icons/AccountCircle";
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
+import Grid from "@material-ui/core/Grid";
 import moment from "moment";
 
 import BenderBottom from "./ee/BenderBottom"
@@ -164,14 +167,14 @@ const Dashboard = inject("ctx")(
                   Home
                 </ListItem>
               </ListItem>
-              <ListItem button onClick={() => this.props.history.push('/menus')}>
+              {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && <ListItem button onClick={() => this.props.history.push('/menus')}>
                 <ListItemIcon>
                   <AssignmentIcon />
                 </ListItemIcon>
                 <ListItem>
                   Menus
                 </ListItem>
-              </ListItem>
+              </ListItem>}
               <ListItem button onClick={() => this.props.history.push('/orders')}>
                 <ListItemIcon>
                   <StorageIcon />
@@ -180,26 +183,28 @@ const Dashboard = inject("ctx")(
                   Orders
                 </ListItem>
               </ListItem>
-              <ListItem button onClick={() => this.props.history.push('/tables')}>
+              {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && <ListItem button onClick={() => this.props.history.push('/tables')}>
                 <ListItemIcon>
                   <TablesIcon />
                 </ListItemIcon>
                 <ListItem>
                   Tables
                 </ListItem>
-              </ListItem>
+              </ListItem>}
             </List>
-            <Divider />
-            <List>
-              <ListItem button onClick={() => this.props.history.push('/users')}>
-                <ListItemIcon>
-                  <UsersIcon />
-                </ListItemIcon>
-                <ListItem>
-                  Users
+            {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && <div>
+              <Divider />
+              <List>
+                <ListItem button onClick={() => this.props.history.push('/users')}>
+                  <ListItemIcon>
+                    <UsersIcon />
+                  </ListItemIcon>
+                  <ListItem>
+                    Users
                 </ListItem>
-              </ListItem>
-            </List>
+                </ListItem>
+              </List>
+            </div>}
             {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && <div>
               <Divider />
               <List>

@@ -7,10 +7,11 @@
 import React from "react";
 import moment from "moment";
 import { observer, inject } from "mobx-react";
-import { withStyles } from "material-ui/styles";
+import { withStyles } from "@material-ui/core/styles";
 import Table from "./GenericTable"
-import Grid from "material-ui/Grid";
+import Grid from "@material-ui/core/Grid";
 import ActionsButtons from "./buttons/ActionsButtons"
+import FloatingAddButton from "./buttons/FloatingAddButton"
 import EnabledIcon from "@material-ui/icons/Done"
 import DisabledIcon from "@material-ui/icons/Clear"
 
@@ -62,7 +63,7 @@ const Orders = inject("ctx")(
                 const actions = (props) => {
                     return (
                         <ActionsButtons
-                            //edit={() => { this.props.ctx.history.push('/orders/' + props.original._id) }}
+                            edit={() => { this.props.ctx.history.push('/orders/' + props.original._id) }}
                             delete={this.handleDelete(props.original)}
                         />
                     )
@@ -81,6 +82,7 @@ const Orders = inject("ctx")(
                         sortable: false,
                         Header: 'Owner',
                         filterable: false,
+                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin),
                         accessor: d => { return d.owner ? d.owner.email : '-' }
                     }, {
                         id: 'firstCourse.item',
@@ -175,9 +177,11 @@ const Orders = inject("ctx")(
                     }
                 }
 
+                const isAdmin = roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin);
+
                 return (
                     <Grid container direction={"column"} justify={"flex-start"} alignItems={"stretch"}>
-                        <Grid item xs={12}>
+                        {isAdmin && <Grid item xs={12}>
                             <Table
                                 title="Daily orders"
                                 filters={true}
@@ -190,7 +194,7 @@ const Orders = inject("ctx")(
                                 store={this.props.ctx.stats}
                                 showPagination={false}
                             />
-                        </Grid>
+                        </Grid>}
                         <Grid item xs={12}>
                             <Table
                                 serverSidePagination={true}
@@ -205,6 +209,9 @@ const Orders = inject("ctx")(
                                 store={this.props.ctx.orders}
                                 showPagination={true}
                             />
+                            {false && <FloatingAddButton
+                                onClick={() => this.props.ctx.history.push('/orders/new')}
+                            />}
                         </Grid>
                     </Grid>
                 );

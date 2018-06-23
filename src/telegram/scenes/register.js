@@ -5,8 +5,7 @@
  */
 "use strict";
 
-const Telegraf = require("telegraf"),
-    Scene = require('telegraf/scenes/base'),
+const Scene = require('telegraf/scenes/base'),
     validator = require('validator'),
     bot = require('../bot'),
     DB = require("../../db"),
@@ -104,14 +103,14 @@ function registerUser(ctx) {
             //ROOT user
             ctx.reply("ROOT Registration successfull.", keyboards.btb(ctx).opts);
             bot.broadcastMessage(
-                "New ROOT user: [" + newUser.username + "](tg://user?id=" + newUser.telegram.id + ")",
+                "New ROOT user: " + bot.getUserLink(newUser),
                 accessLevels.root
             );
         } else {
             //Non root users
             ctx.reply("Registration successfull.\nThe admin should enable your account soon. Please wait.");
             bot.broadcastMessage(
-                "New pending user: [" + newUser.username + "](tg://user?id=" + newUser.telegram.id + ") (" + newUser.email + ")",
+                "New pending user: " + bot.getUserLink(newUser) + " (" + newUser.email + ")",
                 accessLevels.admin
             );
         }

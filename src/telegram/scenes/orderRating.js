@@ -5,12 +5,10 @@
  */
 "use strict";
 
-const Telegraf = require("telegraf"),
-    moment = require('moment'),
+const moment = require('moment'),
     Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     roles = require("../../roles"),
-    checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
@@ -37,7 +35,7 @@ scene.enter((ctx) => {
             ctx.reply("You can't rate your order yet! Please wait");
         } else {
             //Default start rating
-            ctx.session.rating = 5;
+            ctx.session.rating = 7;
             ctx.reply(keyboards.orderRating(ctx).text, keyboards.orderRating(ctx).opts).then((msg) => {
                 //lets save the message to delete it afterward
                 ctx.session.lastMessage = msg;
@@ -67,7 +65,7 @@ scene.on("callback_query", ctx => {
     if (ctx.update.callback_query.data == 'add') {
         if (ctx.session.rating < 10) {
             ctx.session.rating += 1;
-            require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, keyboards.orderRating(ctx).text, keyboards.orderRating(ctx).opts).then((msg) => {
+            ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, keyboards.orderRating(ctx).text, keyboards.orderRating(ctx).opts).then((msg) => {
                 //lets save the message to delete it afterward
                 ctx.session.lastMessage = msg;
             });
@@ -75,7 +73,7 @@ scene.on("callback_query", ctx => {
     } else if (ctx.update.callback_query.data == 'remove') {
         if (ctx.session.rating > 1) {
             ctx.session.rating -= 1;
-            require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, keyboards.orderRating(ctx).text, keyboards.orderRating(ctx).opts).then((msg) => {
+            ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, keyboards.orderRating(ctx).text, keyboards.orderRating(ctx).opts).then((msg) => {
                 //lets save the message to delete it afterward
                 ctx.session.lastMessage = msg;
             });
@@ -115,7 +113,7 @@ function setOrderRating(ctx) {
                     ctx.reply("Ehm, something went wrong");
                 } else {
                     let text = "Well done!\nYour rating was: *" + ctx.session.rating + "* stars! ⭐️";
-                    require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
+                    ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
                         parse_mode: "markdown"
                     });
                     if (!checkUser(ctx.session.user.role, userRoles.root)) {

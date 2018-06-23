@@ -7,16 +7,16 @@
 import React from "react";
 import { observer, inject } from "mobx-react";
 import { extendObservable, action } from "mobx";
-import { withStyles } from "material-ui/styles";
-import Button from 'material-ui/Button';
-import AddIcon from '@material-ui/icons/Add';
-import DeleteIcon from '@material-ui/icons/Delete';
-import EditIcon from '@material-ui/icons/ModeEdit';
-import UpIcon from '@material-ui/icons/KeyboardArrowUp';
-import DownIcon from '@material-ui/icons/KeyboardArrowDown';
-import Slide from 'material-ui/transitions/Slide';
-import green from 'material-ui/colors/green';
-import blue from 'material-ui/colors/blue';
+import { withStyles } from "@material-ui/core/styles";
+import Button from "@material-ui/core/Button";
+import AddIcon from "@material-ui/icons/Add";
+import DeleteIcon from "@material-ui/icons/Delete";
+import EditIcon from "@material-ui/icons/ModeEdit";
+import UpIcon from "@material-ui/icons/KeyboardArrowUp";
+import DownIcon from "@material-ui/icons/KeyboardArrowDown";
+import Slide from '@material-ui/core/Slide';
+import green from "@material-ui/core/colors/green";
+import blue from "@material-ui/core/colors/blue";
 
 const styles = theme => ({
     edit: {

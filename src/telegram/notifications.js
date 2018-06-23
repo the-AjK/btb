@@ -12,7 +12,6 @@ const moment = require('moment'),
     levels = require("../levels"),
     mail = require("../mail"),
     roles = require("../roles"),
-    userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
     keyboards = require('./keyboards');
 

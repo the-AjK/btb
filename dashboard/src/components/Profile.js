@@ -7,18 +7,23 @@
 import React from "react";
 import { observer, inject } from "mobx-react";
 import { extendObservable, action } from "mobx";
-import { withStyles } from "material-ui/styles";
-import Avatar from 'material-ui/Avatar';
+import { withStyles } from "@material-ui/core/styles";
+import Avatar from "@material-ui/core/Avatar";
 import FloatingSaveButton from "./buttons/FloatingSaveButton";
-import Grid from "material-ui/Grid";
-import TextField from 'material-ui/TextField';
-import IconButton from 'material-ui/IconButton';
-import Input, { InputLabel, InputAdornment } from 'material-ui/Input';
-import Visibility from '@material-ui/icons/Visibility';
-import VisibilityOff from '@material-ui/icons/VisibilityOff';
-import { FormControl, FormLabel, FormGroup, FormControlLabel } from 'material-ui/Form';
+import Grid from "@material-ui/core/Grid";
+import TextField from "@material-ui/core/TextField";
+import IconButton from "@material-ui/core/IconButton";
+import Input from '@material-ui/core/Input';
+import InputLabel from '@material-ui/core/InputLabel';
+import InputAdornment from '@material-ui/core/InputAdornment';
+import Visibility from "@material-ui/icons/Visibility";
+import VisibilityOff from "@material-ui/icons/VisibilityOff";
+import FormControl from '@material-ui/core/FormControl';
+import FormLabel from '@material-ui/core/FormLabel';
+import FormGroup from '@material-ui/core/FormGroup';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Validator from "validatorjs";
-import Switch from 'material-ui/Switch';
+import Switch from "@material-ui/core/Switch";
 
 const styles = theme => ({
     root: {
@@ -217,7 +222,7 @@ const Profile = inject("ctx")(
                                             id="password"
                                             type={this.showPassword ? 'text' : 'password'}
                                             value={this.password}
-                                            autoComplete="password2"
+                                            //autoComplete=""
                                             onChange={(e) => { this.handleChangeField("password", e) }}
                                             error={this.password !== this.password2 || this.errors.password !== false}
                                             fullWidth
@@ -244,7 +249,7 @@ const Profile = inject("ctx")(
                                             id="password2"
                                             type={this.showPassword ? 'text' : 'password'}
                                             value={this.password2}
-                                            autoComplete={false}
+                                            //autoComplete=""
                                             onChange={(e) => { this.handleChangeField("password2", e) }}
                                             error={this.password !== this.password2}
                                             fullWidth

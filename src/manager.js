@@ -5,8 +5,7 @@
  */
 "use strict";
 
-const schedule = require('node-schedule'),
-    moment = require('moment'),
+const moment = require('moment'),
     async = require('async'),
     roles = require("./roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
@@ -19,7 +18,6 @@ const schedule = require('node-schedule'),
     bot = require("./telegram/bot"),
     telegramBot = require("./telegram/bot").bot,
     botNotifications = require('./telegram/notifications'),
-    levels = require('./levels'),
     DB = require("./db");
 
 function _getUsers(req, res) {
@@ -352,7 +350,7 @@ function menuIsValid(menu) {
 let dailyMenuNotificationTimeout;
 
 function notifyDailyMenu(menu) {
-    const timeout = 30; //seconds
+    const timeout = 1; //seconds
     console.log("Daily menu will be broadcasted in " + timeout + " seconds.");
     clearTimeout(dailyMenuNotificationTimeout);
     dailyMenuNotificationTimeout = setTimeout(() => {
@@ -416,8 +414,10 @@ function _addMenu(req, res) {
 }
 
 // Returns the orders which has been affected by the menu changes
+// returns:
+// ordersToDelete = result[0]
+// ordersNotAffected = result[1]
 function getOrdersMenuDiff(oldMenu, menu, orders) {
-    let _orders = [];
 
     console.log("Menu diff checking...");
 
@@ -427,11 +427,11 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
         let tableID = removedTables[i];
         console.log("Table _id:" + tableID + " has been removed");
         for (let j = 0; j < orders.length; j++) {
-            let order = orders[j];
-            if (String(tableID).localeCompare(String(order.table._id)) == 0) {
-                console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because table '" + order.table.name + "' has been removed");
-                _orders.push(order);
-                orders.splice(j--, 1);
+            if (orders[j].deprecated)
+                continue;
+            orders[j].deprecated = String(tableID).localeCompare(String(orders[j].table._id)) == 0;
+            if (orders[j].deprecated) {
+                console.log("Order _id:" + orders[j]._id + " (" + orders[j].owner.email + ") will be removed because table '" + orders[j].table.name + "' has been removed");
             }
         }
     }
@@ -443,11 +443,11 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
         if (menu.firstCourse.items.map(mfc => mfc.value).indexOf(oldFc.value) < 0) {
             console.log("First course '" + oldFc.value + "' has been removed");
             for (let k = 0; k < orders.length; k++) {
-                let order = orders[k];
-                if (order.firstCourse && order.firstCourse.item.localeCompare(oldFc.value) == 0) {
-                    console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because firstCourse '" + oldFc.value + "' has been removed");
-                    _orders.push(order);
-                    orders.splice(k--, 1);
+                if (orders[k].deprecated)
+                    continue;
+                orders[k].deprecated = orders[k].firstCourse && orders[k].firstCourse.item.localeCompare(oldFc.value) == 0;
+                if (orders[k].deprecated) {
+                    console.log("Order _id:" + orders[k]._id + " (" + orders[k].owner.email + ") will be removed because firstCourse '" + oldFc.value + "' has been removed");
                 }
             }
         } else {
@@ -460,11 +460,11 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
                         if (newFc.condiments.indexOf(oldCondiment) < 0) {
                             console.log("Condiment '" + oldCondiment + "' has been removed");
                             for (let z = 0; z < orders.length; z++) {
-                                let order = orders[z];
-                                if (order.firstCourse && order.firstCourse.item.localeCompare(oldFc.value) == 0 && order.firstCourse.condiment.localeCompare(oldCondiment) == 0) {
-                                    console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because condiment '" + oldCondiment + "' has been removed");
-                                    _orders.push(order);
-                                    orders.splice(z--, 1);
+                                if (orders[z].deprecated)
+                                    continue;
+                                orders[z].deprecated = orders[z].firstCourse && orders[z].firstCourse.item.localeCompare(oldFc.value) == 0 && orders[z].firstCourse.condiment.localeCompare(oldCondiment) == 0;
+                                if (orders[z].deprecated) {
+                                    console.log("Order _id:" + orders[z]._id + " (" + orders[z].owner.email + ") will be removed because condiment '" + oldCondiment + "' has been removed");
                                 }
                             }
                         }
@@ -480,11 +480,11 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
         if (menu.secondCourse.items.indexOf(oldSc) < 0) {
             console.log("Second course '" + oldSc + "' has been removed");
             for (let z = 0; z < orders.length; z++) {
-                let order = orders[z];
-                if (order.secondCourse && order.secondCourse.item.localeCompare(oldSc) == 0) {
-                    console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because second course '" + oldSc + "' has been removed");
-                    _orders.push(order);
-                    orders.splice(z--, 1);
+                if (orders[z].deprecated)
+                    continue;
+                orders[z].deprecated = orders[z].secondCourse && orders[z].secondCourse.item.localeCompare(oldSc) == 0;
+                if (orders[z].deprecated) {
+                    console.log("Order _id:" + orders[z]._id + " (" + orders[z].owner.email + ") will be removed because second course '" + oldSc + "' has been removed");
                 }
             }
         }
@@ -496,18 +496,20 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
         if (menu.secondCourse.sideDishes.indexOf(oldSideDish) < 0) {
             console.log("Side dish '" + oldSideDish + "' has been removed");
             for (let z = 0; z < orders.length; z++) {
-                let order = orders[z];
-                if (order.secondCourse && order.secondCourse.sideDishes.indexOf(oldSideDish) >= 0) {
-                    console.log("Order _id:" + order._id + " (" + order.owner.email + ") will be removed because side dish '" + oldSideDish + "' has been removed");
-                    _orders.push(order);
-                    orders.splice(z--, 1);
+                if (orders[z].deprecated)
+                    continue;
+                orders[z].deprecated = orders[z].secondCourse && orders[z].secondCourse.sideDishes.indexOf(oldSideDish) >= 0;
+                if (orders[z].deprecated) {
+                    console.log("Order _id:" + orders[z]._id + " (" + orders[z].owner.email + ") will be removed because side dish '" + oldSideDish + "' has been removed");
                 }
             }
         }
     }
 
-    console.log(_orders.length + "/" + (_orders.length + orders.length) + " affected orders.");
-    return [_orders, orders];
+    let ordersToDelete = orders.filter(o => o.deprecated),
+        ordersNotAffected = orders.filter(o => !o.deprecated);
+    console.log(ordersToDelete.length + "/" + orders.length + " affected orders.");
+    return [ordersToDelete, ordersNotAffected];
 }
 exports.getOrdersMenuDiff = getOrdersMenuDiff;
 
@@ -785,6 +787,11 @@ function _getOrders(req, res) {
 
     Object.assign(query, getPaginationQuery(req));
 
+    if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+        //normal user get only its own orders
+        query.owner = req.user._id;
+        select.owner = -1
+    }
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root user limitations
         select.deleted = -1;
@@ -838,6 +845,12 @@ function _addOrder(req, res) {
         delete data.createdAt;
     }
     data.createdAt = moment().format();
+    if (!data.owner)
+        data.owner = req.user._id;
+    if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+        //normal user can save only its own order
+        data.owner = req.user._id;
+    }
     const newOrder = new DB.Order(data);
     newOrder.save((err, order) => {
         if (err) {
@@ -862,7 +875,12 @@ function _updateOrder(req, res) {
         delete data.deleted;
         delete data.createdAt;
     }
-
+    if (!data.owner)
+        data.owner = req.user._id;
+    if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+        //normal user can update only its own order
+        data.owner = req.user._id;
+    }
     data.updatedAt = moment().format();
 
     DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
@@ -880,6 +898,10 @@ function _deleteOrder(req, res) {
     const query = {
         _id: req.params.id
     };
+    if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+        //normal user can delete only its own order
+        query.owner = req.user._id;
+    }
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root users SHALL update ONLY the deleted flag
         const data = {

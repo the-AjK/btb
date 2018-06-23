@@ -6,10 +6,10 @@
 // @flow
 import React from "react";
 import { observer, inject } from "mobx-react";
-import { withStyles } from "material-ui/styles";
-import Button from 'material-ui/Button';
-import Slide from 'material-ui/transitions/Slide';
-import * as Icons from '@material-ui/icons';
+import { withStyles } from "@material-ui/core/styles";
+import Button from "@material-ui/core/Button";
+import Slide from '@material-ui/core/Slide';
+import * as Icons from "@material-ui/icons";
 
 const styles = theme => ({
     save: {

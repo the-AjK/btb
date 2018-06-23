@@ -5,20 +5,17 @@
  */
 "use strict";
 
-const Telegraf = require("telegraf"),
-    Scene = require('telegraf/scenes/base'),
+const Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     async = require("async"),
     moment = require("moment"),
     PaginatedInlineKeyboard = require("../tools/paginatedInlineKeyboard").PaginatedInlineKeyboard,
     roles = require("../../roles"),
-    checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
     levels = require('../../levels'),
     utils = require('../../utils'),
-    beers = require('../beers'),
     DB = require("../../db"),
     bot = require('../bot'),
     ACTIONS = bot.ACTIONS;
@@ -189,7 +186,7 @@ class Slot {
     bombPoints() {
         let winningRows = this.isWinningState();
         if (winningRows > 0) {
-            return this.getPoints(winningRows) * 3;
+            return this.getPoints(winningRows) * 2;
         } else {
             return 0;
         }
@@ -198,7 +195,7 @@ class Slot {
     robPoints() {
         let winningRows = this.isWinningState();
         if (winningRows > 0) {
-            return this.getPoints(winningRows) * 3;
+            return this.getPoints(winningRows) * 2;
         } else {
             return 0;
         }
@@ -313,7 +310,7 @@ scene.leave((ctx) => {
                     console.error(err);
                 } else {
                     //Save slot event
-                    const slotRun = new DB.Slot({
+                    const slotRun = new DB.SlotEvent({
                         owner: ctx.session.user._id,
                         bombedUser: ctx.session.user._id,
                         points: bombPoints
@@ -331,7 +328,7 @@ scene.leave((ctx) => {
 
 function printRunningSlot(ctx, cb) {
     if (ctx.session.slot_message) {
-        require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx, true), {
+        ctx.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx, true), {
             parse_mode: "markdown",
         }).then((msg) => {
             cb(null, msg);
@@ -344,7 +341,7 @@ function printRunningSlot(ctx, cb) {
     }
 }
 
-function printSlot(ctx) {
+function printSlot(ctx, cb) {
     let inline_keyboard = [
         [{
             text: !ctx.session.user.dailySlotRunning ? 'Spin (1 credit)' : 'Spin',
@@ -354,18 +351,21 @@ function printSlot(ctx) {
     const bombWin = ctx.session.slot.isWinningBomb() && ctx.session.slot.bombPoints() > 0,
         robWin = ctx.session.slot.isWinningRob() && ctx.session.slot.robPoints() > 0;
     if (ctx.session.slot_message) {
-        require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
+        ctx.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
             parse_mode: "markdown",
             reply_markup: !ctx.session.user.dailySlotRunning && !bombWin && !robWin ? JSON.stringify({
                 inline_keyboard: inline_keyboard
             }) : undefined
         }).then((msg) => {
             ctx.session.user.dailySlotRunning = false;
+            cb();
             if (bombWin)
                 return selectUserToBomb(ctx);
             if (robWin)
                 return selectUserToRob(ctx);
-        });
+        }, cb);
+    } else {
+        cb("Cannot edit slot message");
     }
 }
 
@@ -462,8 +462,7 @@ function selectUserToRob(ctx) {
     });
 }
 
-function textManager(ctx) {
-    ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
+function slotCleanUp(ctx) {
     if (ctx.session.slot_header) {
         ctx.deleteMessage(ctx.session.slot_header.message_id);
         delete ctx.session.slot_header;
@@ -474,6 +473,11 @@ function textManager(ctx) {
         delete ctx.session.slot_message;
     }
     deleteLastMessage(ctx);
+}
+
+function textManager(ctx) {
+    ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
+    slotCleanUp(ctx);
 
     if (ctx.session.slot.isWinningBomb() && ctx.message.text.toLowerCase() == 'neutralize') {
         ctx.session.slot.bombSent = true;
@@ -492,7 +496,7 @@ function textManager(ctx) {
 
 scene.on("text", textManager);
 
-function handleResults(ctx) {
+function handleResults(ctx, cb) {
     let result = ctx.session.slot.isWinningState(),
         points = 0;
     console.log("Slot " + (ctx.session.user.dailySlotRunning ? "free daily " : "") + "run for user " + ctx.session.user.email);
@@ -507,7 +511,7 @@ function handleResults(ctx) {
                     bot.broadcastMessage("User *" + ctx.session.user.email + "* got " + points + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
                 }
             }
-            printSlot(ctx);
+            printSlot(ctx, cb);
         });
     } else if (result < 0) {
         points = result;
@@ -521,13 +525,13 @@ function handleResults(ctx) {
                     bot.broadcastMessage("User *" + ctx.session.user.email + "* lost " + pointsToRemove + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
                 }
             }
-            printSlot(ctx);
+            printSlot(ctx, cb);
         });
     } else {
-        printSlot(ctx);
+        printSlot(ctx, cb);
     }
     //Save slot result
-    const newSlotRun = new DB.Slot({
+    const newSlotRun = new DB.SlotEvent({
         owner: ctx.session.user._id,
         bet: ctx.session.user.dailySlotRunning ? 0 : 1,
         points: points
@@ -578,19 +582,20 @@ function isWinningRun(ctx, run) {
     return (result > 0) ? ctx.session.test_slot.getPoints(result) : 0;
 }
 
-//Check if the user always lost in the last 15 runs
+//Check if the user always lost in the last 14-18 runs
 function isUserLoser(userID, cb) {
-    DB.Slot.find({
+    const limit = Math.round(utils.getRandomInt(14, 18));
+    DB.SlotEvent.find({
         owner: userID
     }, null, {
         sort: {
             createdAt: -1
         },
-        limit: 15
+        limit: limit
     }, (err, slotruns) => {
         if (err) {
             cb(err);
-        } else if (slotruns && slotruns.length == 15) {
+        } else if (slotruns && slotruns.length == limit) {
             for (let i = 0; i < slotruns.length; i++) {
                 if (slotruns[i].points > 0) {
                     return cb(null, false);
@@ -637,10 +642,10 @@ function runSlot(ctx) {
                 ctx.session.slot.fullRotation();
                 ctx.session.slot.setProgress(Math.round((i + 1) * 10 / slotRun.totalSteps));
                 setTimeout(() => {
-                    printRunningSlot(ctx, () => {
-                        cb();
+                    printRunningSlot(ctx, (err) => {
+                        cb(err);
                     });
-                }, 100);
+                }, 200);
             }
         }());
     }
@@ -658,8 +663,8 @@ function runSlot(ctx) {
                         ctx.session.slot.singleRotation(col);
                         ctx.session.slot.setProgress(Math.round(p_counter * 10 / total_steps));
                         setTimeout(() => {
-                            printRunningSlot(ctx, () => {
-                                cb();
+                            printRunningSlot(ctx, (err) => {
+                                cb(err);
                             });
                         }, 400);
                     }
@@ -672,14 +677,26 @@ function runSlot(ctx) {
     async.series(funList, (err, result) => {
         if (err) {
             console.error(err);
+            ctx.session.slot.isRunning = false;
+            slotCleanUp(ctx);
+            ctx.reply("Ehm, something went wrong!", {
+                parse_mode: "markdown"
+            }).then((m) => {
+                ctx.scene.enter('extra');
+            });
+        } else {
+            handleResults(ctx, (err) => {
+                if (err) {
+                    console.error(err);
+                }
+                ctx.session.slot.isRunning = false;
+            });
         }
-        handleResults(ctx);
-        ctx.session.slot.isRunning = false;
     });
 }
 
 function updateUsersKeyboard(ctx) {
-    require('../bot').bot.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
+    ctx.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
         inline_keyboard: ctx.session.users_inline_keyboard.render()
     }).then((m) => {
         ctx.session.lastMessage = m;
@@ -751,9 +768,8 @@ scene.on("callback_query", ctx => {
             }
             deleteLastMessage(ctx);
             ctx.answerCbQuery("Sending bomb to " + bombUser.telegram.first_name + "...");
-            const sender = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + ")",
-                message = "Boom! " + sender + " just sent you " + ctx.session.slot.bombPoints() + " bombs 💣 !";
-            require('../bot').bot.telegram.sendMessage(bombUser.telegram.id, message, {
+            const message = "Boom! " + bot.getUserLink(ctx.session.user) + " just sent you " + ctx.session.slot.bombPoints() + " bombs 💣 !";
+            ctx.telegram.sendMessage(bombUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
                 const points = ctx.session.slot.bombPoints();
@@ -762,8 +778,7 @@ scene.on("callback_query", ctx => {
                         ctx.reply("Something went wrong!");
                         return console.error(err);
                     }
-                    const bombedUser = "[" + (bombUser.telegram.first_name + (bombUser.telegram.last_name ? (" " + bombUser.telegram.last_name) : "")) + "](tg://user?id=" + bombUser.telegram.id + ")";
-                    ctx.reply(bombedUser + " got your bombs and lost " + points + " points 😬 !", {
+                    ctx.reply(bot.getUserLink(bombUser) + " got your bombs and lost " + points + " points 😬 !", {
                         parse_mode: "markdown"
                     });
                     ctx.session.slot.bombSent = true;
@@ -771,7 +786,7 @@ scene.on("callback_query", ctx => {
                         bot.broadcastMessage("User *" + ctx.session.user.email + "* sent " + points + " bombs to *" + bombUser.email + "*", accessLevels.root, null, true);
                     }
                     //Save slot event
-                    const slotRun = new DB.Slot({
+                    const slotRun = new DB.SlotEvent({
                         owner: ctx.session.user._id,
                         bombedUser: bombUser._id,
                         points: points
@@ -799,9 +814,8 @@ scene.on("callback_query", ctx => {
             }
             deleteLastMessage(ctx);
             ctx.answerCbQuery("Stealing beercoins from " + robbedUser.telegram.first_name + "...");
-            const sender = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + ")",
-                message = "Ops! " + sender + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
-            require('../bot').bot.telegram.sendMessage(robbedUser.telegram.id, message, {
+            const message = "Ops! " + bot.getUserLink(ctx.session.user) + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
+            ctx.telegram.sendMessage(robbedUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
                 const beercoins = ctx.session.slot.robPoints();
@@ -810,8 +824,7 @@ scene.on("callback_query", ctx => {
                         ctx.reply("Something went wrong!");
                         return console.error(err);
                     }
-                    const robUser = "[" + (robbedUser.telegram.first_name + (robbedUser.telegram.last_name ? (" " + robbedUser.telegram.last_name) : "")) + "](tg://user?id=" + robbedUser.telegram.id + ")";
-                    ctx.reply("You stole " + beercoins + " beercoins from " + robUser + " 😬 !", {
+                    ctx.reply("You stole " + beercoins + " beercoins from " + bot.getUserLink(robbedUser) + " 😬 !", {
                         parse_mode: "markdown"
                     }).then(() => {
                         levels.addPoints(ctx.session.user._id, beercoins, false, (err) => {
@@ -823,7 +836,7 @@ scene.on("callback_query", ctx => {
                         bot.broadcastMessage("User *" + ctx.session.user.email + "* stole " + beercoins + " beercoins from *" + robbedUser.email + "*", accessLevels.root, null, true);
                     }
                     //Save slot event
-                    const slotRun = new DB.Slot({
+                    const slotRun = new DB.SlotEvent({
                         owner: ctx.session.user._id,
                         robbedUser: robbedUser._id,
                         points: beercoins

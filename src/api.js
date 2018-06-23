@@ -6,7 +6,6 @@
 "use strict";
 
 const express = require("express"),
-	path = require("path"),
 	RateLimit = require('express-rate-limit'),
 	manager = require("./manager"),
 	auth = require("./auth"),
@@ -36,7 +35,7 @@ api.post("/login", loginLimiter, auth.login);
 api.get("/logout", loginLimiter, auth.checkAuthUser, auth.logout);
 
 api.post("/profile", apiLimiter, auth.checkAuthUser, auth.updateProfile);
-api.get("/suggestions", apiLimiter, auth.checkAuthUser, manager.getSuggestions);
+api.get("/suggestions", apiLimiter, auth.checkAuthAdmin, manager.getSuggestions);
 api.get("/stats", apiLimiter, auth.checkAuthUser, manager.getStats);
 api.post("/broadcast", apiLimiter, auth.checkAuthAdmin, manager.broadcastMessage);
 
@@ -48,13 +47,13 @@ function generateResourceAPIStack(resource) {
 }
 
 generateResourceAPIStack('users');
-generateResourceAPIStack('orders');
+generateResourceAPIStack('menus');
 generateResourceAPIStack('tables');
 
-api.get("/menus/:id?", apiLimiter, auth.checkAuthUser, manager.menus.get);
-api.post("/menus", apiLimiter, auth.checkAuthUser, manager.menus.add);
-api.put("/menus/:id", apiLimiter, auth.checkAuthUser, manager.menus.update);
-api.delete("/menus/:id", apiLimiter, auth.checkAuthUser, manager.menus.delete);
+api.get("/orders/:id?", apiLimiter, auth.checkAuthUser, manager.orders.get);
+api.post("/orders", apiLimiter, auth.checkAuthUser, manager.orders.add);
+api.put("/orders/:id", apiLimiter, auth.checkAuthUser, manager.orders.update);
+api.delete("/orders/:id", apiLimiter, auth.checkAuthUser, manager.orders.delete);
 
 // Root stuff
 api.post("/mail", apiLimiter, auth.checkAuthRoot, manager.sendMail);
@@ -64,7 +63,7 @@ api.get("/coffee", apiLimiter, function (req, res) {
 	return res.sendStatus(418);
 });
 
-api.get("*", apiLimiter, auth.checkAuthAdmin, function (req, res) {
+api.get("*", apiLimiter, auth.checkAuthUser, function (req, res) {
 	return res.sendStatus(400);
 });
 

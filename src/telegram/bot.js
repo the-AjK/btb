@@ -14,11 +14,9 @@ const Telegraf = require("telegraf"),
   request = require('request'),
   moment = require("moment"),
   async = require("async"),
-  ReadWriteLock = require("rwlock"),
   bender = require("./bender"),
   keyboards = require('./keyboards'),
   DB = require("../db"),
-  auth = require("../auth"),
   utils = require("../utils"),
   levels = require("../levels"),
   roles = require("../roles"),
@@ -59,6 +57,7 @@ bot.catch(err => {
 
 // Scene manager
 const stage = new Stage()
+stage.register(require('./scenes/trade').trade)
 stage.register(require('./scenes/order').scene)
 stage.register(require('./scenes/order').firstCourse)
 stage.register(require('./scenes/order').secondCourse)
@@ -149,6 +148,11 @@ bot.use((ctx, next) => {
   }
 });
 
+function getUserLink(u) {
+  return "[" + (u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "")) + "](tg://user?id=" + u.telegram.id + ")";
+}
+exports.getUserLink = getUserLink;
+
 function showWelcomeMessage(ctx) {
   const msg = "Hey! my name is *BiteTheBot*!\nI do things.\nType \"register\" to register yourself."
   ctx.reply(msg, keyboards.register(ctx).opts);
@@ -232,7 +236,7 @@ function animation(ctx, interval, animations, opts, callback) {
           //skip
           return cb(null, m);
         setTimeout(() => {
-          bot.telegram.editMessageText(m.chat.id, m.message_id, null, text, opts).then((m) => {
+          ctx.telegram.editMessageText(m.chat.id, m.message_id, null, text, opts).then((m) => {
             cb(null, m);
           }, (err) => {
             cb(err);
@@ -379,6 +383,8 @@ function decodeWit(ctx, witResponse) {
           ctx.reply(text || err, keyboards.btb(ctx).opts);
         });
         break;
+      case "wiki":
+        return ctx.reply(formatWiki(), keyboards.btb(ctx).opts);
       case "activesessions":
         if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
           msg = "401 - Unauthorized";
@@ -387,8 +393,12 @@ function decodeWit(ctx, witResponse) {
           msg = "Active sessions: *" + activeSessions.length + "*\nUsers:";
           for (let i = 0; i < activeSessions.length; i++) {
             const s = activeSessions[i];
-            let userLink = "[" + (s.user.telegram.first_name + (s.user.telegram.last_name ? (" " + s.user.telegram.last_name) : "")) + "](tg://user?id=" + s.user.telegram.id + ") (" + s.counter + ")";
-            msg += "\n- " + userLink;
+            if (s.user) {
+              let userLink = getUserLink(s.user) + " (" + s.counter + ")";
+              msg += "\n- " + userLink;
+            } else {
+              msg += "\n - Unregistered user";
+            }
           }
         }
         return ctx.reply(msg, keyboards.btb(ctx).opts);
@@ -421,7 +431,7 @@ function decodeWit(ctx, witResponse) {
                 msg = []
                 for (let i = 0; i < topUsers.length; i++) {
                   let user = topUsers[i],
-                    userLink = "[" + (user.telegram.first_name + (user.telegram.last_name ? (" " + user.telegram.last_name) : "")) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
+                    userLink = getUserLink(user) + " (" + user.points + ")";
                   switch (i) {
                     case 0:
                       msg.push("🥇 " + userLink);
@@ -591,7 +601,7 @@ function mentionHandler(ctx) {
       break;
     }
     if (mention.toLowerCase() == 'all') {
-      let message = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text;
+      let message = getUserLink(ctx.session.user) + ": " + ctx.message.text;
       broadcastMessage(message, accessLevels.user, null, false, {
         _id: {
           "$ne": ctx.session.user._id
@@ -603,14 +613,14 @@ function mentionHandler(ctx) {
       if (err) {
         ctx.reply("Cannot broadcast a mention message:\n" + err, keyboards.btb(ctx).opts);
       } else {
-        let message = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text,
+        let message = getUserLink(ctx.session.user) + ": " + ctx.message.text,
           userMessage = "Broadcast service",
           userHasOrdered = false,
           counter = 0;
         if (mention.indexOf("ables") >= 0) {
           for (let i = 0; i < orders.length; i++) {
             if (!orders[i].owner._id.equals(ctx.session.user._id)) {
-              bot.telegram.sendMessage(orders[i].owner.telegram.id, message, {
+              ctx.telegram.sendMessage(orders[i].owner.telegram.id, message, {
                 parse_mode: "markdown"
               }).then(() => {
                 console.log("Mention tables sent to " + orders[i].owner.telegram.id + "-" + orders[i].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
@@ -632,7 +642,7 @@ function mentionHandler(ctx) {
               for (let j = 0; j < orders.length; j++) {
                 if (!orders[j].owner._id.equals(ctx.session.user._id) &&
                   orders[j].table.name == userTableName) {
-                  bot.telegram.sendMessage(orders[j].owner.telegram.id, message, {
+                  ctx.telegram.sendMessage(orders[j].owner.telegram.id, message, {
                     parse_mode: "markdown"
                   }).then(() => {
                     console.log("Mention table sent to " + orders[j].owner.telegram.id + "-" + orders[j].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
@@ -683,7 +693,7 @@ bot.on(['document', 'video', 'sticker', 'photo'], (ctx) => {
 function sendTTSVoice(ctx, text, options) {
   googleTTS(text, 'en-US', 1.5)
     .then(function (url) {
-      bot.telegram.sendVoice(ctx.chat.id, {
+      ctx.telegram.sendVoice(ctx.chat.id, {
         url: url,
         filename: "BTB voice"
       });
@@ -702,6 +712,32 @@ bot.on(['audio', 'voice'], (ctx) => {
     sendTTSVoice(ctx, "Hey " + ctx.session.user.telegram.first_name + ", bite my metal shiny ass!");
   }
 });
+
+function formatWiki() {
+  let text = "_BiteTheBot_ - Wiki" +
+    "\n\n*Menu*" +
+    "\nEach working day you will receive a daily menu notification as soon as an admin user will upload it.\nEnable/disable settings for your daily menu notifications are available in the reminders section under settings menu." +
+    "\n\n*Order*" +
+    "\nOnce a daily menu is available you can place a order. Follow the instructions to choose your favourite dish until a green check mark will confirm that the operation was successfull.\nAfter that a daily order summary will be available in the order section.\nLevel 1 users can rate their order after 2pm." +
+    "\n\n*Beercoins*" +
+    "\nBeercoin is the currency used in BiteTheBot.\nmore beers == more beercoins\nmore beercoins == more BTB features\nSend beers to get more beercoins.\nYou can also try to be the first one to place a daily order to get a beercoin as a gift. Keep in mind that you will loose one beercoin if you will be the last who place a daily order." +
+    "\n\n*Slot*" +
+    "\nBTB Slot let you win more beercoins or destroy/stole beercoins from your friends.\nEach day you will get a free run! Don't forget it." +
+    "\nWinnings examples:" +
+    "\n - beers: 5 beercoins" +
+    "\n - other items: 2 beercoins" +
+    "\n - water: -1 beercoin" +
+    "\nCombining more items will increase the winnings." +
+    "\n\n*Levels*" +
+    "\nGaining beercoins will make you level-up.\nHigher levels means more BTB features.\nAvailable levels:" +
+    "\n1 - 10 beercoins" + 
+    "\n2 - 50 beercoins" + 
+    "\n3 - 200 beercoins" + 
+    "\n4 - 600 beercoins" + 
+    "\n5 - 1500 beercoins" + 
+    "\n...";
+  return text;
+}
 
 function formatMenu(menu) {
   let text =
@@ -745,7 +781,7 @@ function formatUsersWithoutOrder(users, user) {
   let text = "Users who didn't place an order:\n";
   for (let i = 0; i < users.length; i++) {
     let u = users[i];
-    text = text + "\n - [" + (u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "")) + "](tg://user?id=" + u.telegram.id + ")";
+    text = text + "\n - " + getUserLink(u);
     if (u._id.equals(user._id)) {
       text = text + " (*You*)";
     }
@@ -789,7 +825,7 @@ function formatOrder(order, user) {
   if (tableUsers && tableUsers.length) {
     for (let i = 0; i < tableUsers.length; i++) {
       let tableUser = tableUsers[i];
-      text = text + "\n - [" + (tableUser.telegram.first_name + (tableUser.telegram.last_name ? (" " + tableUser.telegram.last_name) : "")) + "](tg://user?id=" + tableUser.telegram.id + ")";
+      text = text + "\n - " + getUserLink(tableUser);
       if (tableUser._id.equals(user._id)) {
         text = text + " (*You*)";
       }
@@ -838,10 +874,8 @@ function formatTables(tables, user) {
       text = text + " (" + tableOrders.length + "/" + table.seats + "):";
       for (let i = 0; i < tableOrders.length; i++) {
         let tableUser = tableOrders[i].owner,
-          userOrder = tableOrders[i],
-          username = (tableUser.telegram.first_name + (tableUser.telegram.last_name ? (" " + tableUser.telegram.last_name) : "")); //.replace(/[^a-zA-Z ]/g, "");
-        text = text + "\n - [" + username + "](tg://user?id=" + tableUser.telegram.id + ")";
-        //text = text + "\n - " + username + "";
+          userOrder = tableOrders[i];
+        text = text + "\n - " + getUserLink(tableUser);
         if (tableUser._id.equals(user._id)) {
           text = text + " (*You*)";
         }

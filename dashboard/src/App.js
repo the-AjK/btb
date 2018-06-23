@@ -7,17 +7,16 @@
 import React from "react";
 import { observer } from "mobx-react";
 import { extendObservable, action } from "mobx";
-import CssBaseline from "material-ui/CssBaseline";
+import CssBaseline from "@material-ui/core/CssBaseline";
 import { Provider } from "mobx-react";
-import { useStrict } from "mobx";
 import {
   BrowserRouter as Router,
   Route,
   Redirect,
   Switch
 } from "react-router-dom";
-import { MuiThemeProvider, createMuiTheme } from "material-ui/styles";
-import grey from "material-ui/colors/grey";
+import { MuiThemeProvider, createMuiTheme } from "@material-ui/core/styles";
+import grey from "@material-ui/core/colors/grey";
 import "typeface-roboto";
 import GlobalStore from "./stores/GlobalStore";
 import Login from "./components/Login";
@@ -36,8 +35,6 @@ import Profile from "./components/Profile";
 import NotFound from "./components/NotFound";
 import GenericDialog from "./components/GenericDialog";
 import { accessLevels, checkUserAccessLevel } from "./utils/Roles";
-
-useStrict(true);
 
 const theme = createMuiTheme({
   palette: {
@@ -128,12 +125,12 @@ const BTB = observer(
                 <Route path="/login" component={Login} />
                 <PrivateRoute accessLevel={accessLevels.root} path="/messages" component={Messages} />
                 <PrivateRoute accessLevel={accessLevels.admin} path="/tables" component={Tables} />
-                <PrivateRoute accessLevel={accessLevels.user} path="/order/:id" component={Order} />
-                <PrivateRoute accessLevel={accessLevels.admin} path="/orders" component={Orders} />
                 <PrivateRoute accessLevel={accessLevels.admin} path="/menus/:id" component={Menu} />
                 <PrivateRoute accessLevel={accessLevels.admin} path="/menus" component={Menus} />
                 <PrivateRoute accessLevel={accessLevels.admin} path="/users/:id" component={User} />
                 <PrivateRoute accessLevel={accessLevels.admin} path="/users" component={Users} />
+                <PrivateRoute path="/orders/:id" component={Order} />
+                <PrivateRoute path="/orders" component={Orders} />
                 <PrivateRoute path="/profile" component={Profile} />
                 <PrivateRoute path="/about" component={About} />
                 <PrivateRoute exact path="/" component={Home} />

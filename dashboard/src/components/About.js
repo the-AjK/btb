@@ -6,10 +6,10 @@
 // @flow
 import React from "react";
 import { observer, inject } from "mobx-react";
-import { withStyles } from "material-ui/styles";
-import Button from 'material-ui/Button';
-import Grid from "material-ui/Grid";
-import Hidden from "material-ui/Hidden";
+import { withStyles } from "@material-ui/core/styles";
+import Button from "@material-ui/core/Button";
+import Grid from "@material-ui/core/Grid";
+import Hidden from "@material-ui/core/Hidden";
 import { version } from "../../package.json";
 
 const styles = theme => ({

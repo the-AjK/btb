@@ -5,18 +5,14 @@
  */
 "use strict";
 
-const Telegraf = require("telegraf"),
-    moment = require("moment"),
+const moment = require("moment"),
     md5 = require('md5'),
     mongoose = require("mongoose"),
     Scene = require('telegraf/scenes/base'),
-    Composer = require('telegraf/composer'),
-    Markup = require('telegraf/markup'),
     WizardScene = require('telegraf/scenes/wizard'),
     keyboards = require('../keyboards'),
     ReadWriteLock = require('rwlock'),
     roles = require("../../roles"),
-    checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
@@ -149,7 +145,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                 }
             });
             if (ctx.session.lastMessage) {
-                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "First course: *" + choosenFC + "*", {
+                ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "First course: *" + choosenFC + "*", {
                     parse_mode: "markdown"
                 });
                 delete ctx.session.lastMessage;
@@ -203,7 +199,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                 }
             });
             if (ctx.session.lastMessage) {
-                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Condiment: *" + choosenC + "*", {
+                ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Condiment: *" + choosenC + "*", {
                     parse_mode: "markdown"
                 });
                 delete ctx.session.lastMessage;
@@ -225,7 +221,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                     if (t._id == ctx.update.callback_query.data)
                         tableName = t.name
                 })
-                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Table: *" + tableName + "*", {
+                ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Table: *" + tableName + "*", {
                     parse_mode: "markdown"
                 });
                 delete ctx.session.lastMessage;
@@ -265,7 +261,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                 if (!moment().isBefore(moment(ctx.session.dailyMenu.deadline))) {
                     let text = "*Time is up!*\nYou can't place any order after the deadline (" + moment(ctx.session.dailyMenu.deadline).format("HH:mm") + ")";
                     if (ctx.session.lastMessage) {
-                        require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
+                        ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
                             parse_mode: "markdown"
                         });
                         delete ctx.session.lastMessage;
@@ -288,7 +284,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                         let tableName = tables[ctx.session.order.table].name,
                             text = "Somebody was faster than you!\n*" + tableName + "* is full. Try again.";
                         if (ctx.session.lastMessage) {
-                            require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
+                            ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
                                 parse_mode: "markdown"
                             });
                             delete ctx.session.lastMessage;
@@ -413,7 +409,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                 }
             });
             if (ctx.session.lastMessage) {
-                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Second course: *" + choosenSC + "*", {
+                ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Second course: *" + choosenSC + "*", {
                     parse_mode: "markdown"
                 });
                 delete ctx.session.lastMessage;
@@ -437,7 +433,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             });
             if (ctx.session.order.secondCourse.sideDishes.indexOf(choosenSD) < 0) {
                 if (ctx.session.lastMessage) {
-                    require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Side dish: *" + choosenSD + "*", {
+                    ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Side dish: *" + choosenSD + "*", {
                         parse_mode: "markdown"
                     });
                     delete ctx.session.lastMessage;
@@ -446,7 +442,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             } else {
                 //Item already present
                 if (ctx.session.lastMessage) {
-                    require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Side dish already set", {
+                    ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Side dish already set", {
                         parse_mode: "markdown"
                     });
                     delete ctx.session.lastMessage;
@@ -474,7 +470,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                     if (t._id == ctx.update.callback_query.data)
                         tableName = t.name
                 })
-                require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Table: *" + tableName + "*", {
+                ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, "Table: *" + tableName + "*", {
                     parse_mode: "markdown"
                 });
                 delete ctx.session.lastMessage;
@@ -514,7 +510,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                 if (!moment().isBefore(moment(ctx.session.dailyMenu.deadline))) {
                     let text = "*Time is up!*\nYou can't place any order after the deadline (" + moment(ctx.session.dailyMenu.deadline).format("HH:mm") + ")";
                     if (ctx.session.lastMessage) {
-                        require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
+                        ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
                             parse_mode: "markdown"
                         });
                         delete ctx.session.lastMessage;
@@ -537,7 +533,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                         let tableName = tables[ctx.session.order.table].name,
                             text = "Somebody was faster than you!\n*" + tableName + "* is full. Try again.";
                         if (ctx.session.lastMessage) {
-                            require('../bot').bot.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
+                            ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
                                 parse_mode: "markdown"
                             });
                             delete ctx.session.lastMessage;

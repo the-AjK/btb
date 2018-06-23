@@ -5,23 +5,22 @@
  */
 "use strict";
 
+if (process.env.NODE_ENV !== "production") {
+	console.log("Loading DEV enviroment...");
+	require("dotenv").load();
+}
+
 const express = require("express"),
 	bodyParser = require("body-parser"),
 	Raven = require('raven'),
 	path = require("path"),
 	cors = require("cors"),
 	app = express(),
-	moment = require("moment"),
 	requestIp = require('request-ip'),
 	packageJSON = require('./package.json'),
 	apiRouter = require("./src/api"),
 	auth = require("./src/auth"),
 	db = require("./src/db");
-
-if (process.env.NODE_ENV !== "production") {
-	console.log("Loading DEV enviroment...");
-	require("dotenv").load();
-}
 
 console.log(
 	"***********************************************************\n*\n" +
@@ -51,8 +50,10 @@ require('deasync').loopWhile(function () {
 auth.init(app);
 apiRouter.init(app);
 
-Raven.config(process.env.SENTRY_DSN).install();
-app.use(Raven.requestHandler());
+if (process.env.SENTRY_DSN) {
+	Raven.config(process.env.SENTRY_DSN).install();
+	app.use(Raven.requestHandler());
+}
 
 //app.use(require("morgan")("combined"));
 
@@ -93,8 +94,10 @@ app.use((req, res, next) => {
 	}
 });
 
-//Raven error handler
-app.use(Raven.errorHandler());
+if (process.env.SENTRY_DSN) {
+	//Raven error handler
+	app.use(Raven.errorHandler());
+}
 
 //body parser error catching middleware
 app.use((req, res, next) => {

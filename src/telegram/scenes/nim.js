@@ -119,7 +119,7 @@ function textManager(ctx) {
 scene.on("text", textManager);
 
 function updateUsersKeyboard(ctx) {
-    require('../bot').bot.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
+    ctx.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
         inline_keyboard: ctx.session.users_inline_keyboard.render()
     }).then((m) => {
         ctx.session.lastMessage = m;
