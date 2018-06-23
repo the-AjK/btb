@@ -7,7 +7,6 @@
 
 const mongoose = require("mongoose"),
   moment = require("moment"),
-  async = require("async"),
   roles = require("./roles"),
   userRoles = roles.userRoles,
   accessLevels = roles.accessLevels,

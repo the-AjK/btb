@@ -5,8 +5,7 @@
  */
 "use strict";
 
-const Telegraf = require("telegraf"),
-    Scene = require('telegraf/scenes/base'),
+const Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     async = require("async"),
     moment = require("moment"),
@@ -17,15 +16,13 @@ const Telegraf = require("telegraf"),
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
     levels = require('../../levels'),
-    utils = require('../../utils'),
-    beers = require('../beers'),
     DB = require("../../db"),
     bot = require('../bot'),
     ACTIONS = bot.ACTIONS;
 
 const scene = new Scene('shop')
 scene.enter((ctx) => {
-    if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+    if (levels.getLevel(ctx.session.user.points) > 0 || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
         //authorized user
         ctx.reply(keyboards.shop(ctx).text, keyboards.shop(ctx).opts).then(() => {
 
@@ -75,7 +72,7 @@ function updateUsersKeyboard(ctx) {
 
 scene.on("callback_query", ctx => {
 
-    if (levels.getLevel(ctx.session.user.points) < 1 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+    if (levels.getLevel(ctx.session.user.points) < 1 && !checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
         //unauthorized user -> back to extra
         return ctx.scene.enter('extra');
     }
@@ -350,7 +347,7 @@ function sendNews(ctx, premium) {
             ctx.reply(formatNews(results, result[3], result[4], premium), {
                 parse_mode: "markdown"
             });
-            if (premium && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+            if (premium && !checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
                 levels.removePoints(ctx.session.user._id, 1, true, (err, p) => {
                     if (err) {
                         console.error(err);

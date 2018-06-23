@@ -5,12 +5,10 @@
  */
 "use strict";
 
-const Telegraf = require("telegraf"),
-    moment = require('moment'),
+const moment = require('moment'),
     Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     roles = require("../../roles"),
-    checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,

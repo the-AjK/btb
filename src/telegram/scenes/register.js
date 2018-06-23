@@ -5,8 +5,7 @@
  */
 "use strict";
 
-const Telegraf = require("telegraf"),
-    Scene = require('telegraf/scenes/base'),
+const Scene = require('telegraf/scenes/base'),
     validator = require('validator'),
     bot = require('../bot'),
     DB = require("../../db"),

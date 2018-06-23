@@ -6,7 +6,6 @@
 "use strict";
 
 const express = require("express"),
-	path = require("path"),
 	RateLimit = require('express-rate-limit'),
 	manager = require("./manager"),
 	auth = require("./auth"),

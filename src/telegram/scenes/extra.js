@@ -5,18 +5,10 @@
  */
 "use strict";
 
-const Telegraf = require("telegraf"),
-    schedule = require('node-schedule'),
-    moment = require('moment'),
-    async = require("async"),
-    Scene = require('telegraf/scenes/base'),
+const Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
-    packageJSON = require('../../../package.json'),
-    utils = require("../../utils"),
     roles = require("../../roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
-    checkUser = roles.checkUser,
-    userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
     levels = require('../../levels'),
     beers = require('../beers'),
@@ -66,7 +58,7 @@ scene.on("callback_query", ctx => {
     deleteLastMessage(ctx);
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     if (ctx.update.callback_query.data == 'statusorders') {
-        if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+        if (levels.getLevel(ctx.session.user.points) < 2 && !checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
             ctx.reply("Admin stuff. Keep out.");
             return;
         } else if (!ctx.session.getDailyOrderStats) {
@@ -85,7 +77,7 @@ scene.on("callback_query", ctx => {
             ctx.answerCbQuery("Operation already in progress. Please wait...");
         }
     } else if (ctx.update.callback_query.data == 'statustables') {
-        if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+        if (levels.getLevel(ctx.session.user.points) < 2 && !checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
             ctx.reply("Admin stuff. Keep out.");
             return;
         } else if (!ctx.session.getTableStatus) {
@@ -110,7 +102,7 @@ scene.on("callback_query", ctx => {
             ctx.answerCbQuery("Operation already in progress. Please wait...");
         }
     } else if (ctx.update.callback_query.data == 'userswithoutorder') {
-        if (levels.getLevel(ctx.session.user.points) < 2 && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+        if (levels.getLevel(ctx.session.user.points) < 2 && !checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
             ctx.reply("Admin stuff. Keep out.");
             return;
         } else if (!ctx.session.getNotOrderUsers) {

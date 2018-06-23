@@ -9,7 +9,7 @@ const roles = require("../roles"),
     moment = require("moment"),
     db = require("../db"),
     levels = require('../levels'),
-    userRoles = roles.userRoles,
+    checkUserAccessLevel = roles.checkUserAccessLevel,
     accessLevels = roles.accessLevels;
 
 module.exports = {
@@ -179,12 +179,12 @@ module.exports = {
         keyboard.push([{
             text: cmd.orderReminder
         }]);
-        if (ctx && ctx.session.user && roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
+        if (ctx && ctx.session.user && checkUserAccessLevel(ctx.session.user.role, accessLevels.admin)) {
             keyboard.push([{
                 text: cmd.adminReminders
             }]);
         }
-        if (ctx && ctx.session.user && roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+        if (ctx && ctx.session.user && checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
             keyboard.push([{
                 text: cmd.rootReminders
             }]);
@@ -511,19 +511,19 @@ module.exports = {
             text: cmd.slot
         }]);
 
-        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root) || levels.getLevel(ctx.session.user.points) > 3)) {
+        if (ctx && ctx.session.user && (checkUserAccessLevel(ctx.session.user.role, accessLevels.root) || levels.getLevel(ctx.session.user.points) > 3)) {
             //Level 4 or root 
             keyboard[keyboard.length - 1].push({
                 text: cmd.nim
             });
         }
 
-        if (ctx && ctx.session.user && (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || levels.getLevel(ctx.session.user.points) > 1)) {
+        if (ctx && ctx.session.user && (checkUserAccessLevel(ctx.session.user.role, accessLevels.admin) || levels.getLevel(ctx.session.user.points) > 1)) {
             // level 2 or admin
             keyboard.push([{
                 text: cmd.status
             }]);
-            if (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root) || levels.getLevel(ctx.session.user.points) > 0) {
+            if (checkUserAccessLevel(ctx.session.user.role, accessLevels.root) || levels.getLevel(ctx.session.user.points) > 0) {
                 //level 1 admin
                 keyboard[keyboard.length - 1].push({
                     text: cmd.shop
@@ -586,7 +586,7 @@ module.exports = {
                     }]
                 ],
                 text = "Daily status:";
-            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
                 inline_keyboard.push([{
                     text: 'Tables',
                     callback_data: 'statustables'
@@ -730,7 +730,7 @@ module.exports = {
                     }]
                 ],
                 text = "Protect yourself from bombs!";
-            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 2) || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 2) || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
                 //Level 3 user or root
                 ctx.reply(text, {
                     parse_mode: "markdown",
@@ -755,7 +755,7 @@ module.exports = {
                     }]
                 ],
                 text = "Protect yourself from thieves!";
-            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 2) || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 2) || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
                 //Level 3 user or root
                 ctx.reply(text, {
                     parse_mode: "markdown",

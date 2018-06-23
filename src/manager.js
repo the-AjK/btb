@@ -5,8 +5,7 @@
  */
 "use strict";
 
-const schedule = require('node-schedule'),
-    moment = require('moment'),
+const moment = require('moment'),
     async = require('async'),
     roles = require("./roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
@@ -19,7 +18,6 @@ const schedule = require('node-schedule'),
     bot = require("./telegram/bot"),
     telegramBot = require("./telegram/bot").bot,
     botNotifications = require('./telegram/notifications'),
-    levels = require('./levels'),
     DB = require("./db");
 
 function _getUsers(req, res) {

@@ -5,18 +5,14 @@
  */
 "use strict";
 
-const Telegraf = require("telegraf"),
-    moment = require("moment"),
+const moment = require("moment"),
     md5 = require('md5'),
     mongoose = require("mongoose"),
     Scene = require('telegraf/scenes/base'),
-    Composer = require('telegraf/composer'),
-    Markup = require('telegraf/markup'),
     WizardScene = require('telegraf/scenes/wizard'),
     keyboards = require('../keyboards'),
     ReadWriteLock = require('rwlock'),
     roles = require("../../roles"),
-    checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,

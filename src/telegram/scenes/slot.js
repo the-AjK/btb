@@ -5,20 +5,17 @@
  */
 "use strict";
 
-const Telegraf = require("telegraf"),
-    Scene = require('telegraf/scenes/base'),
+const Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     async = require("async"),
     moment = require("moment"),
     PaginatedInlineKeyboard = require("../tools/paginatedInlineKeyboard").PaginatedInlineKeyboard,
     roles = require("../../roles"),
-    checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
     levels = require('../../levels'),
     utils = require('../../utils'),
-    beers = require('../beers'),
     DB = require("../../db"),
     bot = require('../bot'),
     ACTIONS = bot.ACTIONS;
