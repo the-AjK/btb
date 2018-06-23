@@ -110,12 +110,23 @@ exports.addPoints = function (userID, points, silent, cb) {
                 } else {
                     //Update bot user session
                     bot.session.setSessionParam(user.telegram.id, "user.points", _user.points);
-                    let message = "🏅 Congratulations!\n\nYou got *" + points + "* point" + (points > 1 ? "s" : "") + "!";
-                    if (getLevel(_user.points) > initialLevel) {
+                    let message = "🏅 Congratulations!\n\nYou got *" + points + "* point" + (points > 1 ? "s" : "") + "!",
+                        level = getLevel(_user.points);
+                    if (level > initialLevel) {
                         //In case of levelUp, forse silent to false
                         silent = false;
                         message = "You collected *" + _user.points + "* points!" +
-                            "\n\n⭐️ Level Up!\n\n*Unlocked features*:\n" + getLevelFeatures(getLevel(_user.points));
+                            "\n\n⭐️ Level Up! 🔝\n\n*Unlocked features*:\n" + getLevelFeatures(level);
+                        //Save event
+                        const event = new DB.LevelEvent({
+                            owner: userID,
+                            level: level
+                        });
+                        event.save((err, s) => {
+                            if (err) {
+                                console.error(err);
+                            }
+                        });
                     }
                     if (!silent) {
                         require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
