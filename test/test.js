@@ -1,3 +1,8 @@
+if (process.env.NODE_ENV !== "production") {
+	console.log("Loading DEV enviroment...");
+	require("dotenv").load();
+}
+
 const expect = require('chai').expect,
     manager = require('../src/manager');
 
@@ -619,8 +624,8 @@ describe('getOrdersMenuDiff()', function () {
         const om = {
             "firstCourse": {
                 "items": [{
-                    "condiments": ["Amatriciana", "Pesto", "Pomodoro"],
-                    "value": "Penne"
+                    "condiments": ["Ragù alla bolognese", "Melanzane, pesto e burrata", "Pomodoro e bufala", "Carbonara con pancetta e rosmarino"],
+                    "value": "fusilli integrali"
                 }, {
                     "condiments": [],
                     "value": "Insalatona Venezia"
@@ -638,8 +643,8 @@ describe('getOrdersMenuDiff()', function () {
         const m = {
             "firstCourse": {
                 "items": [{
-                    "condiments": ["Amatriciana", "Pesto", "Pomodoro"],
-                    "value": "Spaghetti"
+                    "condiments": ["Carbonara con pancetta e rosmarino", "Ragù alla bolognese", "Melanzane, pesto e burrata", "Pomodoro e bufala"],
+                    "value": "Maltagliati freschi all'uovo"
                 }, {
                     "condiments": [],
                     "value": "Insalatona Venezia"
@@ -655,7 +660,7 @@ describe('getOrdersMenuDiff()', function () {
         const or = [{
             "_id": 0,
             "firstCourse": {
-                "item": "Insalatona Bologna"
+                "item": "Insalatona Venezia"
             },
             "table": {
                 "_id": "5acbf33449a5605c11bdd7ff",
@@ -668,8 +673,8 @@ describe('getOrdersMenuDiff()', function () {
         }, {
             "_id": 1,
             "firstCourse": {
-                "condiment": "Pomodoro",
-                "item": "Penne"
+                "condiment": "Melanzane, pesto e burrata",
+                "item": "fusilli integrali"
             },
             "table": {
                 "_id": "5ac23c85a5315a62dc448bb0",
@@ -684,8 +689,8 @@ describe('getOrdersMenuDiff()', function () {
         const orders = manager.getOrdersMenuDiff(om, m, or);
         expect(orders.length).to.be.equal(2);
         //both orders shall be affected because penne and insalata bologna has been removed
-        expect(orders[0].length).to.be.equal(2);
-        expect(orders[1].length).to.be.equal(0);
+        expect(orders[0].length).to.be.equal(1);
+        expect(orders[1].length).to.be.equal(1);
     });
 
     it('should be no diff adding a new firstCourse', function () {
@@ -1046,7 +1051,7 @@ describe('getOrdersMenuDiff()', function () {
                 "items": ["Carne", "Frittata"],
                 "sideDishes": ["Zucchine", "Fagioli"]
             },
-            "tables": ["5acbf33449a5605c11bdd7ff"]
+            "tables": ["5acbf33449a5605c11bdd7ff", "5ac23c85a5315a62dc448bb0"]
         };
 
         const or = [{
@@ -1152,7 +1157,7 @@ describe('getOrdersMenuDiff()', function () {
             },
             "table": {
                 "_id": "5acbf33449a5605c11bdd7ff",
-                "name": "table1"
+                "name": "table2"
             },
             "owner": {
                 "username": "AlbertoJK2",
