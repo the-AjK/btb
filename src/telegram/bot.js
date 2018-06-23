@@ -377,6 +377,8 @@ function decodeWit(ctx, witResponse) {
           ctx.reply(text || err, keyboards.btb(ctx).opts);
         });
         break;
+      case "wiki":
+        return ctx.reply(formatWiki(), keyboards.btb(ctx).opts);
       case "activesessions":
         if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
           msg = "401 - Unauthorized";
@@ -704,6 +706,21 @@ bot.on(['audio', 'voice'], (ctx) => {
     sendTTSVoice(ctx, "Hey " + ctx.session.user.telegram.first_name + ", bite my metal shiny ass!");
   }
 });
+
+function formatWiki() {
+  let text = "__BiteTheBot__ - Wiki" +
+    "\n\n*Menu*" +
+    "\nYou will receive a daily menu" +
+    "\n\n*Order*" +
+    "\nOnce a daily menu is available you can place a order. Level 1 users can rate their order after 2pm." +
+    "\n\n*Beercoins*" +
+    "\nMore beers == more beercoins, more beercoins == more BTB features. Send beers to get more beercoins.\nYou can also try to be the first one to place a daily order to get a beercoin as a gift. Keep in mind that you will loose one beercoin if you will be the last who place a daily order."
+    "\n\n*Slot*" +
+    "\nBTB Slot allow to win more beercoins" +
+    "\n\n*Levels*" +
+    "\nBTB Slot allow to win more beercoins";
+  return text;
+}
 
 function formatMenu(menu) {
   let text =
