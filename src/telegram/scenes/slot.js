@@ -328,7 +328,7 @@ scene.leave((ctx) => {
 
 function printRunningSlot(ctx, cb) {
     if (ctx.session.slot_message) {
-        require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx, true), {
+        ctx.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx, true), {
             parse_mode: "markdown",
         }).then((msg) => {
             cb(null, msg);
@@ -351,7 +351,7 @@ function printSlot(ctx, cb) {
     const bombWin = ctx.session.slot.isWinningBomb() && ctx.session.slot.bombPoints() > 0,
         robWin = ctx.session.slot.isWinningRob() && ctx.session.slot.robPoints() > 0;
     if (ctx.session.slot_message) {
-        require('../bot').bot.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
+        ctx.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
             parse_mode: "markdown",
             reply_markup: !ctx.session.user.dailySlotRunning && !bombWin && !robWin ? JSON.stringify({
                 inline_keyboard: inline_keyboard
@@ -696,7 +696,7 @@ function runSlot(ctx) {
 }
 
 function updateUsersKeyboard(ctx) {
-    require('../bot').bot.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
+    ctx.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
         inline_keyboard: ctx.session.users_inline_keyboard.render()
     }).then((m) => {
         ctx.session.lastMessage = m;
@@ -769,7 +769,7 @@ scene.on("callback_query", ctx => {
             deleteLastMessage(ctx);
             ctx.answerCbQuery("Sending bomb to " + bombUser.telegram.first_name + "...");
             const message = "Boom! " + bot.getUserLink(ctx.session.user) + " just sent you " + ctx.session.slot.bombPoints() + " bombs 💣 !";
-            require('../bot').bot.telegram.sendMessage(bombUser.telegram.id, message, {
+            ctx.telegram.sendMessage(bombUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
                 const points = ctx.session.slot.bombPoints();
@@ -815,7 +815,7 @@ scene.on("callback_query", ctx => {
             deleteLastMessage(ctx);
             ctx.answerCbQuery("Stealing beercoins from " + robbedUser.telegram.first_name + "...");
             const message = "Ops! " + bot.getUserLink(ctx.session.user) + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
-            require('../bot').bot.telegram.sendMessage(robbedUser.telegram.id, message, {
+            ctx.telegram.sendMessage(robbedUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
                 const beercoins = ctx.session.slot.robPoints();

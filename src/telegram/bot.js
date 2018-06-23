@@ -236,7 +236,7 @@ function animation(ctx, interval, animations, opts, callback) {
           //skip
           return cb(null, m);
         setTimeout(() => {
-          bot.telegram.editMessageText(m.chat.id, m.message_id, null, text, opts).then((m) => {
+          ctx.telegram.editMessageText(m.chat.id, m.message_id, null, text, opts).then((m) => {
             cb(null, m);
           }, (err) => {
             cb(err);
@@ -620,7 +620,7 @@ function mentionHandler(ctx) {
         if (mention.indexOf("ables") >= 0) {
           for (let i = 0; i < orders.length; i++) {
             if (!orders[i].owner._id.equals(ctx.session.user._id)) {
-              bot.telegram.sendMessage(orders[i].owner.telegram.id, message, {
+              ctx.telegram.sendMessage(orders[i].owner.telegram.id, message, {
                 parse_mode: "markdown"
               }).then(() => {
                 console.log("Mention tables sent to " + orders[i].owner.telegram.id + "-" + orders[i].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
@@ -642,7 +642,7 @@ function mentionHandler(ctx) {
               for (let j = 0; j < orders.length; j++) {
                 if (!orders[j].owner._id.equals(ctx.session.user._id) &&
                   orders[j].table.name == userTableName) {
-                  bot.telegram.sendMessage(orders[j].owner.telegram.id, message, {
+                  ctx.telegram.sendMessage(orders[j].owner.telegram.id, message, {
                     parse_mode: "markdown"
                   }).then(() => {
                     console.log("Mention table sent to " + orders[j].owner.telegram.id + "-" + orders[j].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
@@ -693,7 +693,7 @@ bot.on(['document', 'video', 'sticker', 'photo'], (ctx) => {
 function sendTTSVoice(ctx, text, options) {
   googleTTS(text, 'en-US', 1.5)
     .then(function (url) {
-      bot.telegram.sendVoice(ctx.chat.id, {
+      ctx.telegram.sendVoice(ctx.chat.id, {
         url: url,
         filename: "BTB voice"
       });

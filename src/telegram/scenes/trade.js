@@ -81,7 +81,7 @@ function sendBeerCoins(ctx) {
     const quantity = ctx.session.trade.quantity,
         message = "*Lucky you!*\n" + bot.getUserLink(ctx.session.user) + " just sent you *" + quantity + "* beercoin" + (quantity > 1 ? "s" : "") + " 💰 !";
     ctx.reply("Sending *" + quantity + "* beercoin" + (quantity > 1 ? "s" : "") + " to " + bot.getUserLink(ctx.session.trade.user) + "...", keyboards.shop(ctx).opts);
-    require('../bot').bot.telegram.sendMessage(ctx.session.trade.user.telegram.id, message, {
+    ctx.telegram.sendMessage(ctx.session.trade.user.telegram.id, message, {
         parse_mode: "markdown"
     }).then(() => {
         levels.removePoints(ctx.session.user._id, quantity, true, (e, p) => {
@@ -119,7 +119,7 @@ function sendBeerCoins(ctx) {
 
 
 function updateUsersKeyboard(ctx) {
-    require('../bot').bot.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
+    ctx.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
         inline_keyboard: ctx.session.users_inline_keyboard.render()
     }).then((m) => {
         ctx.session.lastMessage = m;
