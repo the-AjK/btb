@@ -147,7 +147,7 @@ bot.use((ctx, next) => {
   }
 });
 
-function getUserLink(u){
+function getUserLink(u) {
   return "[" + (u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "")) + "](tg://user?id=" + u.telegram.id + ")";
 }
 exports.getUserLink = getUserLink;
@@ -713,17 +713,28 @@ bot.on(['audio', 'voice'], (ctx) => {
 });
 
 function formatWiki() {
-  let text = "__BiteTheBot__ - Wiki" +
+  let text = "_BiteTheBot_ - Wiki" +
     "\n\n*Menu*" +
-    "\nYou will receive a daily menu" +
+    "\nEach working day you will receive a daily menu notification as soon as an admin user will upload it.\nEnable/disable settings for your daily menu notifications are available in the reminders section under settings menu." +
     "\n\n*Order*" +
-    "\nOnce a daily menu is available you can place a order. Level 1 users can rate their order after 2pm." +
+    "\nOnce a daily menu is available you can place a order. Follow the instructions to choose your favourite dish until a green check mark will confirm that the operation was successfull.\nAfter that a daily order summary will be available in the order section.\nLevel 1 users can rate their order after 2pm." +
     "\n\n*Beercoins*" +
-    "\nMore beers == more beercoins, more beercoins == more BTB features. Send beers to get more beercoins.\nYou can also try to be the first one to place a daily order to get a beercoin as a gift. Keep in mind that you will loose one beercoin if you will be the last who place a daily order."
+    "\nBeercoin is the currency used in BiteTheBot.\nmore beers == more beercoins\nmore beercoins == more BTB features\nSend beers to get more beercoins.\nYou can also try to be the first one to place a daily order to get a beercoin as a gift. Keep in mind that you will loose one beercoin if you will be the last who place a daily order." +
     "\n\n*Slot*" +
-    "\nBTB Slot allow to win more beercoins" +
+    "\nBTB Slot let you win more beercoins or destroy/stole beercoins from your friends.\nEach day you will get a free run! Don't forget it." +
+    "\nWinnings examples:" +
+    "\n - beers: 5 beercoins" +
+    "\n - other items: 2 beercoins" +
+    "\n - water: -1 beercoin" +
+    "\nCombining more items will increase the winnings." +
     "\n\n*Levels*" +
-    "\nBTB Slot allow to win more beercoins";
+    "\nGaining beercoins will make you level-up.\nHigher levels means more BTB features.\nAvailable levels:" +
+    "\n1 - 10 beercoins" + 
+    "\n2 - 50 beercoins" + 
+    "\n3 - 200 beercoins" + 
+    "\n4 - 600 beercoins" + 
+    "\n5 - 1500 beercoins" + 
+    "\n...";
   return text;
 }
 
