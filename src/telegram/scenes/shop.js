@@ -90,7 +90,7 @@ exports.scene = scene;
 
 function formatNews(news, topUsers, dailyOrders, premium) {
     let text = "*~~~ Latest BiteTheBot News" + (premium ? " (Premium)" : "") + " ~~~*",
-        newsListLenght = premium ? 60 : 30,
+        newsListLenght = premium ? 90 : 60,
         limit = news.length > newsListLenght ? newsListLenght : news.length,
         actualDate;
 
@@ -136,13 +136,24 @@ function formatNews(news, topUsers, dailyOrders, premium) {
             text += "\n\n_" + actualDate + "_:";
         }
         text += "\n_" + hour + "_ - " + user;
-        if (n.points != undefined) {
+        if (n.recipient != undefined) {
+            //trade stuff
+            text += " sent 💰 " + n.quantity + " beercoins to " + bot.getUserLink(n.recipient);
+        } else if (n.rating != undefined) {
+            //rating stuff
+            text += " gave  ⭐️ " + n.rating + " stars to the daily launch";
+        } else if (n.level != undefined) {
+            //levelup stuff
+            text += " level up! 🔝";
+        } else if (n.points != undefined) {
             //slot stuff
             if (n.bet != undefined && n.bet == 0) {
                 text += " got a free daily run and";
             }
             if (n.points < 0) {
                 text += " lost " + (n.points * -1) + " slot points 🎰";
+            } else if (n.points == 0) {
+                text += " had no luck with the slot 🙃";
             } else {
                 if (n.robbedUser != undefined) {
                     user = bot.getUserLink(n.robbedUser);
@@ -172,32 +183,67 @@ function sendNews(ctx, premium) {
     console.log((premium ? "Premium " : "") + "News request from user: " + ctx.session.user.email)
     let funList = [];
 
+    //Res0
     funList.push(function () {
         return (cb) => {
             DB.BeerEvent.find(null, null, {
                 sort: {
                     createdAt: -1
                 },
-                limit: 100
+                limit: 50
             }).populate('owner').exec(cb);
         }
     }());
 
+    //Res1
     funList.push(function () {
         return (cb) => {
-            DB.SlotEvent.find({
-                points: {
-                    "$ne": 0
-                }
-            }, null, {
+            DB.RatingEvent.find(null, null, {
                 sort: {
                     createdAt: -1
                 },
-                limit: 100
+                limit: 50
+            }).populate('owner').exec(cb);
+        }
+    }());
+
+    //Res2
+    funList.push(function () {
+        return (cb) => {
+            DB.LevelEvent.find(null, null, {
+                sort: {
+                    createdAt: -1
+                },
+                limit: 50
+            }).populate('owner').exec(cb);
+        }
+    }());
+
+    //Res3
+    funList.push(function () {
+        return (cb) => {
+            DB.TradeEvent.find(null, null, {
+                sort: {
+                    createdAt: -1
+                },
+                limit: 50
+            }).populate('owner').populate('recipient').exec(cb);
+        }
+    }());
+
+    //Res4
+    funList.push(function () {
+        return (cb) => {
+            DB.SlotEvent.find(null, null, {
+                sort: {
+                    createdAt: -1
+                },
+                limit: 50
             }).populate('owner').populate('bombedUser').populate('robbedUser').exec(cb);
         }
     }());
 
+    //Res5
     funList.push(function () {
         return (cb) => {
             DB.Order.find({
@@ -236,7 +282,7 @@ function sendNews(ctx, premium) {
         if (err) {
             console.error(err);
         } else {
-            const results = result[0].concat(result[1]).concat(result[2]);
+            const results = result[0].concat(result[1]).concat(result[2]).concat(result[3]).concat(result[4]).concat(result[5]);
             //desc createdAt sorting
             results.sort((t1, t2) => {
                 if (t1.createdAt > t2.createdAt) {
@@ -248,7 +294,7 @@ function sendNews(ctx, premium) {
                 }
             });
             deleteLastMessage(ctx);
-            ctx.reply(formatNews(results, result[3], result[4], premium), {
+            ctx.reply(formatNews(results, result[6], result[7], premium), {
                 parse_mode: "markdown"
             });
             if (premium && !checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {

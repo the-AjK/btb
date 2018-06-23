@@ -124,6 +124,16 @@ function setOrderRating(ctx) {
                             console.error(err);
                         }
                     });
+                    //Save event
+                    const event = new DB.RatingEvent({
+                        owner: ctx.session.user._id,
+                        rating: ctx.session.rating
+                    });
+                    event.save((err, s) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                    });
                 }
             });
             return;
