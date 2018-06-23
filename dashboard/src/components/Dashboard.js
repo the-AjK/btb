@@ -164,14 +164,14 @@ const Dashboard = inject("ctx")(
                   Home
                 </ListItem>
               </ListItem>
-              <ListItem button onClick={() => this.props.history.push('/menus')}>
+              {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && <ListItem button onClick={() => this.props.history.push('/menus')}>
                 <ListItemIcon>
                   <AssignmentIcon />
                 </ListItemIcon>
                 <ListItem>
                   Menus
                 </ListItem>
-              </ListItem>
+              </ListItem>}
               <ListItem button onClick={() => this.props.history.push('/orders')}>
                 <ListItemIcon>
                   <StorageIcon />
@@ -180,26 +180,28 @@ const Dashboard = inject("ctx")(
                   Orders
                 </ListItem>
               </ListItem>
-              <ListItem button onClick={() => this.props.history.push('/tables')}>
+              {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && <ListItem button onClick={() => this.props.history.push('/tables')}>
                 <ListItemIcon>
                   <TablesIcon />
                 </ListItemIcon>
                 <ListItem>
                   Tables
                 </ListItem>
-              </ListItem>
+              </ListItem>}
             </List>
-            <Divider />
-            <List>
-              <ListItem button onClick={() => this.props.history.push('/users')}>
-                <ListItemIcon>
-                  <UsersIcon />
-                </ListItemIcon>
-                <ListItem>
-                  Users
+            {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && <div>
+              <Divider />
+              <List>
+                <ListItem button onClick={() => this.props.history.push('/users')}>
+                  <ListItemIcon>
+                    <UsersIcon />
+                  </ListItemIcon>
+                  <ListItem>
+                    Users
                 </ListItem>
-              </ListItem>
-            </List>
+                </ListItem>
+              </List>
+            </div>}
             {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && <div>
               <Divider />
               <List>

@@ -51,9 +51,10 @@ const Home = inject("ctx")(
             }
 
             render() {
-                const { classes } = this.props;
+                const { classes } = this.props,
+                    roles = this.props.ctx.roles;
                 const dailyMenuLinkID = this.props.ctx.stats.dailyMenu && this.props.ctx.stats.dailyMenu._id ? this.props.ctx.stats.dailyMenu._id : "new";
-                const tileData = [
+                let tileData = [
                     {
                         img: "/static/images/home_tongue.gif",
                         title: 'Daily Menu Status',
@@ -86,6 +87,28 @@ const Home = inject("ctx")(
                         value: this.props.ctx.stats.usersPending,
                     },
                 ];
+                if (!roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin)) {
+                    //normal users
+                    this.props.ctx.stats.setAutoRefresh(false);
+                    tileData = [
+                        {
+                            img: "/static/images/home_tongue.gif",
+                            title: 'Daily Menu Status',
+                            cols: 2,
+                            value: (this.props.ctx.stats.dailyMenu && this.props.ctx.stats.dailyMenu.enabled) ? "OK" : "not ready!",
+                        }, {
+                            img: "/static/images/home_drink.gif",
+                            title: 'Orders',
+                            cols: 1,
+                            action: () => { this.props.ctx.history.push("/orders") }
+                        }, {
+                            img: "/static/images/home_dancing.webp",
+                            title: 'New order',
+                            cols: 3,
+                            action: () => { this.props.ctx.history.push("/orders/new") }
+                        }
+                    ];
+                }
                 return (
                     <div className={classes.root}>
                         <GridList cellHeight={180} cols={3} className={classes.gridList}>

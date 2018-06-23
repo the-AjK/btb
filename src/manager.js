@@ -785,6 +785,11 @@ function _getOrders(req, res) {
 
     Object.assign(query, getPaginationQuery(req));
 
+    if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+        //normal user get only its own orders
+        query.owner = req.user._id;
+        select.owner = -1
+    }
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root user limitations
         select.deleted = -1;
@@ -838,6 +843,12 @@ function _addOrder(req, res) {
         delete data.createdAt;
     }
     data.createdAt = moment().format();
+    if (!data.owner)
+        data.owner = req.user._id;
+    if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+        //normal user can save only its own order
+        data.owner = req.user._id;
+    }
     const newOrder = new DB.Order(data);
     newOrder.save((err, order) => {
         if (err) {
@@ -862,7 +873,12 @@ function _updateOrder(req, res) {
         delete data.deleted;
         delete data.createdAt;
     }
-
+    if (!data.owner)
+        data.owner = req.user._id;
+    if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+        //normal user can update only its own order
+        data.owner = req.user._id;
+    }
     data.updatedAt = moment().format();
 
     DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
@@ -880,6 +896,10 @@ function _deleteOrder(req, res) {
     const query = {
         _id: req.params.id
     };
+    if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+        //normal user can delete only its own order
+        query.owner = req.user._id;
+    }
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root users SHALL update ONLY the deleted flag
         const data = {
