@@ -5,23 +5,22 @@
  */
 "use strict";
 
+if (process.env.NODE_ENV !== "production") {
+	console.log("Loading DEV enviroment...");
+	require("dotenv").load();
+}
+
 const express = require("express"),
 	bodyParser = require("body-parser"),
 	Raven = require('raven'),
 	path = require("path"),
 	cors = require("cors"),
 	app = express(),
-	moment = require("moment"),
 	requestIp = require('request-ip'),
 	packageJSON = require('./package.json'),
 	apiRouter = require("./src/api"),
 	auth = require("./src/auth"),
 	db = require("./src/db");
-
-if (process.env.NODE_ENV !== "production") {
-	console.log("Loading DEV enviroment...");
-	require("dotenv").load();
-}
 
 console.log(
 	"***********************************************************\n*\n" +
