@@ -27,6 +27,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import FloatingSaveButton from "./buttons/FloatingSaveButton";
 import Select from "@material-ui/core/Select";
 import MenuItem from '@material-ui/core/MenuItem';
+import Checkbox from '@material-ui/core/Checkbox';
 
 import moment from 'moment';
 
@@ -38,13 +39,9 @@ const styles = theme => ({
         //height: "100em"
     },
     heading: {
-        fontSize: theme.typography.pxToRem(15),
+        fontSize: theme.typography.pxToRem(18),
         flexBasis: '33.33%',
         flexShrink: 0,
-    },
-    secondaryHeading: {
-        fontSize: theme.typography.pxToRem(15),
-        color: theme.palette.text.secondary,
     },
 });
 
@@ -61,7 +58,11 @@ const Order = inject("ctx")(
                     isSaving: false,
                     availableTables: [],
                     order: {
-                        owner: this.props.ctx.auth.user
+                        owner: this.props.ctx.auth.user,
+                        firstCourse: {},
+                        secondCourse: {
+                            sideDishes: []
+                        }
                     }
                 });
                 this.props.ctx.stats.fetch((err) => {
@@ -157,8 +158,32 @@ const Order = inject("ctx")(
                 })
             }
 
-            handleChangeOwner = action((event) => {
+            handleChangeOwner = action(event => {
                 this.order.owner = event.target.value;
+            });
+
+            handleFirstCourseChange = action(event => {
+                this.order.firstCourse.item = event.target.value;
+                this.order.firstCourse.condiment = null;
+            });
+
+            handleCondimentChange = action(event => {
+                this.order.firstCourse.condiment = event.target.value;
+            });
+
+            handleSecondCourseChange = action(event => {
+                this.order.secondCourse.item = event.target.value;
+                this.order.firstCourse = {};
+            });
+
+            handleSideDishesChange = action(event => {
+                const sd = event.target.value,
+                    pos = this.order.secondCourse.sideDishes.indexOf(sd);
+                if (pos < 0) {
+                    this.order.secondCourse.sideDishes.push(sd)
+                } else {
+                    this.order.secondCourse.sideDishes.splice(pos, 1);
+                }
             });
 
             save = action(() => {
@@ -187,9 +212,13 @@ const Order = inject("ctx")(
                 }
             })
 
+
+
             render() {
                 const { classes } = this.props,
-                    roles = this.props.ctx.roles;
+                    roles = this.props.ctx.roles,
+                    availableCondiments = this.order.firstCourse.item ? this.props.ctx.stats.dailyMenu.firstCourse.items.filter(fc => fc.value === this.order.firstCourse.item)[0].condiments : [];
+
                 return (
 
                     <Grid
@@ -240,46 +269,90 @@ const Order = inject("ctx")(
                                                 <ExpansionPanel expanded={true} onChange={() => { }}>
                                                     <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
                                                         <Typography className={classes.heading}>First course</Typography>
-                                                        <Typography className={classes.secondaryHeading}>I am an expansion panel</Typography>
                                                     </ExpansionPanelSummary>
                                                     <ExpansionPanelDetails>
+                                                        <Grid container>
 
-                                                        <FormControl component="fieldset" required className={classes.formControl}>
-                                                            <FormLabel component="legend">First course</FormLabel>
-                                                            <RadioGroup
-                                                                aria-label="gender"
-                                                                name="gender1"
-                                                                className={classes.group}
-                                                                value={this.order.firstCourse}
-                                                                onChange={this.handleChange}
-                                                            >
-                                                                <FormControlLabel value="female" control={<Radio />} label="Female" />
-                                                                <FormControlLabel value="male" control={<Radio />} label="Male" />
-                                                                <FormControlLabel value="other" control={<Radio />} label="Other" />
-                                                                <FormControlLabel
-                                                                    value="disabled"
-                                                                    disabled
-                                                                    control={<Radio />}
-                                                                    label="(Disabled option)"
-                                                                />
-                                                            </RadioGroup>
-                                                        </FormControl>
+                                                            <Grid item xs={12} md={6}>
+                                                                <FormControl component="fieldset" required className={classes.formControl}>
+                                                                    <RadioGroup
+                                                                        aria-label="firstCourse"
+                                                                        name="firstCourse"
+                                                                        className={classes.group}
+                                                                        value={this.order.firstCourse.item}
+                                                                        onChange={this.handleFirstCourseChange}
+                                                                    >
+                                                                        {this.props.ctx.stats.dailyMenu.firstCourse.items.map(fc => <FormControlLabel key={fc.value} value={fc.value} control={<Radio />} label={fc.value} />)}
+                                                                    </RadioGroup>
+                                                                </FormControl>
+                                                            </Grid>
+                                                            <Grid item xs={12} md={6}>
+                                                                <FormControl component="fieldset" required className={classes.formControl}>
 
+                                                                    <FormLabel component="legend">Condiments</FormLabel>
+                                                                    {!availableCondiments.length && <p>No condiments available for the selected dish</p>}
+                                                                    {availableCondiments.length > 0 && <RadioGroup
+                                                                        aria-label="condiment"
+                                                                        name="condiment"
+                                                                        className={classes.group}
+                                                                        value={this.order.firstCourse.condiment}
+                                                                        onChange={this.handleCondimentChange}
+                                                                    >
+                                                                        {availableCondiments.map(c => <FormControlLabel value={c} control={<Radio />} label={c} />)}
+                                                                    </RadioGroup>}
+
+                                                                </FormControl>
+                                                            </Grid>
+
+                                                        </Grid>
                                                     </ExpansionPanelDetails>
                                                 </ExpansionPanel>
                                                 <ExpansionPanel expanded={true} onChange={() => { }}>
                                                     <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
                                                         <Typography className={classes.heading}>Second course</Typography>
-                                                        bbb
                                                     </ExpansionPanelSummary>
                                                     <ExpansionPanelDetails>
-                                                        ccc
+                                                        <Grid container>
+                                                            <Grid item xs={12}>
+                                                                <FormControl component="fieldset" required className={classes.formControl}>
+                                                                    <RadioGroup
+                                                                        aria-label="secondCourse"
+                                                                        name="secondCourse"
+                                                                        className={classes.group}
+                                                                        value={this.order.secondCourse.item}
+                                                                        onChange={this.handleSecondCourseChange}
+                                                                    >
+                                                                        {this.props.ctx.stats.dailyMenu.secondCourse.items.map(sc => <FormControlLabel key={sc} value={sc} control={<Radio />} label={sc} />)}
+                                                                    </RadioGroup>
+                                                                </FormControl>
+                                                            </Grid>
+                                                            <Grid item xs={12}>
+                                                                <FormControl component="fieldset" required className={classes.formControl}>
+                                                                    <FormLabel component="legend">Side dishes</FormLabel>
+                                                                    <FormGroup>
+                                                                        {this.props.ctx.stats.dailyMenu.secondCourse.sideDishes.map(sd => <FormControlLabel
+                                                                            key={sd}
+                                                                            control={
+                                                                                <Checkbox
+                                                                                    checked={this.order.secondCourse.sideDishes.indexOf(sd) >= 0}
+                                                                                    onChange={this.handleSideDishesChange}
+                                                                                    value={sd}
+                                                                                />
+                                                                            }
+                                                                            label={sd}
+                                                                        />)}
+                                                                    </FormGroup>
+                                                                </FormControl>
+                                                            </Grid>
+                                                        </Grid>
                                                     </ExpansionPanelDetails>
                                                 </ExpansionPanel>
                                             </Grid>
 
                                             <Grid item xs={12}>
                                                 {JSON.stringify(this.order)}
+
+                                                {JSON.stringify(this.props.ctx.stats.dailyMenu)}
                                             </Grid>
 
 
