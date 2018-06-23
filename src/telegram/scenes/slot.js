@@ -341,7 +341,7 @@ function printRunningSlot(ctx, cb) {
     }
 }
 
-function printSlot(ctx) {
+function printSlot(ctx, cb) {
     let inline_keyboard = [
         [{
             text: !ctx.session.user.dailySlotRunning ? 'Spin (1 credit)' : 'Spin',
@@ -358,11 +358,14 @@ function printSlot(ctx) {
             }) : undefined
         }).then((msg) => {
             ctx.session.user.dailySlotRunning = false;
+            cb();
             if (bombWin)
                 return selectUserToBomb(ctx);
             if (robWin)
                 return selectUserToRob(ctx);
-        });
+        }, cb);
+    } else {
+        cb("Cannot edit slot message");
     }
 }
 
@@ -459,8 +462,7 @@ function selectUserToRob(ctx) {
     });
 }
 
-function textManager(ctx) {
-    ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
+function slotCleanUp(ctx) {
     if (ctx.session.slot_header) {
         ctx.deleteMessage(ctx.session.slot_header.message_id);
         delete ctx.session.slot_header;
@@ -471,6 +473,11 @@ function textManager(ctx) {
         delete ctx.session.slot_message;
     }
     deleteLastMessage(ctx);
+}
+
+function textManager(ctx) {
+    ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
+    slotCleanUp(ctx);
 
     if (ctx.session.slot.isWinningBomb() && ctx.message.text.toLowerCase() == 'neutralize') {
         ctx.session.slot.bombSent = true;
@@ -489,7 +496,7 @@ function textManager(ctx) {
 
 scene.on("text", textManager);
 
-function handleResults(ctx) {
+function handleResults(ctx, cb) {
     let result = ctx.session.slot.isWinningState(),
         points = 0;
     console.log("Slot " + (ctx.session.user.dailySlotRunning ? "free daily " : "") + "run for user " + ctx.session.user.email);
@@ -504,7 +511,7 @@ function handleResults(ctx) {
                     bot.broadcastMessage("User *" + ctx.session.user.email + "* got " + points + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
                 }
             }
-            printSlot(ctx);
+            printSlot(ctx, cb);
         });
     } else if (result < 0) {
         points = result;
@@ -518,10 +525,10 @@ function handleResults(ctx) {
                     bot.broadcastMessage("User *" + ctx.session.user.email + "* lost " + pointsToRemove + " slot points (" + ctx.session.user.points + ")", accessLevels.root, null, true);
                 }
             }
-            printSlot(ctx);
+            printSlot(ctx, cb);
         });
     } else {
-        printSlot(ctx);
+        printSlot(ctx, cb);
     }
     //Save slot result
     const newSlotRun = new DB.SlotEvent({
@@ -575,19 +582,20 @@ function isWinningRun(ctx, run) {
     return (result > 0) ? ctx.session.test_slot.getPoints(result) : 0;
 }
 
-//Check if the user always lost in the last 15 runs
+//Check if the user always lost in the last 14-18 runs
 function isUserLoser(userID, cb) {
+    const limit = Math.round(utils.getRandomInt(14, 18));
     DB.SlotEvent.find({
         owner: userID
     }, null, {
         sort: {
             createdAt: -1
         },
-        limit: 15
+        limit: limit
     }, (err, slotruns) => {
         if (err) {
             cb(err);
-        } else if (slotruns && slotruns.length == 15) {
+        } else if (slotruns && slotruns.length == limit) {
             for (let i = 0; i < slotruns.length; i++) {
                 if (slotruns[i].points > 0) {
                     return cb(null, false);
@@ -634,10 +642,10 @@ function runSlot(ctx) {
                 ctx.session.slot.fullRotation();
                 ctx.session.slot.setProgress(Math.round((i + 1) * 10 / slotRun.totalSteps));
                 setTimeout(() => {
-                    printRunningSlot(ctx, () => {
-                        cb();
+                    printRunningSlot(ctx, (err) => {
+                        cb(err);
                     });
-                }, 100);
+                }, 200);
             }
         }());
     }
@@ -655,8 +663,8 @@ function runSlot(ctx) {
                         ctx.session.slot.singleRotation(col);
                         ctx.session.slot.setProgress(Math.round(p_counter * 10 / total_steps));
                         setTimeout(() => {
-                            printRunningSlot(ctx, () => {
-                                cb();
+                            printRunningSlot(ctx, (err) => {
+                                cb(err);
                             });
                         }, 400);
                     }
@@ -669,9 +677,21 @@ function runSlot(ctx) {
     async.series(funList, (err, result) => {
         if (err) {
             console.error(err);
+            ctx.session.slot.isRunning = false;
+            slotCleanUp(ctx);
+            ctx.reply("Ehm, something went wrong!", {
+                parse_mode: "markdown"
+            }).then((m) => {
+                ctx.scene.enter('extra');
+            });
+        } else {
+            handleResults(ctx, (err) => {
+                if (err) {
+                    console.error(err);
+                }
+                ctx.session.slot.isRunning = false;
+            });
         }
-        handleResults(ctx);
-        ctx.session.slot.isRunning = false;
     });
 }
 
