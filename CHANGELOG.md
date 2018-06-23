@@ -1,5 +1,22 @@
 # Change Log
 
+## [1.0.0-RC17](https://github.com/the-AjK/btb/tree/1.0.0-RC17) (2018-06-23)
+
+[Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC16...1.0.0-RC17)
+
+### Changes
+
+- Added webHook support
+- DB events
+- Slot improvements
+- User sessions handler
+- @all mentions
+
+### Bugfixes
+
+- Menu diff check
+- Various bugfixes
+
 ## [1.0.0-RC16](https://github.com/the-AjK/btb/tree/1.0.0-RC16) (2018-05-16)
 
 [Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC15...1.0.0-RC16)
