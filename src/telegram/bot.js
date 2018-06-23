@@ -387,8 +387,12 @@ function decodeWit(ctx, witResponse) {
           msg = "Active sessions: *" + activeSessions.length + "*\nUsers:";
           for (let i = 0; i < activeSessions.length; i++) {
             const s = activeSessions[i];
-            let userLink = "[" + (s.user.telegram.first_name + (s.user.telegram.last_name ? (" " + s.user.telegram.last_name) : "")) + "](tg://user?id=" + s.user.telegram.id + ") (" + s.counter + ")";
-            msg += "\n- " + userLink;
+            if (s.user) {
+              let userLink = "[" + (s.user.telegram.first_name + (s.user.telegram.last_name ? (" " + s.user.telegram.last_name) : "")) + "](tg://user?id=" + s.user.telegram.id + ") (" + s.counter + ")";
+              msg += "\n- " + userLink;
+            } else {
+              msg += "\n - Unregistered user";
+            }
           }
         }
         return ctx.reply(msg, keyboards.btb(ctx).opts);
