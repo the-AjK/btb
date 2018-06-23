@@ -7,12 +7,12 @@
 import React from "react";
 import { observer } from "mobx-react";
 import { extendObservable, action } from "mobx";
-import { withStyles } from "material-ui/styles";
+import { withStyles } from "@material-ui/core/styles";
 import MultipleSelect from "./MultipleSelect";
-import Grid from "material-ui/Grid";
-import Paper from 'material-ui/Paper';
-import CloseIcon from '@material-ui/icons/Close';
-import CloneIcon from '@material-ui/icons/ControlPointDuplicate';
+import Grid from "@material-ui/core/Grid";
+import Paper from "@material-ui/core/Paper";
+import CloseIcon from "@material-ui/icons/Close";
+import CloneIcon from "@material-ui/icons/ControlPointDuplicate";
 
 const styles = theme => ({
     container: {

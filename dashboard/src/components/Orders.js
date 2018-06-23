@@ -7,9 +7,9 @@
 import React from "react";
 import moment from "moment";
 import { observer, inject } from "mobx-react";
-import { withStyles } from "material-ui/styles";
+import { withStyles } from "@material-ui/core/styles";
 import Table from "./GenericTable"
-import Grid from "material-ui/Grid";
+import Grid from "@material-ui/core/Grid";
 import ActionsButtons from "./buttons/ActionsButtons"
 import FloatingAddButton from "./buttons/FloatingAddButton"
 import EnabledIcon from "@material-ui/icons/Done"

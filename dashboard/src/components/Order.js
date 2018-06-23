@@ -7,10 +7,14 @@
 import React from "react";
 import { observer, inject } from "mobx-react";
 import { extendObservable, action } from "mobx";
-import { withStyles } from "material-ui/styles";
-import Grid from "material-ui/Grid";
-import TextField from 'material-ui/TextField';
-import { FormGroup, FormControl, FormLabel, FormHelperText, FormControlLabel } from 'material-ui/Form';
+import { withStyles } from "@material-ui/core/styles";
+import Grid from "@material-ui/core/Grid";
+import TextField from "@material-ui/core/TextField";
+import FormGroup from '@material-ui/core/FormGroup';
+import FormControl from '@material-ui/core/FormControl';
+import FormLabel from '@material-ui/core/FormLabel';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FloatingSaveButton from "./buttons/FloatingSaveButton";
 
 import moment from 'moment';

@@ -7,16 +7,20 @@
 import React from "react";
 import { observer, inject } from "mobx-react";
 import { extendObservable, action } from "mobx";
-import { withStyles } from "material-ui/styles";
-import TextField from 'material-ui/TextField';
-import { FormGroup, FormControl, FormLabel, FormHelperText, FormControlLabel } from 'material-ui/Form';
-import Checkbox from 'material-ui/Checkbox';
-import Switch from 'material-ui/Switch';
-import Grid from "material-ui/Grid";
+import { withStyles } from "@material-ui/core/styles";
+import TextField from "@material-ui/core/TextField";
+import FormGroup from '@material-ui/core/FormGroup';
+import FormControl from '@material-ui/core/FormControl';
+import FormLabel from '@material-ui/core/FormLabel';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Checkbox from "@material-ui/core/Checkbox";
+import Switch from "@material-ui/core/Switch";
+import Grid from "@material-ui/core/Grid";
 import FirstCourseSelect from "./inputs/FirstCourseSelect";
 import GenericCourseSelect from "./inputs/GenericCourseSelect";
 import FloatingSaveButton from "./buttons/FloatingSaveButton";
-import Button from 'material-ui/Button';
+import Button from "@material-ui/core/Button";
 import TimePicker from 'react-times';
 
 import 'react-times/css/material/default.css';

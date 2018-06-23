@@ -6,8 +6,8 @@
 // @flow
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
-import Grid from "material-ui/Grid";
-import { withStyles } from "material-ui/styles";
+import Grid from "@material-ui/core/Grid";
+import { withStyles } from "@material-ui/core/styles";
 
 const styles = theme => ({
   content: {

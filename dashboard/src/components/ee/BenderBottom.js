@@ -7,8 +7,8 @@
 import React from "react";
 import { observer, inject } from "mobx-react";
 import { extendObservable, action } from "mobx";
-import { withStyles } from "material-ui/styles";
-import Slide from 'material-ui/transitions/Slide';
+import { withStyles } from "@material-ui/core/styles";
+import Slide from '@material-ui/core/Slide';
 
 const styles = theme => ({
     image: {

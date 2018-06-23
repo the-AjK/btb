@@ -8,17 +8,21 @@ import React, { Component } from "react";
 import { Redirect } from "react-router-dom";
 import { extendObservable, action } from "mobx";
 import { observer, inject } from "mobx-react";
-import { withStyles } from "material-ui/styles";
-import TextField from "material-ui/TextField";
-import Grid from "material-ui/Grid";
-import { LinearProgress } from "material-ui/Progress";
-import Button from "material-ui/Button";
+import { withStyles } from "@material-ui/core/styles";
+import TextField from "@material-ui/core/TextField";
+import Grid from "@material-ui/core/Grid";
+import LinearProgress from '@material-ui/core/LinearProgress';
+import Button from "@material-ui/core/Button";
 import Validator from "validatorjs";
-import { FormControl, FormHelperText } from "material-ui/Form";
-import Fade from "material-ui/transitions/Fade";
-import Slide from "material-ui/transitions/Slide";
-import Card, { CardActions, CardContent, CardMedia } from "material-ui/Card";
-import Typography from "material-ui/Typography";
+import FormControl from '@material-ui/core/FormControl';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import Fade from '@material-ui/core/Fade';
+import Slide from '@material-ui/core/Slide';
+import CardMedia from '@material-ui/core/CardMedia';
+import CardContent from '@material-ui/core/CardContent';
+import CardActions from '@material-ui/core/CardActions';
+import Card from '@material-ui/core/Card';
+import Typography from "@material-ui/core/Typography";
 
 const styles = theme => ({
   root: {

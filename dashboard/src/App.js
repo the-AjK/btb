@@ -7,17 +7,16 @@
 import React from "react";
 import { observer } from "mobx-react";
 import { extendObservable, action } from "mobx";
-import CssBaseline from "material-ui/CssBaseline";
+import CssBaseline from "@material-ui/core/CssBaseline";
 import { Provider } from "mobx-react";
-import { useStrict } from "mobx";
 import {
   BrowserRouter as Router,
   Route,
   Redirect,
   Switch
 } from "react-router-dom";
-import { MuiThemeProvider, createMuiTheme } from "material-ui/styles";
-import grey from "material-ui/colors/grey";
+import { MuiThemeProvider, createMuiTheme } from "@material-ui/core/styles";
+import grey from "@material-ui/core/colors/grey";
 import "typeface-roboto";
 import GlobalStore from "./stores/GlobalStore";
 import Login from "./components/Login";
@@ -36,8 +35,6 @@ import Profile from "./components/Profile";
 import NotFound from "./components/NotFound";
 import GenericDialog from "./components/GenericDialog";
 import { accessLevels, checkUserAccessLevel } from "./utils/Roles";
-
-useStrict(true);
 
 const theme = createMuiTheme({
   palette: {

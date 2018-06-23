@@ -9,14 +9,14 @@ import checkboxHOC from 'react-table/lib/hoc/selectTable';
 import React from 'react';
 import { extendObservable, action, toJS } from "mobx";
 import { observer, inject } from "mobx-react";
-import { withStyles } from "material-ui/styles";
-import Fade from "material-ui/transitions/Fade";
-import { CircularProgress } from 'material-ui/Progress';
-import WarningIcon from '@material-ui/icons/Warning';
-import FilterList from '@material-ui/icons/FilterList';
-import FullList from '@material-ui/icons/FormatAlignJustify';
-import SyncIcon from '@material-ui/icons/Sync';
-import Grid from "material-ui/Grid";
+import { withStyles } from "@material-ui/core/styles";
+import Fade from '@material-ui/core/Fade';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import WarningIcon from "@material-ui/icons/Warning";
+import FilterList from "@material-ui/icons/FilterList";
+import FullList from "@material-ui/icons/FormatAlignJustify";
+import SyncIcon from "@material-ui/icons/Sync";
+import Grid from "@material-ui/core/Grid";
 
 import 'react-table/react-table.css'
 

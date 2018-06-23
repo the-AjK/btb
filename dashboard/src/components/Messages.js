@@ -7,13 +7,13 @@
 import React from "react";
 import { observer, inject } from "mobx-react";
 import { extendObservable, action } from "mobx";
-import { withStyles } from "material-ui/styles";
+import { withStyles } from "@material-ui/core/styles";
 import FloatingButton from "./buttons/FloatingButton";
-import Grid from "material-ui/Grid";
-import TextField from 'material-ui/TextField';
+import Grid from "@material-ui/core/Grid";
+import TextField from "@material-ui/core/TextField";
 import API from "./../utils/API";
-import { MenuItem } from 'material-ui/Menu';
-import Select from 'material-ui/Select';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from "@material-ui/core/Select";
 
 const styles = theme => ({
     root: {

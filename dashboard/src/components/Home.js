@@ -6,10 +6,12 @@
 // @flow
 import React from "react";
 import { observer, inject } from "mobx-react";
-import { withStyles } from "material-ui/styles";
-import GridList, { GridListTile, GridListTileBar } from 'material-ui/GridList';
-import Subheader from 'material-ui/List/ListSubheader';
-import Autorenew from '@material-ui/icons/Autorenew';
+import { withStyles } from "@material-ui/core/styles";
+import GridList from '@material-ui/core/GridList';
+import GridListTile from '@material-ui/core/GridListTile';
+import GridListTileBar from '@material-ui/core/GridListTileBar';
+import Subheader from '@material-ui/core/ListSubheader';
+import Autorenew from "@material-ui/icons/Autorenew";
 
 const styles = theme => ({
     root: {
