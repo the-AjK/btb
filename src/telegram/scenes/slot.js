@@ -186,7 +186,7 @@ class Slot {
     bombPoints() {
         let winningRows = this.isWinningState();
         if (winningRows > 0) {
-            return this.getPoints(winningRows) * 3;
+            return this.getPoints(winningRows) * 2;
         } else {
             return 0;
         }
@@ -195,7 +195,7 @@ class Slot {
     robPoints() {
         let winningRows = this.isWinningState();
         if (winningRows > 0) {
-            return this.getPoints(winningRows) * 3;
+            return this.getPoints(winningRows) * 2;
         } else {
             return 0;
         }
