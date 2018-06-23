@@ -350,7 +350,7 @@ function menuIsValid(menu) {
 let dailyMenuNotificationTimeout;
 
 function notifyDailyMenu(menu) {
-    const timeout = 30; //seconds
+    const timeout = 1; //seconds
     console.log("Daily menu will be broadcasted in " + timeout + " seconds.");
     clearTimeout(dailyMenuNotificationTimeout);
     dailyMenuNotificationTimeout = setTimeout(() => {
