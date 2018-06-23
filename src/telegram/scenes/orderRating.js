@@ -35,7 +35,7 @@ scene.enter((ctx) => {
             ctx.reply("You can't rate your order yet! Please wait");
         } else {
             //Default start rating
-            ctx.session.rating = 5;
+            ctx.session.rating = 7;
             ctx.reply(keyboards.orderRating(ctx).text, keyboards.orderRating(ctx).opts).then((msg) => {
                 //lets save the message to delete it afterward
                 ctx.session.lastMessage = msg;
