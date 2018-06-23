@@ -111,8 +111,7 @@ scene.on("callback_query", ctx => {
             }
             deleteLastMessage(ctx);
             ctx.answerCbQuery("Sending gift to " + giftUser.telegram.first_name + "...");
-            const sender = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + ")",
-                message = "*You got a gift!*\n" + sender + " just sent you 1 beercoin 💰 !";
+            const message = "*You got a gift!*\n" + bot.getUserLink(ctx.session.user) + " just sent you 1 beercoin 💰 !";
             require('../bot').bot.telegram.sendMessage(giftUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
@@ -126,8 +125,7 @@ scene.on("callback_query", ctx => {
                             ctx.reply("Something went wrong!");
                             return console.error(err);
                         }
-                        const giftedUser = "[" + (giftUser.telegram.first_name + (giftUser.telegram.last_name ? (" " + giftUser.telegram.last_name) : "")) + "](tg://user?id=" + giftUser.telegram.id + ")";
-                        ctx.reply(giftedUser + " got your beercoin 💰 !", {
+                        ctx.reply(bot.getUserLink(giftUser) + " got your beercoin 💰 !", {
                             parse_mode: "markdown"
                         });
                         if (!checkUser(ctx.session.user.role, userRoles.root)) {
@@ -189,19 +187,17 @@ function formatNews(news, topUsers, dailyOrders, premium) {
 
     if (topUsers && topUsers.length) {
         let user = topUsers[0],
-            userLink = "[" + (user.telegram.first_name + (user.telegram.last_name ? (" " + user.telegram.last_name) : "")) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
+            userLink = bot.getUserLink(user) + " (" + user.points + ")";
         text += "\n\n*Top user*: 🥇 " + userLink;
     }
 
     if (dailyOrders && dailyOrders.length) {
-        let dailyWinner = dailyOrders[0].owner,
-            dailyOrderWinnerLink = "[" + (dailyWinner.telegram.first_name + (dailyWinner.telegram.last_name ? (" " + dailyWinner.telegram.last_name) : "")) + "](tg://user?id=" + dailyWinner.telegram.id + ")";
-        text += "\n\n*Daily winner*: 🍺 " + dailyOrderWinnerLink + " was the first to place the daily order!";
+        let dailyWinner = dailyOrders[0].owner;
+        text += "\n\n*Daily winner*: 🍺 " + bot.getUserLink(dailyWinner) + " was the first to place the daily order!";
 
         if (!moment().isBefore(moment(dailyOrders[0].menu.deadline))) {
-            let dailyLooser = dailyOrders[dailyOrders.length - 1].owner,
-                dailyOrderLooserLink = "[" + (dailyLooser.telegram.first_name + (dailyLooser.telegram.last_name ? (" " + dailyLooser.telegram.last_name) : "")) + "](tg://user?id=" + dailyLooser.telegram.id + ")";
-            text += "\n\n*Daily loser*: 💩 " + dailyOrderLooserLink + " was the last to place the daily order!";
+            let dailyLooser = dailyOrders[dailyOrders.length - 1].owner;
+            text += "\n\n*Daily loser*: 💩 " + bot.getUserLink(dailyLooser) + " was the last to place the daily order!";
         }
     }
 
@@ -209,8 +205,7 @@ function formatNews(news, topUsers, dailyOrders, premium) {
         const activeSessions = bot.session.getTopSessions();
         if (activeSessions && activeSessions.length) {
             const s = activeSessions[0];
-            let sessionUserLink = "[" + (s.user.telegram.first_name + (s.user.telegram.last_name ? (" " + s.user.telegram.last_name) : "")) + "](tg://user?id=" + s.user.telegram.id + ")";
-            text += "\n\n*Most active user*: 🏃 " + sessionUserLink +
+            text += "\n\n*Most active user*: 🏃 " + bot.getUserLink(s.user) +
                 "\n*User sessions*: " + activeSessions.length;
         }
     }
@@ -224,7 +219,7 @@ function formatNews(news, topUsers, dailyOrders, premium) {
                 limit++;
             continue;
         }
-        let user = "[" + (n.owner.telegram.first_name + (n.owner.telegram.last_name ? (" " + n.owner.telegram.last_name) : "")) + "](tg://user?id=" + n.owner.telegram.id + ")",
+        let user = bot.getUserLink(n.owner),
             date = moment(n.createdAt).format('Do MMMM YYYY'),
             hour = moment(n.createdAt).format('HH:mm');
         if (actualDate != date) {
@@ -241,10 +236,10 @@ function formatNews(news, topUsers, dailyOrders, premium) {
                 text += " lost " + (n.points * -1) + " slot points 🎰";
             } else {
                 if (n.robbedUser != undefined) {
-                    user = "[" + (n.robbedUser.telegram.first_name + (n.robbedUser.telegram.last_name ? (" " + n.robbedUser.telegram.last_name) : "")) + "](tg://user?id=" + n.robbedUser.telegram.id + ")";
+                    user = bot.getUserLink(n.robbedUser);
                     text += " stole 💰 " + n.points + " beercoins from " + user;
                 } else if (n.bombedUser != undefined) {
-                    user = "[" + (n.bombedUser.telegram.first_name + (n.bombedUser.telegram.last_name ? (" " + n.bombedUser.telegram.last_name) : "")) + "](tg://user?id=" + n.bombedUser.telegram.id + ")";
+                    user = bot.getUserLink(n.bombedUser);
                     text += " sent 💣 " + n.points + " bombs to " + user;
                 } else {
                     text += " won " + n.points + " slot points 🎰"

@@ -147,6 +147,11 @@ bot.use((ctx, next) => {
   }
 });
 
+function getUserLink(u){
+  return "[" + (u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "")) + "](tg://user?id=" + u.telegram.id + ")";
+}
+exports.getUserLink = getUserLink;
+
 function showWelcomeMessage(ctx) {
   const msg = "Hey! my name is *BiteTheBot*!\nI do things.\nType \"register\" to register yourself."
   ctx.reply(msg, keyboards.register(ctx).opts);
@@ -388,7 +393,7 @@ function decodeWit(ctx, witResponse) {
           for (let i = 0; i < activeSessions.length; i++) {
             const s = activeSessions[i];
             if (s.user) {
-              let userLink = "[" + (s.user.telegram.first_name + (s.user.telegram.last_name ? (" " + s.user.telegram.last_name) : "")) + "](tg://user?id=" + s.user.telegram.id + ") (" + s.counter + ")";
+              let userLink = getUserLink(s.user) + " (" + s.counter + ")";
               msg += "\n- " + userLink;
             } else {
               msg += "\n - Unregistered user";
@@ -425,7 +430,7 @@ function decodeWit(ctx, witResponse) {
                 msg = []
                 for (let i = 0; i < topUsers.length; i++) {
                   let user = topUsers[i],
-                    userLink = "[" + (user.telegram.first_name + (user.telegram.last_name ? (" " + user.telegram.last_name) : "")) + "](tg://user?id=" + user.telegram.id + ") (" + user.points + ")";
+                    userLink = getUserLink(user) + " (" + user.points + ")";
                   switch (i) {
                     case 0:
                       msg.push("🥇 " + userLink);
@@ -595,7 +600,7 @@ function mentionHandler(ctx) {
       break;
     }
     if (mention.toLowerCase() == 'all') {
-      let message = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text;
+      let message = getUserLink(ctx.session.user) + ": " + ctx.message.text;
       broadcastMessage(message, accessLevels.user, null, false, {
         _id: {
           "$ne": ctx.session.user._id
@@ -607,7 +612,7 @@ function mentionHandler(ctx) {
       if (err) {
         ctx.reply("Cannot broadcast a mention message:\n" + err, keyboards.btb(ctx).opts);
       } else {
-        let message = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + "): " + ctx.message.text,
+        let message = getUserLink(ctx.session.user) + ": " + ctx.message.text,
           userMessage = "Broadcast service",
           userHasOrdered = false,
           counter = 0;
@@ -764,7 +769,7 @@ function formatUsersWithoutOrder(users, user) {
   let text = "Users who didn't place an order:\n";
   for (let i = 0; i < users.length; i++) {
     let u = users[i];
-    text = text + "\n - [" + (u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "")) + "](tg://user?id=" + u.telegram.id + ")";
+    text = text + "\n - " + getUserLink(u);
     if (u._id.equals(user._id)) {
       text = text + " (*You*)";
     }
@@ -808,7 +813,7 @@ function formatOrder(order, user) {
   if (tableUsers && tableUsers.length) {
     for (let i = 0; i < tableUsers.length; i++) {
       let tableUser = tableUsers[i];
-      text = text + "\n - [" + (tableUser.telegram.first_name + (tableUser.telegram.last_name ? (" " + tableUser.telegram.last_name) : "")) + "](tg://user?id=" + tableUser.telegram.id + ")";
+      text = text + "\n - " + getUserLink(tableUser);
       if (tableUser._id.equals(user._id)) {
         text = text + " (*You*)";
       }
@@ -857,10 +862,8 @@ function formatTables(tables, user) {
       text = text + " (" + tableOrders.length + "/" + table.seats + "):";
       for (let i = 0; i < tableOrders.length; i++) {
         let tableUser = tableOrders[i].owner,
-          userOrder = tableOrders[i],
-          username = (tableUser.telegram.first_name + (tableUser.telegram.last_name ? (" " + tableUser.telegram.last_name) : "")); //.replace(/[^a-zA-Z ]/g, "");
-        text = text + "\n - [" + username + "](tg://user?id=" + tableUser.telegram.id + ")";
-        //text = text + "\n - " + username + "";
+          userOrder = tableOrders[i];
+        text = text + "\n - " + getUserLink(tableUser);
         if (tableUser._id.equals(user._id)) {
           text = text + " (*You*)";
         }

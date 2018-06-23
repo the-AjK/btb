@@ -748,8 +748,7 @@ scene.on("callback_query", ctx => {
             }
             deleteLastMessage(ctx);
             ctx.answerCbQuery("Sending bomb to " + bombUser.telegram.first_name + "...");
-            const sender = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + ")",
-                message = "Boom! " + sender + " just sent you " + ctx.session.slot.bombPoints() + " bombs 💣 !";
+            const message = "Boom! " + bot.getUserLink(ctx.session.user) + " just sent you " + ctx.session.slot.bombPoints() + " bombs 💣 !";
             require('../bot').bot.telegram.sendMessage(bombUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
@@ -759,8 +758,7 @@ scene.on("callback_query", ctx => {
                         ctx.reply("Something went wrong!");
                         return console.error(err);
                     }
-                    const bombedUser = "[" + (bombUser.telegram.first_name + (bombUser.telegram.last_name ? (" " + bombUser.telegram.last_name) : "")) + "](tg://user?id=" + bombUser.telegram.id + ")";
-                    ctx.reply(bombedUser + " got your bombs and lost " + points + " points 😬 !", {
+                    ctx.reply(bot.getUserLink(bombUser) + " got your bombs and lost " + points + " points 😬 !", {
                         parse_mode: "markdown"
                     });
                     ctx.session.slot.bombSent = true;
@@ -796,8 +794,7 @@ scene.on("callback_query", ctx => {
             }
             deleteLastMessage(ctx);
             ctx.answerCbQuery("Stealing beercoins from " + robbedUser.telegram.first_name + "...");
-            const sender = "[" + (ctx.session.user.telegram.first_name + (ctx.session.user.telegram.last_name ? (" " + ctx.session.user.telegram.last_name) : "")) + "](tg://user?id=" + ctx.session.user.telegram.id + ")",
-                message = "Ops! " + sender + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
+            const message = "Ops! " + bot.getUserLink(ctx.session.user) + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
             require('../bot').bot.telegram.sendMessage(robbedUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
@@ -807,8 +804,7 @@ scene.on("callback_query", ctx => {
                         ctx.reply("Something went wrong!");
                         return console.error(err);
                     }
-                    const robUser = "[" + (robbedUser.telegram.first_name + (robbedUser.telegram.last_name ? (" " + robbedUser.telegram.last_name) : "")) + "](tg://user?id=" + robbedUser.telegram.id + ")";
-                    ctx.reply("You stole " + beercoins + " beercoins from " + robUser + " 😬 !", {
+                    ctx.reply("You stole " + beercoins + " beercoins from " + bot.getUserLink(robbedUser) + " 😬 !", {
                         parse_mode: "markdown"
                     }).then(() => {
                         levels.addPoints(ctx.session.user._id, beercoins, false, (err) => {

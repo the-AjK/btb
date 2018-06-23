@@ -85,8 +85,7 @@ function autoDrink() {
 
 function addBeer(ctx) {
     if (drunkBot && beerLock.username != ctx.session.user.username) {
-        const username = "[" + (lastUserBeer.telegram.first_name + (lastUserBeer.telegram.last_name ? (" " + lastUserBeer.telegram.last_name) : "")) + "](tg://user?id=" + lastUserBeer.telegram.id + ")";
-        ctx.reply("😵 " + username + " got me drunk!", {
+        ctx.reply("😵 " + bot.getUserLink(lastUserBeer) + " got me drunk!", {
             parse_mode: "markdown"
         });
         console.log("Drunk beer from: " + ctx.session.user.email);
@@ -104,8 +103,7 @@ function addBeer(ctx) {
                 parse_mode: "markdown"
             });
         } else if (beerLock.username != ctx.session.user.username) {
-            const username = "[" + (beerLock.telegram.first_name + (beerLock.telegram.last_name ? (" " + beerLock.telegram.last_name) : "")) + "](tg://user?id=" + beerLock.telegram.id + ")";
-            ctx.reply("Wait wait, I can get one beer at time!\nI'm still drinking the " + username + "'s one!", {
+            ctx.reply("Wait wait, I can get one beer at time!\nI'm still drinking the " + bot.getUserLink(beerLock) + "'s one!", {
                 parse_mode: "markdown"
             });
         } else {
