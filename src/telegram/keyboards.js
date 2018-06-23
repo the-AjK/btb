@@ -642,7 +642,7 @@ module.exports = {
                 news: "🗞 Newspaper",
                 shield: "🛡 Bomb Shield",
                 gun: "🔫 Anti-Thief WaterGun",
-                gift: "💰 Gift",
+                trade: "💰 Trading",
                 back: "◀️ Back to extra"
             };
 
@@ -657,7 +657,7 @@ module.exports = {
         }]);
 
         keyboard.push([{
-            text: cmd.gift
+            text: cmd.trade
         }]);
 
         keyboard.push([{
@@ -690,26 +690,6 @@ module.exports = {
                     }]
                 ],
                 text = "Get latest BTB news";
-            ctx.reply(text, {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: inline_keyboard
-                })
-            }).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
-        }
-
-        obj[cmd.gift] = () => {
-            let inline_keyboard = [
-                    [{
-                        text: 'Send (1 credit)',
-                        callback_data: 'gift'
-                    }]
-                ],
-                text = "Give a beercoin to a friend!";
             ctx.reply(text, {
                 parse_mode: "markdown",
                 force_reply: true,

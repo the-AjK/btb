@@ -9,7 +9,6 @@ const Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     async = require("async"),
     moment = require("moment"),
-    PaginatedInlineKeyboard = require("../tools/paginatedInlineKeyboard").PaginatedInlineKeyboard,
     roles = require("../../roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
@@ -50,6 +49,8 @@ function textManager(ctx) {
 
     if (keyboards.shop(ctx)[ctx.message.text]) {
         keyboards.shop(ctx)[ctx.message.text]();
+    } else if (ctx.message.text == keyboards.shop(ctx).cmd.trade) {
+        ctx.scene.enter('tradeWizard');
     } else if (ctx.message.text == keyboards.shop(ctx).cmd.back) {
         //back button
         ctx.scene.enter('extra');
@@ -62,14 +63,6 @@ function textManager(ctx) {
 
 scene.on("text", textManager);
 
-function updateUsersKeyboard(ctx) {
-    require('../bot').bot.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
-        inline_keyboard: ctx.session.users_inline_keyboard.render()
-    }).then((m) => {
-        ctx.session.lastMessage = m;
-    });
-}
-
 scene.on("callback_query", ctx => {
 
     if (levels.getLevel(ctx.session.user.points) < 1 && !checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
@@ -78,106 +71,22 @@ scene.on("callback_query", ctx => {
     }
 
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-    if (ctx.session.users_inline_keyboard && ctx.update.callback_query.data == ctx.session.users_inline_keyboard.previousCallbackData()) {
-        ctx.session.users_inline_keyboard.previous();
-        updateUsersKeyboard(ctx);
-    } else if (ctx.session.users_inline_keyboard && ctx.update.callback_query.data == ctx.session.users_inline_keyboard.nextCallbackData()) {
-        ctx.session.users_inline_keyboard.next();
-        updateUsersKeyboard(ctx);
-    } else if (ctx.update.callback_query.data == "gun") {
+    if (ctx.update.callback_query.data == "gun") {
         deleteLastMessage(ctx);
         ctx.reply('Not in stock. Try again later');
     } else if (ctx.update.callback_query.data == "shield") {
         deleteLastMessage(ctx);
         ctx.reply('Not in stock. Try again later');
-    } else if (ctx.update.callback_query.data == "gift") {
-        selectGiftUser(ctx);
     } else if (ctx.update.callback_query.data == "news") {
         sendNews(ctx);
     } else if (ctx.update.callback_query.data == "newspremium") {
         sendNews(ctx, true);
-    } else if (ctx.update.callback_query.data.indexOf("usergift_") == 0) {
-        const userTelegramID = parseInt(ctx.update.callback_query.data.substring(9));
-        if (isNaN(userTelegramID)) {
-            console.error("Wrong callback data");
-            return ctx.answerCbQuery("Something went wrong!");
-        }
-        DB.User.findOne({
-            "telegram.id": userTelegramID
-        }, (err, giftUser) => {
-            if (err || !giftUser) {
-                console.error(err || "Gift user not found");
-                return ctx.answerCbQuery("Something went wrong!");
-            }
-            deleteLastMessage(ctx);
-            ctx.answerCbQuery("Sending gift to " + giftUser.telegram.first_name + "...");
-            const message = "*You got a gift!*\n" + bot.getUserLink(ctx.session.user) + " just sent you 1 beercoin 💰 !";
-            require('../bot').bot.telegram.sendMessage(giftUser.telegram.id, message, {
-                parse_mode: "markdown"
-            }).then(() => {
-                levels.removePoints(ctx.session.user._id, 1, true, (e, p) => {
-                    if (err) {
-                        ctx.reply("Something went wrong!");
-                        return console.error(err);
-                    }
-                    levels.addPoints(giftUser._id, 1, true, (err, _points) => {
-                        if (err) {
-                            ctx.reply("Something went wrong!");
-                            return console.error(err);
-                        }
-                        ctx.reply(bot.getUserLink(giftUser) + " got your beercoin 💰 !", {
-                            parse_mode: "markdown"
-                        });
-                        if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                            bot.broadcastMessage("User *" + ctx.session.user.email + "* sent 1 beercoin to *" + giftUser.email + "*", accessLevels.root, null, true);
-                        }
-                    });
-                });
-            });
-        });
     } else {
         ctx.answerCbQuery("Okey! I have nothing to do.");
     }
 });
 
 exports.scene = scene;
-
-function selectGiftUser(ctx) {
-    deleteLastMessage(ctx);
-    DB.User.find({
-        "_id": {
-            "$ne": ctx.session.user._id
-        },
-        "telegram.enabled": true,
-        "telegram.banned": false,
-        deleted: false
-    }, (err, users) => {
-        if (err) {
-            ctx.reply("Something went wrong!");
-            console.error(err);
-        } else {
-            let data = users.map(u => {
-                    return {
-                        text: u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "") + " (" + u.points + ")",
-                        callback_data: "usergift_" + String(u.telegram.id)
-                    };
-                }),
-                options = {
-                    columns: 2,
-                    pageSize: 6
-                };
-            ctx.session.users_inline_keyboard = new PaginatedInlineKeyboard(data, options);
-            ctx.reply("Beercoin gift 💰 !\nWho do you want to send it to?", {
-                parse_mode: "markdown",
-                reply_markup: JSON.stringify({
-                    inline_keyboard: ctx.session.users_inline_keyboard.render()
-                })
-            }).then((m) => {
-                ctx.session.lastMessage = m;
-            });
-        }
-    });
-}
 
 function formatNews(news, topUsers, dailyOrders, premium) {
     let text = "*~~~ Latest BiteTheBot News" + (premium ? " (Premium)" : "") + " ~~~*",

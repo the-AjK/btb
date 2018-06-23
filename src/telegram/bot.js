@@ -57,6 +57,7 @@ bot.catch(err => {
 
 // Scene manager
 const stage = new Stage()
+stage.register(require('./scenes/trade').trade)
 stage.register(require('./scenes/order').scene)
 stage.register(require('./scenes/order').firstCourse)
 stage.register(require('./scenes/order').secondCourse)
