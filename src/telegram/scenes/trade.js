@@ -117,12 +117,9 @@ function sendBeerCoins(ctx) {
     });
 }
 
-
 function updateUsersKeyboard(ctx) {
     ctx.telegram.editMessageReplyMarkup(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, {
         inline_keyboard: ctx.session.users_inline_keyboard.render()
-    }).then((m) => {
-        ctx.session.lastMessage = m;
     });
 }
 
