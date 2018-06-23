@@ -350,7 +350,7 @@ function sendNews(ctx, premium) {
             ctx.reply(formatNews(results, result[3], result[4], premium), {
                 parse_mode: "markdown"
             });
-            if (premium) {
+            if (premium && !roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
                 levels.removePoints(ctx.session.user._id, 1, true, (err, p) => {
                     if (err) {
                         console.error(err);
