@@ -40,13 +40,13 @@ const theme = createMuiTheme({
   palette: {
     primary: {
       light: grey[300],
-      main: grey[500],
-      dark: grey[600]
+      main: grey[400],
+      dark: grey[500]
     },
     secondary: {
-      light: grey[200],
-      main: grey[300],
-      dark: grey[400]
+      light: grey[300],
+      main: grey[400],
+      dark: grey[500]
     }
   }
 });
