@@ -150,7 +150,7 @@ function buyShield(ctx) {
 
 function formatNews(news, topUsers, dailyOrders, premium) {
     let text = "*~~~ Latest BiteTheBot News" + (premium ? " (Premium)" : "") + " ~~~*",
-        newsListLenght = premium ? 90 : 60,
+        newsListLenght = premium ? 70 : 50,
         limit = news.length > newsListLenght ? newsListLenght : news.length,
         actualDate;
 
