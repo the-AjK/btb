@@ -705,7 +705,7 @@ module.exports = {
         obj[cmd.shield] = () => {
             let inline_keyboard = [
                     [{
-                        text: 'Buy a bombshield (1 credit)',
+                        text: 'Buy a bombshield (5 credits)',
                         callback_data: 'shield'
                     }]
                 ],
@@ -730,7 +730,7 @@ module.exports = {
         obj[cmd.gun] = () => {
             let inline_keyboard = [
                     [{
-                        text: 'Buy a watergun (1 credit)',
+                        text: 'Buy a watergun (5 credits)',
                         callback_data: 'gun'
                     }]
                 ],
