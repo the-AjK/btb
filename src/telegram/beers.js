@@ -88,7 +88,7 @@ function addBeer(ctx) {
         ctx.reply("😵 " + bot.getUserLink(lastUserBeer) + " got me drunk!", {
             parse_mode: "markdown"
         });
-        console.log("Drunk beer from: " + ctx.session.user.email);
+        console.log("Drunk beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
         return;
     } else if (drunkBot) {
         ctx.reply("😵 You got me drunk!", {

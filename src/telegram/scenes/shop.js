@@ -73,10 +73,10 @@ scene.on("callback_query", ctx => {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     if (ctx.update.callback_query.data == "gun") {
         deleteLastMessage(ctx);
-        ctx.reply('Not in stock. Try again later');
+        buyGun(ctx);
     } else if (ctx.update.callback_query.data == "shield") {
         deleteLastMessage(ctx);
-        ctx.reply('Not in stock. Try again later');
+        buyShield(ctx);
     } else if (ctx.update.callback_query.data == "news") {
         sendNews(ctx);
     } else if (ctx.update.callback_query.data == "newspremium") {
@@ -88,9 +88,69 @@ scene.on("callback_query", ctx => {
 
 exports.scene = scene;
 
+function buyGun(ctx) {
+    const price = 5; //5beercoins
+    if (ctx.session.user.backpack.guns > 0) {
+        return ctx.reply("You already have a watergun 🔫 !");
+    } else if (ctx.session.user.points < price) {
+        return ctx.reply("You don't have enough beercoins!");
+    }
+    DB.User.findByIdAndUpdate(ctx.session.user._id, {
+        "$inc": {
+            "backpack.guns": 1
+        }
+    }, {
+        new: true
+    }, (err, user) => {
+        if (err) {
+            console.error(err);
+            return ctx.reply('Something went wrong!');
+        }
+        ctx.session.user = user;
+        ctx.reply('Here you are!\nYou just got a brand new *watergun* 🔫 !', {
+            parse_mode: "markdown"
+        });
+        levels.removePoints(ctx.session.user._id, price, true, (err) => {
+            if (err) {
+                console.error(err);
+            }
+        });
+    });
+}
+
+function buyShield(ctx) {
+    const price = 5; //5beercoins
+    if (ctx.session.user.backpack.shields > 0) {
+        return ctx.reply("You already have a bomb shield 🛡 !");
+    } else if (ctx.session.user.points < price) {
+        return ctx.reply("You don't have enough beercoins!");
+    }
+    DB.User.findByIdAndUpdate(ctx.session.user._id, {
+        "$inc": {
+            "backpack.shields": 1
+        }
+    }, {
+        new: true
+    }, (err, user) => {
+        if (err) {
+            console.error(err);
+            return ctx.reply('Something went wrong!');
+        }
+        ctx.session.user = user;
+        ctx.reply('Here you are!\nYou just got a brand new *bomb shield* 🛡 !', {
+            parse_mode: "markdown"
+        });
+        levels.removePoints(ctx.session.user._id, price, true, (err) => {
+            if (err) {
+                console.error(err);
+            }
+        });
+    });
+}
+
 function formatNews(news, topUsers, dailyOrders, premium) {
     let text = "*~~~ Latest BiteTheBot News" + (premium ? " (Premium)" : "") + " ~~~*",
-        newsListLenght = premium ? 90 : 60,
+        newsListLenght = premium ? 70 : 50,
         limit = news.length > newsListLenght ? newsListLenght : news.length,
         actualDate;
 
@@ -123,7 +183,7 @@ function formatNews(news, topUsers, dailyOrders, premium) {
 
     for (let i = 0; i < limit; i++) {
         let n = news[i];
-        if (!premium && n.type != undefined || !n.owner) {
+        if ((!premium && n.type != undefined && !n.drunk) || !n.owner) {
             if (news.length > limit)
                 limit++;
             continue;

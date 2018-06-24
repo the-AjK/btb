@@ -765,6 +765,47 @@ scene.on("callback_query", ctx => {
                 return ctx.answerCbQuery("Something went wrong!");
             }
             deleteLastMessage(ctx);
+            if (bombUser.backpack.shields > 0) {
+                //the selected user has a bomb shield!
+                ctx.answerCbQuery(bombUser.telegram.first_name + " is using a bomb shield!");
+                bombUser.backpack.shields -= 1;
+                bombUser.save((err) => {
+                    if (err) {
+                        ctx.reply("Something went wrong!");
+                        return console.error(err);
+                    }
+                    ctx.reply(bot.getUserLink(bombUser) + " used a bomb shield 🛡 !", {
+                        parse_mode: "markdown"
+                    });
+                    const points = ctx.session.slot.bombPoints();
+                    levels.removePoints(ctx.session.user._id, points, false, (err, _points) => {
+                        if (err) {
+                            ctx.reply("Something went wrong!");
+                            return console.error(err);
+                        }
+                        ctx.telegram.sendMessage(bombUser.telegram.id, "Your bomb shield neutralized " + bot.getUserLink(ctx.session.user) + "'s bombs.\n" + bot.getUserLink(ctx.session.user) + " lost " + points + " points 😬 !", {
+                            parse_mode: "markdown"
+                        });
+                        ctx.session.slot.bombSent = true;
+                        if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                            bot.broadcastMessage("User *" + ctx.session.user.email + "* sent " + points + " bombs to *" + bombUser.email + "* but found a bombshield", accessLevels.root, null, true);
+                        }
+                        //Save slot event
+                        const slotRun = new DB.SlotEvent({
+                            owner: ctx.session.user._id,
+                            bombedUser: bombUser._id,
+                            shield: true,
+                            points: points
+                        });
+                        slotRun.save((err, s) => {
+                            if (err) {
+                                console.error(err);
+                            }
+                        });
+                    });
+                });
+                return;
+            }
             ctx.answerCbQuery("Sending bomb to " + bombUser.telegram.first_name + "...");
             const message = "Boom! " + bot.getUserLink(ctx.session.user) + " just sent you " + ctx.session.slot.bombPoints() + " bombs 💣 !";
             ctx.telegram.sendMessage(bombUser.telegram.id, message, {
@@ -811,6 +852,51 @@ scene.on("callback_query", ctx => {
                 return ctx.answerCbQuery("Something went wrong!");
             }
             deleteLastMessage(ctx);
+            if (robbedUser.backpack.guns > 0) {
+                //the selected user has a watergun!
+                ctx.answerCbQuery(robbedUser.telegram.first_name + " is using a watergun!");
+                robbedUser.backpack.guns -= 1;
+                robbedUser.save((err) => {
+                    if (err) {
+                        ctx.reply("Something went wrong!");
+                        return console.error(err);
+                    }
+                    ctx.reply(bot.getUserLink(robbedUser) + " used a watergun 🔫 !", {
+                        parse_mode: "markdown"
+                    });
+                    const beercoins = ctx.session.slot.robPoints();
+                    levels.removePoints(ctx.session.user._id, beercoins, false, (err, _points) => {
+                        if (err) {
+                            ctx.reply("Something went wrong!");
+                            return console.error(err);
+                        }
+                        ctx.telegram.sendMessage(robbedUser.telegram.id, bot.getUserLink(ctx.session.user) + " got wet with your watergun!.\n" + bot.getUserLink(ctx.session.user) + " left " + beercoins + " beercoins for you 😬 !", {
+                            parse_mode: "markdown"
+                        }).then(() => {
+                            levels.addPoints(robbedUser._id, beercoins, false, (err) => {
+                                if (err)
+                                    console.error(err);
+                            });
+                        });
+                        if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                            bot.broadcastMessage("User *" + ctx.session.user.email + "* stole " + beercoins + " beercoins from *" + robbedUser.email + "* but found a watergun", accessLevels.root, null, true);
+                        }
+                        //Save slot event
+                        const slotRun = new DB.SlotEvent({
+                            owner: ctx.session.user._id,
+                            robbedUser: robbedUser._id,
+                            gun: true,
+                            points: beercoins
+                        });
+                        slotRun.save((err, s) => {
+                            if (err) {
+                                console.error(err);
+                            }
+                        });
+                    });
+                });
+                return;
+            }
             ctx.answerCbQuery("Stealing beercoins from " + robbedUser.telegram.first_name + "...");
             const message = "Ops! " + bot.getUserLink(ctx.session.user) + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
             ctx.telegram.sendMessage(robbedUser.telegram.id, message, {

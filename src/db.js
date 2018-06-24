@@ -130,6 +130,18 @@ const UserSchema = new mongoose.Schema({
   dailySlot: {
     type: Date
   },
+  backpack: {
+    guns: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    shields: {
+      type: Number,
+      min: 0,
+      default: 0
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -351,9 +363,17 @@ const SlotEventSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
+  shield: {
+    type: Boolean,
+    default: false
+  },
   robbedUser: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+  },
+  gun: {
+    type: Boolean,
+    default: false
   },
   points: {
     type: Number,
