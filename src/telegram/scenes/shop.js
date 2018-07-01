@@ -201,7 +201,7 @@ function formatNews(news, topUsers, dailyOrders, premium) {
             text += " sent 💰 " + n.quantity + " beercoins to " + bot.getUserLink(n.recipient);
         } else if (n.rating != undefined) {
             //rating stuff
-            text += " gave  ⭐️ " + n.rating + " stars to the daily lunch";
+            text += " gave ⭐️ " + n.rating + " stars to the daily lunch";
         } else if (n.level != undefined) {
             //levelup stuff
             text += " level up! 🔝";
