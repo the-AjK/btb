@@ -650,8 +650,8 @@ function _updateMenu(req, res) {
                         } else if (oldMenu.enabled && !(moment(data.day).isSame(moment(oldMenu.day), 'day'))) {
                             console.warn("Changing menu data when menu is enabled its not allowed")
                             return res.sendStatus(400);
-                        } else if (oldMenu.enabled && !data.enabled && moment(data.day).isBefore(moment(), 'day')) {
-                            console.warn("Once enabled its not possible to disable the old menus");
+                        } else if (oldMenu.enabled && moment(data.day).isBefore(moment(), 'day')) {
+                            console.warn("Cannot edit old menus");
                             return res.sendStatus(400);
                         }
                         DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
