@@ -20,14 +20,6 @@ const Scene = require('telegraf/scenes/base'),
     bot = require('../bot'),
     ACTIONS = bot.ACTIONS;
 
-function shuffle(a) {
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-}
-
 class Slot {
     constructor(row, col, colElements) {
         this._row = row;
@@ -56,7 +48,7 @@ class Slot {
                     j--;
                 }
             }
-            shuffle(this._slot[i]);
+            utils.shuffle(this._slot[i]);
         }
     }
 

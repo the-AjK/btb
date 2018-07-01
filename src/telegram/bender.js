@@ -5,6 +5,8 @@
  */
 "use strict";
 
+const utils = require('../utils');
+
 const quotes = [{
         id: "",
         tags: ["friend", "sad"],
@@ -187,18 +189,6 @@ const quotes = [{
     }
 ]
 
-function randomInt(low, high) {
-    return Math.floor(Math.random() * (high - low) + low);
-}
-
-function shuffle(a) {
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-}
-
 function getTagQuotes(tags) {
     let q = [];
     for (let i = 0; i < tags.length; i++) {
@@ -212,8 +202,8 @@ function getTagQuotes(tags) {
 }
 
 exports.getRandomTagQuote = function (tags) {
-    const q = shuffle(getTagQuotes(tags));
-    return q[randomInt(0, q.length)].text;
+    const q = utils.shuffle(getTagQuotes(tags));
+    return q[utils.getRandomInt(0, q.length)].text;
 }
 
 //exports.quotes = quotes;
