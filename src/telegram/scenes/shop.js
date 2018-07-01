@@ -246,64 +246,16 @@ function sendNews(ctx, premium) {
     //Res0
     funList.push(function () {
         return (cb) => {
-            DB.BeerEvent.find(null, null, {
+            DB.GenericEvent.find(null, null, {
                 sort: {
                     createdAt: -1
                 },
-                limit: 50
-            }).populate('owner').exec(cb);
+                limit: 70
+            }).populate('owner').populate('recipient').populate('bombedUser').populate('robbedUser').exec(cb);
         }
     }());
 
     //Res1
-    funList.push(function () {
-        return (cb) => {
-            DB.RatingEvent.find(null, null, {
-                sort: {
-                    createdAt: -1
-                },
-                limit: 50
-            }).populate('owner').exec(cb);
-        }
-    }());
-
-    //Res2
-    funList.push(function () {
-        return (cb) => {
-            DB.LevelEvent.find(null, null, {
-                sort: {
-                    createdAt: -1
-                },
-                limit: 50
-            }).populate('owner').exec(cb);
-        }
-    }());
-
-    //Res3
-    funList.push(function () {
-        return (cb) => {
-            DB.TradeEvent.find(null, null, {
-                sort: {
-                    createdAt: -1
-                },
-                limit: 50
-            }).populate('owner').populate('recipient').exec(cb);
-        }
-    }());
-
-    //Res4
-    funList.push(function () {
-        return (cb) => {
-            DB.SlotEvent.find(null, null, {
-                sort: {
-                    createdAt: -1
-                },
-                limit: 50
-            }).populate('owner').populate('bombedUser').populate('robbedUser').exec(cb);
-        }
-    }());
-
-    //Res5
     funList.push(function () {
         return (cb) => {
             DB.Order.find({
@@ -316,17 +268,19 @@ function sendNews(ctx, premium) {
                 sort: {
                     createdAt: -1
                 },
-                limit: 100
+                limit: 50
             }).populate('owner').exec(cb);
         }
     }());
 
+    //Res2
     funList.push(function () {
         return (cb) => {
             DB.getTopTenUsers(cb);
         }
     }());
 
+    //Res3
     funList.push(function () {
         return (cb) => {
             DB.getDailyOrders(null, (err, res) => {
@@ -342,7 +296,7 @@ function sendNews(ctx, premium) {
         if (err) {
             console.error(err);
         } else {
-            const results = result[0].concat(result[1]).concat(result[2]).concat(result[3]).concat(result[4]).concat(result[5]);
+            const results = result[0].concat(result[1]);
             //desc createdAt sorting
             results.sort((t1, t2) => {
                 if (t1.createdAt > t2.createdAt) {
@@ -354,7 +308,7 @@ function sendNews(ctx, premium) {
                 }
             });
             deleteLastMessage(ctx);
-            ctx.reply(formatNews(results, result[6], result[7], premium), {
+            ctx.reply(formatNews(results, result[2], result[3], premium), {
                 parse_mode: "markdown"
             });
             if (premium && !checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
