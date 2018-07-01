@@ -615,10 +615,15 @@ function runSlot(ctx) {
         if (err) {
             console.error(err);
         } else if (isLoser) {
-            console.log("Loser user -> forceWin slot")
-            while (runResult != 2) {
+            console.log("Loser user -> try forceWin slot")
+            let i = 0;
+            while (runResult != 2 && i < 1000) {
                 slotRun = generateRandomRun(ctx.session.slot);
                 runResult = isWinningRun(ctx, slotRun);
+                i += 1;
+            }
+            if (i == 1000) {
+                console.warn("Cannot generate winning slot")
             }
         }
         loserCheck = true;
