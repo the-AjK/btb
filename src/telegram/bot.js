@@ -357,11 +357,6 @@ function defaultAnswer(ctx) {
     }).then(() => {
       replies(ctx, msg, keyboards.btb(ctx).opts);
     });
-    levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
-      if (err) {
-        console.error(err);
-      }
-    });
   } else {
     ctx.replyWithSticker({
       source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
