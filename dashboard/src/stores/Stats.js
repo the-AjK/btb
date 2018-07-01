@@ -18,6 +18,7 @@ export default class Stats {
             usersPending: 0,
             orders: 0,
             ordersStats: {},
+            tablesStats: {},
             menus: 0,
             dailyMenu: {},
             isLoading: false,
@@ -58,6 +59,7 @@ export default class Stats {
                     this.setField("users", -1);
                     this.setField("dailyOrders", -1);
                     this.setField("ordersStats", {});
+                    this.setField("tablesStats", {});
                     this.setField("orders", -1);
                     this.setField("menus", -1);
                     this.setField("usersPending", -1);
@@ -67,6 +69,7 @@ export default class Stats {
                     this.setField("users", res.body.users);
                     this.setField("dailyOrders", res.body.dailyOrders);
                     this.setField("ordersStats", res.body.ordersStats);
+                    this.setField("tablesStats", res.body.tablesStats);
                     this.setField("orders", res.body.orders);
                     this.setField("menus", res.body.menus);
                     this.setField("usersPending", res.body.usersPending);
@@ -80,6 +83,7 @@ export default class Stats {
                     this.setField("usersPending", -1);
                     this.setField("dailyMenu", {});
                     this.setField("ordersStats", {});
+                    this.setField("tablesStats", {});
                     this.setField("usersWithoutOrder", []);
                     err = "Data not available!";
                     this.setError(err);

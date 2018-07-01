@@ -1142,6 +1142,14 @@ exports.getStats = function (req, res) {
                 callback(null, users);
             });
         },
+        tablesStats: (callback) => {
+            DB.getTablesStatus(null, (err, tablesStats) => {
+                if (err) {
+                    return callback(null, {});
+                }
+                callback(null, tablesStats);
+            })
+        },
         ordersStats: (callback) => {
             DB.getDailyOrderStats(null, (err, stats) => {
                 if (err) {
@@ -1155,11 +1163,11 @@ exports.getStats = function (req, res) {
             })
         },
         dailyOrders: (callback) => {
-            DB.getDailyOrdersCount(null, (err, res) => {
+            DB.getDailyOrdersCount(null, (err, dailyOrders) => {
                 if (err) {
                     callback(null, 0)
                 } else {
-                    callback(null, res);
+                    callback(null, dailyOrders);
                 }
             });
         },
@@ -1176,25 +1184,26 @@ exports.getStats = function (req, res) {
             DB.Menu.findOne(query).populate('tables').populate({
                 path: 'owner',
                 select: 'username email _id'
-            }).exec((err, res) => {
+            }).exec((err, results) => {
                 if (err) {
                     callback(null)
                 } else {
-                    callback(null, res);
+                    callback(null, results);
                 }
             });
         }
     }, (err, results) => {
         if (err)
             console.error(err);
-        stats.users = results.users;
-        stats.usersPending = results.usersPending;
-        stats.usersWithoutOrder = results.usersWithoutOrder;
-        stats.menus = results.menus;
-        stats.orders = results.orders;
-        stats.ordersStats = results.ordersStats;
-        stats.dailyOrders = results.dailyOrders;
+        stats.users = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.users : undefined;
+        stats.usersPending = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.usersPending : undefined;
+        stats.usersWithoutOrder = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.usersWithoutOrder : undefined;
+        stats.menus = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.menus : undefined;
+        stats.orders = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.orders : undefined;
+        stats.ordersStats = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.ordersStats : undefined;
+        stats.dailyOrders = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.dailyOrders : undefined;
         stats.dailyMenu = results.dailyMenu;
+        stats.tablesStats = results.tablesStats;
         res.send(stats);
     });
 }
