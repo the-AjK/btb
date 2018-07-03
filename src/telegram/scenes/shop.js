@@ -79,7 +79,7 @@ scene.on("callback_query", ctx => {
         buyShield(ctx);
     } else if (ctx.update.callback_query.data == "hp") {
         deleteLastMessage(ctx);
-        ctx.scene.enter('hp');
+        bot.enterScene(ctx, 'hp');
     } else if (ctx.update.callback_query.data == "news") {
         sendNews(ctx);
     } else if (ctx.update.callback_query.data == "newspremium") {

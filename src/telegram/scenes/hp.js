@@ -14,6 +14,7 @@ const Scene = require('telegraf/scenes/base'),
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
     levels = require('../../levels'),
+    utils = require('../../utils'),
     DB = require("../../db"),
     bot = require('../bot'),
     ACTIONS = bot.ACTIONS;
@@ -64,9 +65,9 @@ class HP {
             if (err) {
                 console.error(err);
                 this.ctx.answerCbQuery("Something went wrong!");
-                return this.exit();
+                return bot.leaveScene(this.ctx, true);
             } else {
-                //TODO random sort users
+                utils.shuffle(users);
                 const data = users.map(u => {
                     return {
                         text: u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : ""),
@@ -77,7 +78,6 @@ class HP {
                     columns: 2,
                     pageSize: 6
                 });
-
                 this.ctx.reply("Who do you want to send it to?", {
                     parse_mode: "markdown",
                     reply_markup: JSON.stringify({
@@ -86,7 +86,6 @@ class HP {
                 }).then((k) => {
                     this.keyboardMessage = k;
                 });
-
             }
         });
     }
@@ -115,7 +114,6 @@ class HP {
 
     startGame(ctx) {
         this.ctx = ctx;
-        this.startPlayer = ctx.session.user;
         this.owner = ctx.session.user;
         this.history = [];
         this.isRunning = true;
@@ -146,7 +144,7 @@ class HP {
             //TODO save event with history
             console.log("GAME OVER " + this.owner.email);
             this.isRunning = false;
-            this.exit();
+            bot.leaveScene(this.ctx, true);
         });
     }
 
@@ -166,22 +164,12 @@ class HP {
             parse_mode: "markdown"
         });
 
-        this.exit();
+        bot.leaveScene(this.ctx, true);
         //New user
         this.owner = user;
         this.sendCountdown();
         console.log("GAME switch " + this.owner.email);
 
-    }
-
-    exit(){
-        if(this.startPlayer._id == this.ctx.session.user._id){
-            //startPlayer, back to extra shop
-            this.ctx.scene.enter('extra');
-        }else{
-            //normal user, exit
-            this.ctx.scene.leave();
-        }
     }
 
     getCountdownText() {
@@ -198,12 +186,13 @@ scene.enter((ctx) => {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
 
     //TODO check credits and remove them
+    console.log('start hp ' + ctx.scene.state.backTo)
 
     if (HotPotato.isRunning) {
         ctx.reply("The Hot Potato is still bouncing in " + bot.getUserLink(HotPotato.owner) + "'s hands!\nPlease wait until the game ends!", {
             parse_mode: "markdown"
         });
-        return ctx.scene.enter('extra');
+        return ctx.scene.enter('shop', {}, true);
     }
 
     HotPotato.startGame(ctx);
@@ -224,6 +213,7 @@ function updateUsersKeyboard(ctx) {
 }
 
 exports.handleHP = (ctx) => {
+    bot.enterScene(ctx, 'hp', true);
     HotPotato.handleHP(ctx);
 }
 
@@ -242,7 +232,7 @@ scene.on("callback_query", ctx => {
         if (isNaN(userTelegramID)) {
             console.error("Wrong callback data");
             ctx.answerCbQuery("Something went wrong!");
-            return HotPotato.exit();
+            return bot.leaveScene(this.ctx, true);
         }
         DB.User.findOne({
             "telegram.id": userTelegramID
@@ -250,7 +240,7 @@ scene.on("callback_query", ctx => {
             if (err || !nextPlayer) {
                 console.error(err || "HP user not found");
                 ctx.answerCbQuery("Something went wrong!");
-                return HotPotato.exit();
+                return bot.leaveScene(this.ctx, true);
             }
             HotPotato.nextPlayer(nextPlayer);
         });
