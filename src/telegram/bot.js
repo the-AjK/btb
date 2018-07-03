@@ -7,6 +7,7 @@
 
 const Telegraf = require("telegraf"),
   Session = require('./session'),
+  Scene = require('telegraf/scenes/base'),
   Stage = require('telegraf/stage'),
   rateLimit = require("telegraf-ratelimit"),
   uuidv1 = require('uuid/v1'),
@@ -55,8 +56,35 @@ bot.catch(err => {
   console.error("Ooops", err);
 });
 
+//Main bot scene
+const mainScene = new Scene('main');
+mainScene.enter((ctx) => {
+  //console.log("enter main")
+  textManager(ctx);
+});
+/*mainScene.leave((ctx) => {
+  console.log("exit main")
+});*/
+
+//Utility function to enter a scene with the backTo sceneID
+function enterScene(ctx, sceneID, silent) {
+  //console.log("enter wrapper " + sceneID)
+  ctx.scene.enter(sceneID, {
+    backTo: ctx.scene.current.id
+  }, silent);
+}
+exports.enterScene = enterScene;
+
+//Utility function to leave a scene to the backTo sceneID
+function leaveScene(ctx, silent) {
+  //console.log("leave wrapper")
+  ctx.scene.enter(ctx.scene.state.backTo, {}, silent);
+}
+exports.leaveScene = leaveScene;
+
 // Scene manager
 const stage = new Stage()
+stage.register(mainScene);
 stage.register(require('./scenes/trade').trade)
 stage.register(require('./scenes/order').scene)
 stage.register(require('./scenes/order').firstCourse)
@@ -110,8 +138,7 @@ bot.use((ctx, next) => {
           }
           return;
         } else if (ctx.message && ctx.message.text && ctx.message.text.toLowerCase().indexOf('/start') == 0) {
-          showWelcomeMessage(ctx);
-          return;
+          return ctx.reply("Hey! my name is *BiteTheBot*!\nI do things.\nType \"register\" to register yourself.", keyboards.register(ctx).opts);
         } else {
           //for other messages lets discard the request
           ctx.reply(keyboards.register(ctx).text, keyboards.register(ctx).opts);
@@ -149,29 +176,16 @@ bot.use((ctx, next) => {
   }
 });
 
+//After auth middleware, enter the main scene
+bot.use((ctx, next) => {
+  ctx.scene.enter('main');
+});
+
+//Utility function to get the markdown user link
 function getUserLink(u) {
   return "[" + (u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "")) + "](tg://user?id=" + u.telegram.id + ")";
 }
 exports.getUserLink = getUserLink;
-
-function showWelcomeMessage(ctx) {
-  const msg = "Hey! my name is *BiteTheBot*!\nI do things.\nType \"register\" to register yourself."
-  ctx.reply(msg, keyboards.register(ctx).opts);
-}
-
-bot.on("callback_query", ctx => {
-  if (ctx.session.lastMessage) {
-    ctx.deleteMessage(ctx.session.lastMessage.message_id);
-    delete ctx.session.lastMessage;
-  }
-  if (ctx.update.callback_query.data == 'unsubscribe') {
-    require('./scenes/settings').unsubscribe(ctx);
-  } else if (ctx.update.callback_query.data == "throwhp") {
-    require('./scenes/hp').handleHP(ctx);
-  } else {
-    ctx.answerCbQuery("Hmm, this options is not available anymore!");
-  }
-});
 
 // sequentialReplies wrapper with constant interval
 function replies(ctx, messages, opts, callback) {
@@ -270,6 +284,11 @@ exports.typingEffect = typingEffect;
 
 function textManager(ctx) {
 
+  if (!ctx.message.text) {
+    //media stuff handler
+    return mediaHandler(ctx);
+  }
+
   if (parseMention(ctx).length > 0)
     return mentionHandler(ctx);
 
@@ -284,7 +303,7 @@ function textManager(ctx) {
     });
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.order) {
     ctx.session.mainCounter = 0;
-    ctx.scene.enter('order');
+    enterScene(ctx, 'order');
   } else if (ctx.message.text == keyboards.settings(ctx).cmd.unsubscribe) {
     ctx.session.mainCounter = 0;
     keyboards.settings(ctx)[ctx.message.text]();
@@ -292,10 +311,10 @@ function textManager(ctx) {
     keyboards.btb(ctx)[ctx.message.text]();
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.settings) {
     ctx.session.mainCounter = 0;
-    ctx.scene.enter('settings');
+    enterScene(ctx, 'settings');
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.extra) {
     ctx.session.mainCounter = 0;
-    ctx.scene.enter('extra');
+    enterScene(ctx, 'extra');
   } else {
     ctx.session.mainCounter++;
     client.message(ctx.message.text).then((response) => {
@@ -409,7 +428,7 @@ function decodeWit(ctx, witResponse) {
         }
         return ctx.reply(msg, keyboards.btb(ctx).opts);
       case "order":
-        ctx.scene.enter('order');
+        enterScene(ctx, 'order');
         break;
       case "areyoudrunk":
         if (require('./beers').botIsDrunk()) {
@@ -575,6 +594,8 @@ function decodeWit(ctx, witResponse) {
 }
 
 function parseMention(ctx) {
+  if (!ctx.message.text)
+    return [];
   //ctx.message.entities = [ { offset: 0, length: 7, type: 'mention' } ]
   if (ctx.message.text.toLowerCase().indexOf('@all ') >= 0) {
     return ['all'];
@@ -671,22 +692,47 @@ bot.mention(['@tables', '@table', '@Tables', '@Table', '@all', '@All'], (ctx) =>
   mentionHandler(ctx);
 });
 
-bot.on("text", textManager);
+mainScene.on("text", textManager);
 
-// Handle unsupported types
-bot.on(['document', 'video', 'sticker', 'photo'], (ctx) => {
-  //bad answer
-  ctx.replyWithChatAction(ACTIONS.GENERAL_FILES);
-  console.log("Unsupported message type from: " + ctx.session.user.email);
-  if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
-    broadcastMessage("Unsupported message type from: " + ctx.session.user.email, accessLevels.root, null, true);
+mainScene.on("callback_query", ctx => {
+  if (ctx.session.lastMessage) {
+    ctx.deleteMessage(ctx.session.lastMessage.message_id);
+    delete ctx.session.lastMessage;
   }
-  ctx.replyWithSticker({
-    source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
-  }).then(() => {
-    replies(ctx, bender.getRandomTagQuote(["ass"]));
-  });
+  if (ctx.update.callback_query.data == 'unsubscribe') {
+    require('./scenes/settings').unsubscribe(ctx);
+  } else if (ctx.update.callback_query.data == "throwhp") {
+    require('./scenes/hp').handleHP(ctx);
+  } else {
+    ctx.answerCbQuery("Hmm, this options is not available anymore!");
+  }
 });
+
+function mediaHandler(ctx) {
+  if (ctx.message.audio || ctx.message.voice) {
+    if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
+      broadcastMessage("Got voice from: " + ctx.session.user.email, accessLevels.root, null, true);
+    }
+    if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+      ctx.replyWithChatAction(ACTIONS.RECORD_AUDIO);
+      console.log("Sent voice answer to " + ctx.session.user.email);
+      sendTTSVoice(ctx, "Hey " + ctx.session.user.telegram.first_name + ", bite my metal shiny ass!");
+    }
+  } else if (ctx.message.document || ctx.message.video || ctx.message.sticker || ctx.message.photo) {
+    ctx.replyWithChatAction(ACTIONS.GENERAL_FILES);
+    ctx.replyWithSticker({
+      source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
+    }, keyboards.btb(ctx).opts).then(() => {
+      replies(ctx, bender.getRandomTagQuote(["ass"]));
+    });
+  } else {
+    console.log("Unsupported message type from: " + ctx.session.user.email);
+    console.log(ctx.message)
+    if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
+      broadcastMessage("Unsupported message type from: " + ctx.session.user.email, accessLevels.root, null, true);
+    }
+  }
+}
 
 function sendTTSVoice(ctx, text, options) {
   googleTTS(text, 'en-US', 1.5)
@@ -694,21 +740,14 @@ function sendTTSVoice(ctx, text, options) {
       ctx.telegram.sendVoice(ctx.chat.id, {
         url: url,
         filename: "BTB voice"
-      });
+      }, keyboards.btb(ctx).opts);
     }).catch(function (err) {
       console.error(err.stack);
     });
 }
 
-bot.on(['audio', 'voice'], (ctx) => {
-  if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
-    broadcastMessage("Got voice from: " + ctx.session.user.email, accessLevels.root, null, true);
-  }
-  if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-    ctx.replyWithChatAction(ACTIONS.RECORD_AUDIO);
-    console.log("Sent voice answer to " + ctx.session.user.email);
-    sendTTSVoice(ctx, "Hey " + ctx.session.user.telegram.first_name + ", bite my metal shiny ass!");
-  }
+bot.on(['document', 'video', 'sticker', 'photo', 'audio', 'voice'], (ctx) => {
+  mediaHandler(ctx);
 });
 
 function formatWiki() {
