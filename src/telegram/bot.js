@@ -324,8 +324,8 @@ function textManager(ctx) {
       //console.log(JSON.stringify(response))
       if (response.entities && response.entities.number && response.entities.number.length >= 0) {
         const number = response.entities.number[0].value;
-        console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [-number-]");
         if (response.entities.intent && response.entities.intent.length >= 0 && response.entities.intent[0].value == 'insertcoins') {
+          console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [-number-]");
           if (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
             return levels.addPoints(ctx.session.user._id, number, true, (err) => {
               if (err) {
@@ -338,6 +338,7 @@ function textManager(ctx) {
             return ctx.reply("401 - Unauthorized", keyboards.btb(ctx).opts);
           }
         } else if (!response.entities.intent || (response.entities.intent && response.entities.intent.length >= 0 && response.entities.intent[0].value != 'toptenuser')) {
+          console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [-number-]");
           return request('http://numbersapi.com/' + number, {
             json: true
           }, (err, res, body) => {
