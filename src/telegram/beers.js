@@ -12,6 +12,7 @@ const schedule = require('node-schedule'),
     checkUser = roles.checkUser,
     userRoles = roles.userRoles,
     accessLevels = roles.accessLevels,
+    ReadWriteLock = require('rwlock'),
     levels = require('../levels'),
     bot = require('./bot'),
     DB = require("../db"),
@@ -22,7 +23,8 @@ let beerLock = null,
     lastUserBeer,
     drunkBot = false,
     autoDrinkRange = 60000 * 30, //30mins
-    drinkingSchedule;
+    drinkingSchedule,
+    lock = new ReadWriteLock();
 
 exports.botIsDrunk = function () {
     return drunkBot;
@@ -35,14 +37,18 @@ function drinkBeer(user) {
         maxDrunkDrinkingTime = 60000 * 30 * 5; //2,5h
     let drinkingTime = Math.round(utils.getRandomInt(minDrinkingTime, maxDrinkingTime));
     beerLock = user;
+    lastUserBeer = user;
     if (drunkBot) {
         drinkingTime = Math.round(utils.getRandomInt(minDrunkDrinkingTime, maxDrunkDrinkingTime));
     }
     console.log("Beer lock for: " + beerLock.email + " [" + Math.round(drinkingTime / 60000) + "mins]");
     setTimeout(() => {
-        beerLock = null;
-        drunkBot = false;
-        console.log("Beer unlocked")
+        lock.writeLock('beer', function (release) {
+            beerLock = null;
+            drunkBot = false;
+            console.log("Beer unlocked");
+            release();
+        });
     }, drinkingTime);
 }
 
@@ -84,92 +90,95 @@ function autoDrink() {
 }
 
 function addBeer(ctx) {
-    if (drunkBot && beerLock.username != ctx.session.user.username) {
-        ctx.reply("😵 " + bot.getUserLink(lastUserBeer) + " got me drunk!", {
-            parse_mode: "markdown"
-        });
-        console.log("Drunk beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
-        return;
-    } else if (drunkBot) {
-        ctx.reply("😵 You got me drunk!", {
-            parse_mode: "markdown"
-        });
-        console.log("Drunk beer from: " + ctx.session.user.email);
-        return;
-    }
-    if (beerLock != null) {
-        if (beerLock.username == "BiteTheBot") {
-            ctx.reply("Wait wait, I'm drinking my own beer!\nI can get one beer at time!", {
+    lock.readLock('beer', function (release) {
+        if (drunkBot && beerLock.username != ctx.session.user.username) {
+            ctx.reply("😵 " + bot.getUserLink(lastUserBeer) + " got me drunk!", {
                 parse_mode: "markdown"
             });
-        } else if (beerLock.username != ctx.session.user.username) {
-            ctx.reply("Wait wait, I can get one beer at time!\nI'm still drinking the " + bot.getUserLink(beerLock) + "'s one!", {
+            console.log("Drunk beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
+            return release();
+        } else if (drunkBot) {
+            ctx.reply("😵 You got me drunk!", {
                 parse_mode: "markdown"
             });
-        } else {
-            ctx.reply("Wait wait, I can get one beer at time!", {
-                parse_mode: "markdown"
-            });
+            console.log("Drunk beer from: " + ctx.session.user.email);
+            return release();
         }
-        console.log("Locked beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
-    } else {
-        if (lastUserBeer && lastUserBeer.email == ctx.session.user.email && levels.getLevel(ctx.session.user.points) > 0) {
-            drunkBot = true;
-        } else {
-            lastUserBeer = ctx.session.user;
-        }
-        //set the addBeer flag
-        ctx.session.addBeer = true;
-        drinkBeer(ctx.session.user);
-        const type = ctx.update.callback_query.data,
-            newBeer = new DB.BeerEvent({
-                owner: ctx.session.user._id,
-                drunk: drunkBot,
-                type: (type == 'pint' ? 1 : 0)
-            });
-        newBeer.save((err, beer) => {
-            if (err) {
-                console.error(err);
-                ctx.session.addBeer = false;
-                ctx.reply("Something went wrong...");
-                return;
+        if (beerLock != null) {
+            if (beerLock.username == "BiteTheBot") {
+                ctx.reply("Wait wait, I'm drinking my own beer!\nI can get one beer at time!", {
+                    parse_mode: "markdown"
+                });
+            } else if (beerLock.username != ctx.session.user.username) {
+                ctx.reply("Wait wait, I can get one beer at time!\nI'm still drinking the " + bot.getUserLink(beerLock) + "'s one!", {
+                    parse_mode: "markdown"
+                });
+            } else {
+                ctx.reply("Wait wait, I can get one beer at time!", {
+                    parse_mode: "markdown"
+                });
             }
-            //TODO send beer image
-            ctx.reply("Oh yeah, let me drink it...");
-            ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-            setTimeout(() => {
-                if (drunkBot) {
-                    ctx.reply("😵 You got me drunk!");
-                    levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
-                        if (err) {
-                            ctx.session.addBeer = false;
-                            console.error(err);
-                            return;
-                        }
-                        if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                            bot.broadcastMessage("New drunk beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
-                        }
-                        ctx.session.addBeer = false;
-                        //console.log("New drunk beer from: " + ctx.session.user.email + " (" + points + ")");
-                    });
-                } else {
-                    ctx.reply("Thank you bro!");
-                    levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
-                        if (err) {
-                            ctx.session.addBeer = false;
-                            console.error(err);
-                            return;
-                        }
-                        if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                            bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
-                        }
-                        ctx.session.addBeer = false;
-                        //console.log("New beer from: " + ctx.session.user.email + " (" + points + ")");
-                    });
+            console.log("Locked beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
+            return release();
+        } else {
+            if (lastUserBeer && lastUserBeer.email == ctx.session.user.email && levels.getLevel(ctx.session.user.points) > 0) {
+                drunkBot = true;
+            }
+            //set the addBeer flag
+            ctx.session.addBeer = true;
+            drinkBeer(ctx.session.user);
+            const type = ctx.update.callback_query.data,
+                newBeer = new DB.BeerEvent({
+                    owner: ctx.session.user._id,
+                    drunk: drunkBot,
+                    type: (type == 'pint' ? 1 : 0)
+                });
+            newBeer.save((err, beer) => {
+                if (err) {
+                    console.error(err);
+                    ctx.session.addBeer = false;
+                    ctx.reply("Something went wrong...");
+                    return release();
                 }
-            }, type == 'pint' ? 3000 : 2000)
-        });
-    }
+                //TODO send beer image
+                ctx.reply("Oh yeah, let me drink it...");
+                ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
+                setTimeout(() => {
+                    if (drunkBot) {
+                        ctx.reply("😵 You got me drunk!");
+                        levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
+                            if (err) {
+                                ctx.session.addBeer = false;
+                                console.error(err);
+                                return release();
+                            }
+                            if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                                bot.broadcastMessage("New drunk beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
+                            }
+                            ctx.session.addBeer = false;
+                            //console.log("New drunk beer from: " + ctx.session.user.email + " (" + points + ")");
+                            return release();
+                        });
+                    } else {
+                        ctx.reply("Thank you bro!");
+                        levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
+                            if (err) {
+                                ctx.session.addBeer = false;
+                                console.error(err);
+                                return release();
+                            }
+                            if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                                bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
+                            }
+                            ctx.session.addBeer = false;
+                            //console.log("New beer from: " + ctx.session.user.email + " (" + points + ")");
+                            return release();
+                        });
+                    }
+                }, type == 'pint' ? 3000 : 2000)
+            });
+        }
+    });
 }
 exports.addBeer = addBeer;
 
