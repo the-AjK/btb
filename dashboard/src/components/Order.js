@@ -9,7 +9,6 @@ import { observer, inject } from "mobx-react";
 import { extendObservable, action } from "mobx";
 import { withStyles } from "@material-ui/core/styles";
 import Grid from "@material-ui/core/Grid";
-import TextField from "@material-ui/core/TextField";
 import FormGroup from '@material-ui/core/FormGroup';
 import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
@@ -28,8 +27,6 @@ import FloatingSaveButton from "./buttons/FloatingSaveButton";
 import Select from "@material-ui/core/Select";
 import MenuItem from '@material-ui/core/MenuItem';
 import Checkbox from '@material-ui/core/Checkbox';
-
-import moment from 'moment';
 
 const styles = theme => ({
     root: {
@@ -56,7 +53,11 @@ const Order = inject("ctx")(
                     isLoading: true,
                     loadingMessage: "loading daily menu...",
                     isSaving: false,
-                    availableTables: [],
+                    sections: {
+                        firstCourse: false,
+                        secondCourse: false,
+                        tables: false
+                    },
                     order: {
                         owner: this.props.ctx.auth.user,
                         firstCourse: {},
@@ -78,31 +79,12 @@ const Order = inject("ctx")(
                                     alert(err)
                                 } else {
                                     this.order = order;
-                                    this.loadingMessage = "loading tables..."
-                                    this.props.ctx.tables.fetch(action((err, tables) => {
-                                        if (err) {
-                                            console.error(err);
-                                        } else if (tables) {
-                                            this.availableTables = tables.map(t => {
-                                                t.enabled = this.order.menu.tables.map(mt => mt._id).indexOf(t._id) >= 0;
-                                                return t;
-                                            });
-                                            this.isLoading = false;
-                                        }
-                                    }));
-                                }
-                            }));
-                        } else {
-                            this.loadingMessage = "loading tables..."
-                            this.props.ctx.tables.fetch(action((err, tables) => {
-                                if (err) {
-                                    console.error(err);
-                                    alert(err);
-                                } else if (tables) {
-                                    this.availableTables = tables;
                                     this.isLoading = false;
                                 }
                             }));
+                        } else {
+                            this.isLoading = false;
+                            //new daily order
                         }
                     } else {
                         this.showAlert("Error", "Daily menu not available yet", () => {
@@ -159,12 +141,22 @@ const Order = inject("ctx")(
             }
 
             handleChangeOwner = action(event => {
-                this.order.owner = event.target.value;
+                const userID = event.target.value;
+                for (let i = 0; i < this.props.ctx.users.users.length; i++) {
+                    if (this.props.ctx.users.users[i]._id === userID) {
+                        this.order.owner = this.props.ctx.users.users[i];
+                        return;
+                    }
+                }
+                this.order.owner = { _id: "", name: "Guest" }; //Guest user
             });
 
             handleFirstCourseChange = action(event => {
                 this.order.firstCourse.item = event.target.value;
                 this.order.firstCourse.condiment = null;
+                this.order.secondCourse = {
+                    sideDishes: []
+                };
             });
 
             handleCondimentChange = action(event => {
@@ -174,6 +166,11 @@ const Order = inject("ctx")(
             handleSecondCourseChange = action(event => {
                 this.order.secondCourse.item = event.target.value;
                 this.order.firstCourse = {};
+            });
+
+            handleTableChange = action(event => {
+                this.order.table = event.target.value;
+
             });
 
             handleSideDishesChange = action(event => {
@@ -257,16 +254,18 @@ const Order = inject("ctx")(
                                                 <Grid item xs={12}>
                                                     <h2>Owner</h2>
                                                     {this.id === "new" && <Select
-                                                        value={(this.order && this.order.owner && this.order.owner.email) || "None"}
-                                                        onChange={(e) => { this.handleChangeOwner(e) }}
+                                                        value={this.order.owner._id}
+                                                        onChange={this.handleChangeOwner}
                                                     >
-                                                        <MenuItem value={null}>None</MenuItem>
-                                                        {this.props.ctx.users.users && this.props.ctx.users.users.map((user, i) => { return (<MenuItem key={i} value={user.email}>{user.email}</MenuItem>) })}
+                                                        <MenuItem value={""}>Guest</MenuItem>
+                                                        {this.props.ctx.users.users && this.props.ctx.users.users.map(user => <MenuItem key={user._id} value={user._id}>{user.email}</MenuItem>)}
                                                     </Select>}
                                                     {this.id !== "new" && <p>{this.order.owner.email}</p>}
-                                                </Grid>}
+                                                </Grid>
+                                            }
+
                                             <Grid item xs={12}>
-                                                <ExpansionPanel expanded={true} onChange={() => { }}>
+                                                <ExpansionPanel expanded={this.sections.firstCourse} onChange={action((e, v) => this.sections.firstCourse = v)}>
                                                     <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
                                                         <Typography className={classes.heading}>First course</Typography>
                                                     </ExpansionPanelSummary>
@@ -288,26 +287,30 @@ const Order = inject("ctx")(
                                                             </Grid>
                                                             <Grid item xs={12} md={6}>
                                                                 <FormControl component="fieldset" required className={classes.formControl}>
-
                                                                     <FormLabel component="legend">Condiments</FormLabel>
-                                                                    {!availableCondiments.length && <p>No condiments available for the selected dish</p>}
-                                                                    {availableCondiments.length > 0 && <RadioGroup
+                                                                    <RadioGroup
                                                                         aria-label="condiment"
                                                                         name="condiment"
                                                                         className={classes.group}
                                                                         value={this.order.firstCourse.condiment}
                                                                         onChange={this.handleCondimentChange}
                                                                     >
-                                                                        {availableCondiments.map(c => <FormControlLabel value={c} control={<Radio />} label={c} />)}
-                                                                    </RadioGroup>}
+                                                                        {!availableCondiments.length && <FormControlLabel checked={true} disabled={true} value={""} control={<Radio />} label="No condiments available for the selected dish" />}
 
+                                                                        {availableCondiments.map(c => <FormControlLabel key={c} value={c} control={<Radio />} label={c} />)}
+
+                                                                        }
+                                                                    </RadioGroup>
                                                                 </FormControl>
                                                             </Grid>
 
                                                         </Grid>
                                                     </ExpansionPanelDetails>
                                                 </ExpansionPanel>
-                                                <ExpansionPanel expanded={true} onChange={() => { }}>
+                                            </Grid>
+
+                                            <Grid item xs={12}>
+                                                <ExpansionPanel expanded={this.sections.secondCourse} onChange={action((e, v) => this.sections.secondCourse = v)}>
                                                     <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
                                                         <Typography className={classes.heading}>Second course</Typography>
                                                     </ExpansionPanelSummary>
@@ -350,24 +353,44 @@ const Order = inject("ctx")(
                                             </Grid>
 
                                             <Grid item xs={12}>
+                                                <ExpansionPanel expanded={this.sections.tables} onChange={action((e, v) => this.sections.tables = v)}>
+                                                    <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                                                        <Typography className={classes.heading}>Tables</Typography>
+                                                    </ExpansionPanelSummary>
+                                                    <ExpansionPanelDetails>
+                                                        <Grid container>
+                                                            <Grid item xs={12}>
+                                                                <FormControl component="fieldset" required className={classes.formControl}>
+                                                                    <RadioGroup
+                                                                        aria-label="tables"
+                                                                        name="tables"
+                                                                        className={classes.group}
+                                                                        value={this.order.table}
+                                                                        onChange={this.handleTableChange}
+                                                                    >
+                                                                        {this.props.ctx.stats.dailyMenu.tables.map(t => <FormControlLabel key={t._id} disabled={false} value={t._id} control={<Radio />} label={t.name + " [" + this.props.ctx.stats.tablesStats[t._id].used + "/" + this.props.ctx.stats.tablesStats[t._id].total + "]"} />)}
+                                                                    </RadioGroup>
+                                                                </FormControl>
+                                                            </Grid>
+                                                        </Grid>
+                                                    </ExpansionPanelDetails>
+                                                </ExpansionPanel>
+                                            </Grid>
+
+                                            <Grid item xs={12}>
                                                 {JSON.stringify(this.order)}
+
+                                            </Grid>
+
+                                            <Grid item xs={12}>
 
                                                 {JSON.stringify(this.props.ctx.stats.dailyMenu)}
                                             </Grid>
 
+                                            <Grid item xs={12}>
 
-
-
-
-
-
-
-
-
-
-
-
-
+                                                {JSON.stringify(this.props.ctx.stats)}
+                                            </Grid>
 
 
                                         </Grid>

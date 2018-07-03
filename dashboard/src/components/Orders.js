@@ -209,9 +209,9 @@ const Orders = inject("ctx")(
                                 store={this.props.ctx.orders}
                                 showPagination={true}
                             />
-                            {false && <FloatingAddButton
+                            <FloatingAddButton
                                 onClick={() => this.props.ctx.history.push('/orders/new')}
-                            />}
+                            />
                         </Grid>
                     </Grid>
                 );
