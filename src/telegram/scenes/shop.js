@@ -203,7 +203,7 @@ function formatNews(news, topUsers, dailyOrders, premium) {
         text += "\n_" + hour + "_ - " + user;
         if (n.recipient != undefined) {
             //trade stuff
-            text += " sent 💰 " + n.quantity + " beercoins to " + bot.getUserLink(n.recipient);
+            text += " sent 💰 " + n.quantity + " beercoin" + (n.quantity > 1 ? "s" : "") + " to " + bot.getUserLink(n.recipient);
         } else if (n.rating != undefined) {
             //rating stuff
             text += " gave ⭐️ " + n.rating + " stars to the daily lunch";
@@ -222,10 +222,18 @@ function formatNews(news, topUsers, dailyOrders, premium) {
             } else {
                 if (n.robbedUser != undefined) {
                     user = bot.getUserLink(n.robbedUser);
-                    text += " stole 💰 " + n.points + " beercoins from " + user;
+                    if (n.gun) {
+                        text += " tried to steal " + n.points + " beercoins from " + user + " but found a watergun 🔫";
+                    } else {
+                        text += " stole 💰 " + n.points + " beercoins from " + user;
+                    }
                 } else if (n.bombedUser != undefined) {
                     user = bot.getUserLink(n.bombedUser);
-                    text += " sent 💣 " + n.points + " bombs to " + user;
+                    if (n.shield) {
+                        text += " tried to send " + n.points + " bombs to " + user + " but found a bombshield 🛡";
+                    } else {
+                        text += " sent 💣 " + n.points + " bombs to " + user;
+                    }
                 } else {
                     text += " won " + n.points + " slot points 🎰";
                 }
