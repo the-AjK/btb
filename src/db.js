@@ -683,7 +683,7 @@ exports.getDailyOrdersCount = (day, cb) => {
       Order.find({
         deleted: false,
         menu: menu._id
-      }).count().exec(cb)
+      }).countDocuments().exec(cb)
     } else {
       cb(err || "DB error");
     }

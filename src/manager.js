@@ -808,7 +808,7 @@ function _getOrders(req, res) {
         query.deleted = false;
     }
     if (!id) {
-        DB.Order.count(query, (err, totalOrders) => {
+        DB.Order.countDocuments(query, (err, totalOrders) => {
             if (err) {
                 console.error(err);
                 return res.sendStatus(500);
@@ -1263,24 +1263,24 @@ exports.getStats = function (req, res) {
 
     async.parallel({
         users: (callback) => {
-            DB.User.count({
+            DB.User.countDocuments({
                 deleted: false,
                 "telegram.enabled": true
             }, callback)
         },
         usersPending: (callback) => {
-            DB.User.count({
+            DB.User.countDocuments({
                 deleted: false,
                 "telegram.enabled": false
             }, callback)
         },
         menus: (callback) => {
-            DB.Menu.count({
+            DB.Menu.countDocuments({
                 deleted: false
             }, callback)
         },
         orders: (callback) => {
-            DB.Order.count({
+            DB.Order.countDocuments({
                 deleted: false
             }, callback)
         },
