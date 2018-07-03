@@ -109,12 +109,11 @@ const Menu = inject("ctx")(
                             menu.deadline = moment(menu.deadline).format("HH:mm");
                             menu.day = moment(menu.day).format("YYYY-MM-DD");
                             this.firstCoursesPanels = [];
-                            this.menu = menu;
                             for (let i = 0; i < menu.firstCourse.items.length; i++) {
-                                if (i > 1)
-                                    this.firstCoursesPanels.push(i)
+                                this.firstCoursesPanels.push(i)
                                 menu.firstCourse.items[i].key = i;
                             }
+                            this.menu = menu;
                             this.props.ctx.tables.fetch(action((err, tables) => {
                                 if (err) {
                                     console.error(err);
