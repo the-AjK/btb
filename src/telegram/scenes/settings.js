@@ -33,8 +33,6 @@ function textManager(ctx) {
         keyboards.settings(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.settings(ctx).cmd.reminders) {
         ctx.reply(keyboards.reminders(ctx).text, keyboards.reminders(ctx).opts);
-    } else if (ctx.message.text == keyboards.settings(ctx).cmd.slot) {
-        ctx.scene.enter('slot');
     } else if (keyboards.reminders(ctx)[ctx.message.text]) {
         keyboards.reminders(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.settings(ctx).cmd.about) {
@@ -86,7 +84,9 @@ scene.on("callback_query", ctx => {
     } else if (ctx.update.callback_query.data == 'unsubscribe') {
         unsubscribe(ctx);
     } else {
-        ctx.answerCbQuery("Okey! I have nothing to do.");
+        ctx.scene.leave();
+        //fallback to main bot scen
+        bot.callbackQueryManager(ctx);
     }
 });
 

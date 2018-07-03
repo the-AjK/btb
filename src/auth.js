@@ -101,6 +101,7 @@ exports.login = function (req, res) {
     } else if (user) {
       if (sha512(password, user.salt).hash === user.password) {
         const userData = {
+          _id: user._id,
           username: user.username,
           email: user.email,
           role: user.role,

@@ -20,14 +20,6 @@ const Scene = require('telegraf/scenes/base'),
     bot = require('../bot'),
     ACTIONS = bot.ACTIONS;
 
-function shuffle(a) {
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-}
-
 class Slot {
     constructor(row, col, colElements) {
         this._row = row;
@@ -56,7 +48,7 @@ class Slot {
                     j--;
                 }
             }
-            shuffle(this._slot[i]);
+            utils.shuffle(this._slot[i]);
         }
     }
 
@@ -449,7 +441,7 @@ function selectUserToRob(ctx) {
                 };
             ctx.session.users_inline_keyboard = new PaginatedInlineKeyboard(data, options);
             const beercoins = ctx.session.slot.robPoints();
-            console.log("User: " + ctx.session.user.email + " won " + beercoins + " beercoins");
+            console.log("User: " + ctx.session.user.email + " won " + beercoins + " beercoin bags");
             ctx.reply("You can steal " + beercoins + " beercoins 💰 !\nWho do you want to rob?", {
                 parse_mode: "markdown",
                 reply_markup: JSON.stringify({
@@ -623,10 +615,15 @@ function runSlot(ctx) {
         if (err) {
             console.error(err);
         } else if (isLoser) {
-            console.log("Loser user -> forceWin slot")
-            while (runResult != 2) {
+            console.log("Loser user -> try forceWin slot")
+            let i = 0;
+            while (runResult != 2 && i < 1000) {
                 slotRun = generateRandomRun(ctx.session.slot);
                 runResult = isWinningRun(ctx, slotRun);
+                i += 1;
+            }
+            if (i == 1000) {
+                console.warn("Cannot generate winning slot")
             }
         }
         loserCheck = true;
@@ -807,7 +804,7 @@ scene.on("callback_query", ctx => {
                 return;
             }
             ctx.answerCbQuery("Sending bomb to " + bombUser.telegram.first_name + "...");
-            const message = "Boom! " + bot.getUserLink(ctx.session.user) + " just sent you " + ctx.session.slot.bombPoints() + " bombs 💣 !";
+            const message = "*Boom!* " + bot.getUserLink(ctx.session.user) + " just sent you " + ctx.session.slot.bombPoints() + " bombs 💣 !";
             ctx.telegram.sendMessage(bombUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
@@ -898,7 +895,7 @@ scene.on("callback_query", ctx => {
                 return;
             }
             ctx.answerCbQuery("Stealing beercoins from " + robbedUser.telegram.first_name + "...");
-            const message = "Ops! " + bot.getUserLink(ctx.session.user) + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
+            const message = "*Ops!* " + bot.getUserLink(ctx.session.user) + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
             ctx.telegram.sendMessage(robbedUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
@@ -934,7 +931,9 @@ scene.on("callback_query", ctx => {
             });
         });
     } else {
-        ctx.answerCbQuery("Okey! I have nothing to do.");
+        ctx.scene.leave();
+        //fallback to main bot scen
+        bot.callbackQueryManager(ctx);
     }
 });
 

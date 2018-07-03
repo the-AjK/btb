@@ -5,6 +5,8 @@
  */
 "use strict";
 
+const utils = require('../utils');
+
 const quotes = [{
         id: "",
         tags: ["friend", "sad"],
@@ -187,18 +189,6 @@ const quotes = [{
     }
 ]
 
-function randomInt(low, high) {
-    return Math.floor(Math.random() * (high - low) + low);
-}
-
-function shuffle(a) {
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-}
-
 function getTagQuotes(tags) {
     let q = [];
     for (let i = 0; i < tags.length; i++) {
@@ -212,8 +202,38 @@ function getTagQuotes(tags) {
 }
 
 exports.getRandomTagQuote = function (tags) {
-    const q = shuffle(getTagQuotes(tags));
-    return q[randomInt(0, q.length)].text;
+    const q = utils.shuffle(getTagQuotes(tags));
+    return q[utils.getRandomInt(0, q.length)].text;
 }
 
 //exports.quotes = quotes;
+
+//Bender mind
+exports.mind = {
+    "hi": ["Hey!", "How are you?"],
+    "yes": ["Yes"],
+    "no": ["No!"],
+    "what": ["What?"],
+    "welcome": ["You are welcome!"],
+    "useragree": ["Good"],
+    "userlaugh": ["Hmm,", "Do I look like a joke?", "I'm not laughing!"],
+    "sad": ["That's sad!"],
+    "great": ["That's great!"],
+    "thanks": ["Thank you!"],
+    "icant": ["I can't do it"],
+    "yesiam": ["Yes! I am!"],
+    "noimnot": ["No, I'm not!"],
+    "arewefriends": ["Ehm,", "are we friends?"],
+    "imnotyourfriend": ["I'm not your friend"],
+    "shutdown": ["I'm sorry! This is a ROOT command only"],
+    "help": ["Do you need help?", "Use the custom keyboard to check my features", "or ask me something!"],
+    "botstatus": ["I'm ok!", "I'm always ok!"],
+    "changetable": ["Do you want to change your table?", "You shall delete your order and place a new one"],
+    "hungry": ["You know,", "I'm hungry, too."],
+    "howtogetpoints": ["To get more points you can give me a beer!", "or be the first to place a daily order", "or who knows 😜"],
+    "beers": ["Hmmm did you just said beers?", "Select 'extra' menu and send me one!", "or two 😁"],
+    "weather": ["Weather results will be implemented asap!", "Meanwhile let's drink a fresh beer!"],
+    "whoareyou": ["I'm BTB", "a telegram bot!"],
+    "whoisyourfather": ["Alberto Garbui wrote my code"],
+    "howtoratelunch": ["You can rate your lunch clicking on the 'order' button", "you can do it after 2pm if you placed a daily order", "and if you are a level 1 user! 😜"]
+};

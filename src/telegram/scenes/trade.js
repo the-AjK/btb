@@ -31,7 +31,10 @@ function leave(ctx) {
 
 function checkReEnter(ctx) {
     if (ctx.message) {
-        if (keyboards.shop(ctx).cmd.trade == ctx.message.text) {
+        if (ctx.message.text === "◀️ Back") {
+            leave(ctx);
+            return true;
+        } else if (keyboards.shop(ctx).cmd.trade == ctx.message.text) {
             deleteLastMessage(ctx);
             ctx.scene.enter('tradeWizard');
             return true;
@@ -65,13 +68,25 @@ function selectUser(ctx) {
                     pageSize: 6
                 };
             ctx.session.users_inline_keyboard = new PaginatedInlineKeyboard(data, options);
-            ctx.reply("*Beercoins trading!* 💰\nSend beercoins to your friends!\nSelect the recipient:", {
+            ctx.reply("*Beercoins trading!* 💰\nSend beercoins to your friends!", {
                 parse_mode: "markdown",
                 reply_markup: JSON.stringify({
-                    inline_keyboard: ctx.session.users_inline_keyboard.render()
+                    resize_keyboard: true,
+                    keyboard: [
+                        [{
+                            text: "◀️ Back"
+                        }]
+                    ]
                 })
-            }).then((m) => {
-                ctx.session.lastMessage = m;
+            }).then(() => {
+                ctx.reply("Select the recipient:", {
+                    parse_mode: "markdown",
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: ctx.session.users_inline_keyboard.render()
+                    })
+                }).then((m) => {
+                    ctx.session.lastMessage = m;
+                });
             });
         }
     });
@@ -190,7 +205,8 @@ const tradeWizard = new WizardScene('tradeWizard',
                 const quantity = parseInt(ctx.message.text);
                 deleteLastMessage(ctx);
                 if (isNaN(quantity)) {
-                    return askQuantity(ctx, "*Invalid value!*");
+                    //return askQuantity(ctx, "*Invalid value!*");
+                    return leave(ctx);
                 } else if (quantity < 1) {
                     return askQuantity(ctx, "*Ohh come on!*");
                 } else if (ctx.session.user.points < quantity) {

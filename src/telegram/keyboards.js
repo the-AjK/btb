@@ -502,6 +502,7 @@ module.exports = {
                 status: "📋 Status",
                 slot: "🎰 Slot",
                 shop: "🛍 Shop",
+                top: "🔝 Top ten",
                 nim: "🎱 NIM"
             };
 
@@ -528,11 +529,16 @@ module.exports = {
                 keyboard[keyboard.length - 1].push({
                     text: cmd.shop
                 });
+                keyboard[keyboard.length - 1].push({
+                    text: cmd.top
+                });
             }
         } else if (levels.getLevel(ctx.session.user.points) > 0) {
             //level 1 user
             keyboard.push([{
                 text: cmd.shop
+            }, {
+                text: cmd.top
             }]);
         }
 
@@ -643,6 +649,7 @@ module.exports = {
                 shield: "🛡 Bomb Shield",
                 gun: "🔫 Anti-Thief WaterGun",
                 trade: "💰 Trading",
+                hp: "🥔 Hot Potato",
                 back: "◀️ Back to extra"
             };
 
@@ -658,7 +665,9 @@ module.exports = {
 
         keyboard.push([{
             text: cmd.trade
-        }]);
+        }/*, {
+            text: cmd.hp
+        }*/]);
 
         keyboard.push([{
             text: cmd.back
@@ -690,6 +699,26 @@ module.exports = {
                     }]
                 ],
                 text = "Get latest BTB news";
+            ctx.reply(text, {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    inline_keyboard: inline_keyboard
+                })
+            }).then((msg) => {
+                //lets save the message to delete it afterward
+                ctx.session.lastMessage = msg;
+            });
+        }
+
+        obj[cmd.hp] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'Buy a Hot Potato (1 credit)',
+                        callback_data: 'hp'
+                    }]
+                ],
+                text = "Never play with fire!";
             ctx.reply(text, {
                 parse_mode: "markdown",
                 force_reply: true,

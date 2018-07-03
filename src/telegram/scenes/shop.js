@@ -77,12 +77,17 @@ scene.on("callback_query", ctx => {
     } else if (ctx.update.callback_query.data == "shield") {
         deleteLastMessage(ctx);
         buyShield(ctx);
+    } else if (ctx.update.callback_query.data == "hp") {
+        deleteLastMessage(ctx);
+        bot.enterScene(ctx, 'hp');
     } else if (ctx.update.callback_query.data == "news") {
         sendNews(ctx);
     } else if (ctx.update.callback_query.data == "newspremium") {
         sendNews(ctx, true);
     } else {
-        ctx.answerCbQuery("Okey! I have nothing to do.");
+        ctx.scene.leave();
+        //fallback to main bot scen
+        bot.callbackQueryManager(ctx);
     }
 });
 
@@ -198,10 +203,10 @@ function formatNews(news, topUsers, dailyOrders, premium) {
         text += "\n_" + hour + "_ - " + user;
         if (n.recipient != undefined) {
             //trade stuff
-            text += " sent 💰 " + n.quantity + " beercoins to " + bot.getUserLink(n.recipient);
+            text += " sent 💰 " + n.quantity + " beercoin" + (n.quantity > 1 ? "s" : "") + " to " + bot.getUserLink(n.recipient);
         } else if (n.rating != undefined) {
             //rating stuff
-            text += " gave  ⭐️ " + n.rating + " stars to the daily lunch";
+            text += " gave ⭐️ " + n.rating + " stars to the daily lunch";
         } else if (n.level != undefined) {
             //levelup stuff
             text += " level up! 🔝";
@@ -217,22 +222,40 @@ function formatNews(news, topUsers, dailyOrders, premium) {
             } else {
                 if (n.robbedUser != undefined) {
                     user = bot.getUserLink(n.robbedUser);
-                    text += " stole 💰 " + n.points + " beercoins from " + user;
+                    if (n.gun) {
+                        text += " tried to steal " + n.points + " beercoins from " + user + " but found a watergun 🔫";
+                    } else {
+                        text += " stole 💰 " + n.points + " beercoins from " + user;
+                    }
                 } else if (n.bombedUser != undefined) {
                     user = bot.getUserLink(n.bombedUser);
-                    text += " sent 💣 " + n.points + " bombs to " + user;
+                    if (n.shield) {
+                        text += " tried to send " + n.points + " bombs to " + user + " but found a bombshield 🛡";
+                    } else {
+                        text += " sent 💣 " + n.points + " bombs to " + user;
+                    }
                 } else {
-                    text += " won " + n.points + " slot points 🎰"
+                    text += " won " + n.points + " slot points 🎰";
                 }
             }
         } else if (n.type != undefined) {
             //beer stuff
-            text += " sent a beer 🍺"
+            text += " sent a beer 🍺";
             if (n.drunk) {
-                text += " and made the bot drunk 😵"
+                text += " and made the bot drunk 😵";
             }
         } else if (n.menu != undefined) {
-            text += " place a daily order 🍽"
+            //menu stuff
+            text += " place a daily order 🍽";
+        } else if (n.history != undefined) {
+            //HP stuff
+            const burnedUser = n.history.length ? n.history[n.history.length - 1].owner : n.owner;
+            text += " threw an HotPotato 🥔 ";
+            if (burnedUser.email != n.owner.email) {
+                text += "! " + bot.getUserLink(burnedUser) + " got burned!";
+            } else {
+                text += "and got burned!";
+            }
         }
     }
     return text;
@@ -246,64 +269,22 @@ function sendNews(ctx, premium) {
     //Res0
     funList.push(function () {
         return (cb) => {
-            DB.BeerEvent.find(null, null, {
-                sort: {
-                    createdAt: -1
-                },
-                limit: 50
-            }).populate('owner').exec(cb);
+            DB.GenericEvent.find(null, null, {
+                    sort: {
+                        createdAt: -1
+                    },
+                    limit: 70
+                })
+                .populate('history.owner')
+                .populate('owner')
+                .populate('recipient')
+                .populate('bombedUser')
+                .populate('robbedUser')
+                .exec(cb);
         }
     }());
 
     //Res1
-    funList.push(function () {
-        return (cb) => {
-            DB.RatingEvent.find(null, null, {
-                sort: {
-                    createdAt: -1
-                },
-                limit: 50
-            }).populate('owner').exec(cb);
-        }
-    }());
-
-    //Res2
-    funList.push(function () {
-        return (cb) => {
-            DB.LevelEvent.find(null, null, {
-                sort: {
-                    createdAt: -1
-                },
-                limit: 50
-            }).populate('owner').exec(cb);
-        }
-    }());
-
-    //Res3
-    funList.push(function () {
-        return (cb) => {
-            DB.TradeEvent.find(null, null, {
-                sort: {
-                    createdAt: -1
-                },
-                limit: 50
-            }).populate('owner').populate('recipient').exec(cb);
-        }
-    }());
-
-    //Res4
-    funList.push(function () {
-        return (cb) => {
-            DB.SlotEvent.find(null, null, {
-                sort: {
-                    createdAt: -1
-                },
-                limit: 50
-            }).populate('owner').populate('bombedUser').populate('robbedUser').exec(cb);
-        }
-    }());
-
-    //Res5
     funList.push(function () {
         return (cb) => {
             DB.Order.find({
@@ -316,17 +297,19 @@ function sendNews(ctx, premium) {
                 sort: {
                     createdAt: -1
                 },
-                limit: 100
+                limit: 50
             }).populate('owner').exec(cb);
         }
     }());
 
+    //Res2
     funList.push(function () {
         return (cb) => {
             DB.getTopTenUsers(cb);
         }
     }());
 
+    //Res3
     funList.push(function () {
         return (cb) => {
             DB.getDailyOrders(null, (err, res) => {
@@ -342,7 +325,7 @@ function sendNews(ctx, premium) {
         if (err) {
             console.error(err);
         } else {
-            const results = result[0].concat(result[1]).concat(result[2]).concat(result[3]).concat(result[4]).concat(result[5]);
+            const results = result[0].concat(result[1]);
             //desc createdAt sorting
             results.sort((t1, t2) => {
                 if (t1.createdAt > t2.createdAt) {
@@ -354,7 +337,7 @@ function sendNews(ctx, premium) {
                 }
             });
             deleteLastMessage(ctx);
-            ctx.reply(formatNews(results, result[6], result[7], premium), {
+            ctx.reply(formatNews(results, result[2], result[3], premium), {
                 parse_mode: "markdown"
             });
             if (premium && !checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {

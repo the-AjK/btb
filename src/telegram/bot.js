@@ -7,6 +7,7 @@
 
 const Telegraf = require("telegraf"),
   Session = require('./session'),
+  Scene = require('telegraf/scenes/base'),
   Stage = require('telegraf/stage'),
   rateLimit = require("telegraf-ratelimit"),
   uuidv1 = require('uuid/v1'),
@@ -55,8 +56,35 @@ bot.catch(err => {
   console.error("Ooops", err);
 });
 
+//Main bot scene
+const mainScene = new Scene('main');
+mainScene.enter((ctx) => {
+  //console.log("enter main")
+  textManager(ctx);
+});
+/*mainScene.leave((ctx) => {
+  console.log("exit main")
+});*/
+
+//Utility function to enter a scene with the backTo sceneID
+function enterScene(ctx, sceneID, silent) {
+  //console.log("enter wrapper " + sceneID)
+  ctx.scene.enter(sceneID, {
+    backTo: ctx.scene.current ? ctx.scene.current.id : undefined
+  }, silent);
+}
+exports.enterScene = enterScene;
+
+//Utility function to leave a scene to the backTo sceneID
+function leaveScene(ctx, silent) {
+  if (ctx.scene.state.backTo)
+    ctx.scene.enter(ctx.scene.state.backTo, {}, silent);
+}
+exports.leaveScene = leaveScene;
+
 // Scene manager
 const stage = new Stage()
+stage.register(mainScene);
 stage.register(require('./scenes/trade').trade)
 stage.register(require('./scenes/order').scene)
 stage.register(require('./scenes/order').firstCourse)
@@ -67,6 +95,7 @@ stage.register(require('./scenes/register').scene)
 stage.register(require('./scenes/orderRating').scene)
 stage.register(require('./scenes/slot').scene)
 stage.register(require('./scenes/shop').scene)
+stage.register(require('./scenes/hp').scene)
 stage.register(require('./scenes/nim').scene)
 
 const session = new Session({
@@ -109,8 +138,7 @@ bot.use((ctx, next) => {
           }
           return;
         } else if (ctx.message && ctx.message.text && ctx.message.text.toLowerCase().indexOf('/start') == 0) {
-          showWelcomeMessage(ctx);
-          return;
+          return ctx.reply("Hey! my name is *BiteTheBot*!\nI do things.\nType \"register\" to register yourself.", keyboards.register(ctx).opts);
         } else {
           //for other messages lets discard the request
           ctx.reply(keyboards.register(ctx).text, keyboards.register(ctx).opts);
@@ -148,27 +176,16 @@ bot.use((ctx, next) => {
   }
 });
 
+//After auth middleware, enter the main scene
+bot.use((ctx, next) => {
+  ctx.scene.enter('main');
+});
+
+//Utility function to get the markdown user link
 function getUserLink(u) {
   return "[" + (u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "")) + "](tg://user?id=" + u.telegram.id + ")";
 }
 exports.getUserLink = getUserLink;
-
-function showWelcomeMessage(ctx) {
-  const msg = "Hey! my name is *BiteTheBot*!\nI do things.\nType \"register\" to register yourself."
-  ctx.reply(msg, keyboards.register(ctx).opts);
-}
-
-bot.on("callback_query", ctx => {
-  if (ctx.session.lastMessage) {
-    ctx.deleteMessage(ctx.session.lastMessage.message_id);
-    delete ctx.session.lastMessage;
-  }
-  if (ctx.update.callback_query.data == 'unsubscribe') {
-    require('./scenes/settings').unsubscribe(ctx);
-  } else {
-    ctx.answerCbQuery("Hmm, this options is not available anymore!");
-  }
-});
 
 // sequentialReplies wrapper with constant interval
 function replies(ctx, messages, opts, callback) {
@@ -267,6 +284,14 @@ exports.typingEffect = typingEffect;
 
 function textManager(ctx) {
 
+  if (!ctx.message)
+    return;
+
+  if (!ctx.message.text) {
+    //media stuff handler
+    return mediaHandler(ctx);
+  }
+
   if (parseMention(ctx).length > 0)
     return mentionHandler(ctx);
 
@@ -281,7 +306,7 @@ function textManager(ctx) {
     });
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.order) {
     ctx.session.mainCounter = 0;
-    ctx.scene.enter('order');
+    enterScene(ctx, 'order');
   } else if (ctx.message.text == keyboards.settings(ctx).cmd.unsubscribe) {
     ctx.session.mainCounter = 0;
     keyboards.settings(ctx)[ctx.message.text]();
@@ -289,32 +314,32 @@ function textManager(ctx) {
     keyboards.btb(ctx)[ctx.message.text]();
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.settings) {
     ctx.session.mainCounter = 0;
-    ctx.scene.enter('settings');
+    enterScene(ctx, 'settings');
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.extra) {
     ctx.session.mainCounter = 0;
-    ctx.scene.enter('extra');
+    enterScene(ctx, 'extra');
   } else {
     ctx.session.mainCounter++;
     client.message(ctx.message.text).then((response) => {
       //console.log(JSON.stringify(response))
       if (response.entities && response.entities.number && response.entities.number.length >= 0) {
         const number = response.entities.number[0].value;
-        console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [-number-]");
         if (response.entities.intent && response.entities.intent.length >= 0 && response.entities.intent[0].value == 'insertcoins') {
+          console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [-number-]");
           if (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-            levels.addPoints(ctx.session.user._id, number, true, (err) => {
+            return levels.addPoints(ctx.session.user._id, number, true, (err) => {
               if (err) {
                 console.error(err);
               } else {
                 ctx.reply(number + " beercoins added!", keyboards.btb(ctx).opts);
               }
             });
-            return;
           } else {
             return ctx.reply("401 - Unauthorized", keyboards.btb(ctx).opts);
           }
-        } else {
-          request('http://numbersapi.com/' + number, {
+        } else if (!response.entities.intent || (response.entities.intent && response.entities.intent.length >= 0 && response.entities.intent[0].value != 'toptenuser')) {
+          console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [-number-]");
+          return request('http://numbersapi.com/' + number, {
             json: true
           }, (err, res, body) => {
             if (err) {
@@ -326,7 +351,8 @@ function textManager(ctx) {
             }
           });
         }
-      } else if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
+      }
+      if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
         ctx.session.mainCounter = 0;
         console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [" + response.entities.intent[0].value + "]");
         decodeWit(ctx, response);
@@ -357,11 +383,6 @@ function defaultAnswer(ctx) {
     }).then(() => {
       replies(ctx, msg, keyboards.btb(ctx).opts);
     });
-    levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
-      if (err) {
-        console.error(err);
-      }
-    });
   } else {
     ctx.replyWithSticker({
       source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
@@ -373,7 +394,7 @@ function defaultAnswer(ctx) {
 
 function decodeWit(ctx, witResponse) {
   let value = witResponse.entities.intent[0].value,
-    msg = require("./mind")[value];
+    msg = bender.mind[value];
 
   if (!msg) {
     //console.log("Mind not found [" + value + "]");
@@ -385,6 +406,38 @@ function decodeWit(ctx, witResponse) {
         break;
       case "wiki":
         return ctx.reply(formatWiki(), keyboards.btb(ctx).opts);
+      case "sysinfo":
+        if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+          msg = "401 - Unauthorized";
+        } else {
+          return utils.systemInfo((sysInfo) => {
+            msg = "System:" +
+              "\n- time: " + moment(sysInfo.time.current).format() +
+              "\n- uptime: " + (sysInfo.time.uptime / 3600) + "h" +
+              "\n- timezone: " + sysInfo.time.timezone +
+              "\n- info:" + JSON.stringify(sysInfo.system, null, 2) +
+              "\n- versions:" + JSON.stringify(sysInfo.versions, null, 2) +
+              "\nProcess:" +
+              "\n- uptime: " + (sysInfo.time.uptime / 3600) + "h" +
+              "\n- version: " + sysInfo.process.version +
+              "\nFS:" +
+              "\n" + JSON.stringify(sysInfo.fs, null, 2) +
+              "\nMemory:" +
+              "\n- total: " + utils.bytesToSize(sysInfo.memory.total) +
+              "\n- free: " + utils.bytesToSize(sysInfo.memory.free) +
+              "\n- used: " + utils.bytesToSize(sysInfo.memory.used) +
+              "\n- active: " + utils.bytesToSize(sysInfo.memory.active) +
+              "\n- available: " + utils.bytesToSize(sysInfo.memory.available) +
+              '\nNetwork Interface Stats (' + sysInfo.network.stats.iface + "):" +
+              '\n- status: ' + sysInfo.network.stats.operstate +
+              '\n- RX bytes overall: ' + sysInfo.network.stats.rx +
+              '\n- TX bytes overall: ' + sysInfo.network.stats.tx +
+              '\n- RX bytes/sec: ' + sysInfo.network.stats.rx_sec +
+              '\n- TX bytes/sec: ' + sysInfo.network.stats.tx_sec;
+            ctx.reply(msg, keyboards.btb(ctx).opts);
+          });
+        }
+        return ctx.reply(msg, keyboards.btb(ctx).opts);
       case "activesessions":
         if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
           msg = "401 - Unauthorized";
@@ -411,7 +464,7 @@ function decodeWit(ctx, witResponse) {
         }
         return ctx.reply(msg, keyboards.btb(ctx).opts);
       case "order":
-        ctx.scene.enter('order');
+        enterScene(ctx, 'order');
         break;
       case "areyoudrunk":
         if (require('./beers').botIsDrunk()) {
@@ -577,6 +630,8 @@ function decodeWit(ctx, witResponse) {
 }
 
 function parseMention(ctx) {
+  if (!ctx.message.text)
+    return [];
   //ctx.message.entities = [ { offset: 0, length: 7, type: 'mention' } ]
   if (ctx.message.text.toLowerCase().indexOf('@all ') >= 0) {
     return ['all'];
@@ -673,22 +728,49 @@ bot.mention(['@tables', '@table', '@Tables', '@Table', '@all', '@All'], (ctx) =>
   mentionHandler(ctx);
 });
 
-bot.on("text", textManager);
+mainScene.on("text", textManager);
 
-// Handle unsupported types
-bot.on(['document', 'video', 'sticker', 'photo'], (ctx) => {
-  //bad answer
-  ctx.replyWithChatAction(ACTIONS.GENERAL_FILES);
-  console.log("Unsupported message type from: " + ctx.session.user.email);
-  if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
-    broadcastMessage("Unsupported message type from: " + ctx.session.user.email, accessLevels.root, null, true);
+function callbackQueryManager(ctx) {
+  if (ctx.session.lastMessage) {
+    ctx.deleteMessage(ctx.session.lastMessage.message_id);
+    delete ctx.session.lastMessage;
   }
-  ctx.replyWithSticker({
-    source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
-  }).then(() => {
-    replies(ctx, bender.getRandomTagQuote(["ass"]));
-  });
-});
+  if (ctx.update.callback_query.data == 'unsubscribe') {
+    require('./scenes/settings').unsubscribe(ctx);
+  } else if (ctx.update.callback_query.data == "throwhp") {
+    require('./scenes/hp').handleHP(ctx);
+  } else {
+    ctx.answerCbQuery("Hmm, this options is not available anymore!");
+  }
+}
+exports.callbackQueryManager = callbackQueryManager;
+mainScene.on("callback_query", callbackQueryManager);
+
+function mediaHandler(ctx) {
+  if (ctx.message.audio || ctx.message.voice) {
+    if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
+      broadcastMessage("Got voice from: " + ctx.session.user.email, accessLevels.root, null, true);
+    }
+    if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+      ctx.replyWithChatAction(ACTIONS.RECORD_AUDIO);
+      console.log("Sent voice answer to " + ctx.session.user.email);
+      sendTTSVoice(ctx, "Hey " + ctx.session.user.telegram.first_name + ", bite my metal shiny ass!");
+    }
+  } else if (ctx.message.document || ctx.message.video || ctx.message.sticker || ctx.message.photo) {
+    ctx.replyWithChatAction(ACTIONS.GENERAL_FILES);
+    ctx.replyWithSticker({
+      source: require('fs').createReadStream(__dirname + "/img/0" + utils.getRandomInt(1, 10) + ".webp")
+    }, keyboards.btb(ctx).opts).then(() => {
+      replies(ctx, bender.getRandomTagQuote(["ass"]));
+    });
+  } else {
+    console.log("Unsupported message type from: " + ctx.session.user.email);
+    console.log(ctx.message)
+    if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
+      broadcastMessage("Unsupported message type from: " + ctx.session.user.email, accessLevels.root, null, true);
+    }
+  }
+}
 
 function sendTTSVoice(ctx, text, options) {
   googleTTS(text, 'en-US', 1.5)
@@ -696,21 +778,14 @@ function sendTTSVoice(ctx, text, options) {
       ctx.telegram.sendVoice(ctx.chat.id, {
         url: url,
         filename: "BTB voice"
-      });
+      }, keyboards.btb(ctx).opts);
     }).catch(function (err) {
       console.error(err.stack);
     });
 }
 
-bot.on(['audio', 'voice'], (ctx) => {
-  if (!roles.checkUser(ctx.session.user.role, userRoles.root)) {
-    broadcastMessage("Got voice from: " + ctx.session.user.email, accessLevels.root, null, true);
-  }
-  if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-    ctx.replyWithChatAction(ACTIONS.RECORD_AUDIO);
-    console.log("Sent voice answer to " + ctx.session.user.email);
-    sendTTSVoice(ctx, "Hey " + ctx.session.user.telegram.first_name + ", bite my metal shiny ass!");
-  }
+bot.on(['document', 'video', 'sticker', 'photo', 'audio', 'voice'], (ctx) => {
+  mediaHandler(ctx);
 });
 
 function formatWiki() {
@@ -729,13 +804,14 @@ function formatWiki() {
     "\n - water: -1 beercoin" +
     "\nCombining more items will increase the winnings." +
     "\n\n*Levels*" +
-    "\nGaining beercoins will make you level-up.\nHigher levels means more BTB features.\nAvailable levels:" +
-    "\n1 - 10 beercoins" + 
-    "\n2 - 50 beercoins" + 
-    "\n3 - 200 beercoins" + 
-    "\n4 - 600 beercoins" + 
-    "\n5 - 1500 beercoins" + 
-    "\n...";
+    "\nGaining beercoins will make you level-up.\nHigher levels means more BTB features.\nAvailable levels:";
+  let i = 1;
+  for (let p in levels.pointsLevels) {
+    text += "\n" + i + " - " + p + " beercoins";
+    if (i++ > 3)
+      break;
+  }
+  text += "\n...";
   return text;
 }
 

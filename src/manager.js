@@ -7,6 +7,7 @@
 
 const moment = require('moment'),
     async = require('async'),
+    validator = require('validator'),
     roles = require("./roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
@@ -650,8 +651,8 @@ function _updateMenu(req, res) {
                         } else if (oldMenu.enabled && !(moment(data.day).isSame(moment(oldMenu.day), 'day'))) {
                             console.warn("Changing menu data when menu is enabled its not allowed")
                             return res.sendStatus(400);
-                        } else if (oldMenu.enabled && !data.enabled && moment(data.day).isBefore(moment(), 'day')) {
-                            console.warn("Once enabled its not possible to disable the old menus");
+                        } else if (oldMenu.enabled && moment(data.day).isBefore(moment(), 'day')) {
+                            console.warn("Cannot edit old menus");
                             return res.sendStatus(400);
                         }
                         DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
@@ -844,29 +845,152 @@ function _getOrders(req, res) {
     }
 }
 
+//validate an order against a menu
+function orderIsValid(order, menu) {
+
+    try {
+
+        if (!order.firstCourse && !order.secondCourse) {
+            console.error("missing field firstCourse/secondCourse");
+            return false;
+        }
+        if (!order.table || !menu.tables.reduce((r, m) => m._id == order.table ? r.concat(m._id) : r, []).length) {
+            console.error("missing table/not found");
+            return false;
+        }
+
+        //types check
+        if (order.firstCourse && order.firstCourse.item && (order.firstCourse.item + '').length == 0) {
+            console.error("invalid firstCourse item");
+            return false;
+        }
+        if (order.firstCourse && order.firstCourse.condiment && (order.firstCourse.condiment + '').length == 0) {
+            console.error("invalid firstCourse condiment");
+            return false;
+        }
+        if (order.secondCourse && order.secondCourse.item && (order.secondCourse.item + '').length == 0) {
+            console.error("invalid secondCourse item");
+            return false;
+        }
+        if (order.secondCourse && order.secondCourse.sideDishes) {
+            if (!Array.isArray(order.secondCourse.sideDishes)) {
+                console.error("invalid secondCourse sideDishes");
+                return false;
+            }
+            for (let i = 0; i < order.secondCourse.sideDishes.length; i++) {
+                if ((order.secondCourse.sideDishes[i] + '').length == 0) {
+                    console.error("invalid secondCourse sideDishes");
+                    return false;
+                }
+            }
+        }
+
+        //only one dish allowed
+        if (order.firstCourse && order.firstCourse.item && order.secondCourse && order.secondCourse.item) {
+            console.error("order only one dish allowed");
+            return false;
+        }
+
+        //firstCourse item check
+        if (order.firstCourse && order.firstCourse.item) {
+            if (!menu.firstCourse || menu.firstCourse.items.map(fc => fc.value).indexOf(order.firstCourse.item.toLowerCase()) < 0) {
+                console.error("firstCourse item not found");
+                return false;
+            }
+        }
+        //firstCourse condiment check
+        if (order.firstCourse && order.firstCourse.condiment) {
+            if (!order.firstCourse.item) {
+                console.error("invalid condiment, missing firstCourse item");
+                return false;
+            }
+            if (!menu.firstCourse || menu.firstCourse.items.filter(fc => fc.value == order.firstCourse.item.toLowerCase())[0].condiments.indexOf(order.firstCourse.condiment.toLowerCase()) < 0) {
+                console.error("order firstCourse condiment not found");
+                return false;
+            }
+        }
+
+        //secondCourse item check
+        if (order.secondCourse && order.secondCourse.item) {
+            if (!menu.secondCourse || menu.secondCourse.items.indexOf(order.secondCourse.item.toLowerCase()) < 0) {
+                console.error("order secondCourse not found");
+                return false;
+            }
+        }
+        //secondCourse sideDishes check
+        if (order.secondCourse && order.secondCourse.sideDishes) {
+            if (!order.secondCourse.item) {
+                console.error("invalid sideDishes, missing secondCourse item");
+                return false;
+            }
+            if (Array.isArray(order.secondCourse.sideDishes)) {
+                for (let i = 0; i < order.secondCourse.sideDishes.length; i++) {
+                    if (!menu.secondCourse || menu.secondCourse.sideDishes.indexOf(order.secondCourse.sideDishes[i].toLowerCase()) < 0) {
+                        console.error("secondCourse sidedish not found");
+                        return false;
+                    }
+                }
+            } else {
+                console.error("secondCourse invalid sidedishes");
+                return false;
+            }
+        }
+
+    } catch (ex) {
+        console.error(ex);
+        return false;
+    }
+    return true;
+}
+
 function _addOrder(req, res) {
     let data = req.body;
+
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root user limitations
         delete data._id;
         delete data.deleted;
+        delete data.rating;
         delete data.updatedAt;
-        delete data.createdAt;
     }
     data.createdAt = moment().format();
+
+    //check owner
     if (!data.owner)
         data.owner = req.user._id;
     if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
         //normal user can save only its own order
         data.owner = req.user._id;
     }
-    const newOrder = new DB.Order(data);
-    newOrder.save((err, order) => {
-        if (err) {
-            console.error(err);
+
+    DB.getDailyMenu(null, (err, menu) => {
+        if (err || !menu) {
+            console.error(err || "daily menu not found");
             return res.sendStatus(400);
+        } else {
+            //force adding orders only for the dailyMenu
+            data.menu = menu._id;
+
+            //check deadline
+            if (moment().isAfter(moment(menu.deadline))) {
+                console.error("cannot add order: deadline reached")
+                return res.sendStatus(400);
+            }
+
+            //order validation against daily menu
+            if (!orderIsValid(data, menu)) {
+                return res.sendStatus(400);
+            }
+
+            const newOrder = new DB.Order(data);
+            newOrder.save((err, order) => {
+                if (err) {
+                    console.error(err);
+                    return res.sendStatus(400);
+                }
+                res.status(201).send(order);
+            });
         }
-        res.status(201).send(order);
     });
 }
 
@@ -882,7 +1006,10 @@ function _updateOrder(req, res) {
         //non root user limitations
         delete data._id;
         delete data.deleted;
+        delete data.rating;
         delete data.createdAt;
+        delete data.menu; //avoid to switch the menu
+        delete data.owner; //avoid to switch the owner
     }
     if (!data.owner)
         data.owner = req.user._id;
@@ -892,15 +1019,38 @@ function _updateOrder(req, res) {
     }
     data.updatedAt = moment().format();
 
-    DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
-        if (err) {
-            console.error(err);
-            return res.sendStatus(500);
-        } else if (!order) {
-            return res.sendStatus(404);
+    DB.getDailyMenu(null, (err, menu) => {
+        if (err || !menu) {
+            console.error(err || "daily menu not found");
+            return res.sendStatus(400);
+        } else {
+            //force updating orders only for the dailyMenu
+            query.menu = menu._id;
+
+            //check deadline
+            if (moment().isAfter(moment(menu.deadline))) {
+                console.error("cannot update order: deadline reached")
+                return res.sendStatus(400);
+            }
+
+            //order validation against daily menu
+            if (!orderIsValid(data, menu)) {
+                return res.sendStatus(400);
+            }
+
+            DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
+                if (err) {
+                    console.error(err);
+                    return res.sendStatus(500);
+                } else if (!order) {
+                    return res.sendStatus(404);
+                }
+                res.sendStatus(200);
+            });
         }
-        res.sendStatus(200);
     });
+
+    
 }
 
 function _deleteOrder(req, res) {
@@ -1142,6 +1292,14 @@ exports.getStats = function (req, res) {
                 callback(null, users);
             });
         },
+        tablesStats: (callback) => {
+            DB.getTablesStatus(null, (err, tablesStats) => {
+                if (err) {
+                    return callback(null, {});
+                }
+                callback(null, tablesStats);
+            })
+        },
         ordersStats: (callback) => {
             DB.getDailyOrderStats(null, (err, stats) => {
                 if (err) {
@@ -1155,11 +1313,11 @@ exports.getStats = function (req, res) {
             })
         },
         dailyOrders: (callback) => {
-            DB.getDailyOrdersCount(null, (err, res) => {
+            DB.getDailyOrdersCount(null, (err, dailyOrders) => {
                 if (err) {
                     callback(null, 0)
                 } else {
-                    callback(null, res);
+                    callback(null, dailyOrders);
                 }
             });
         },
@@ -1176,25 +1334,26 @@ exports.getStats = function (req, res) {
             DB.Menu.findOne(query).populate('tables').populate({
                 path: 'owner',
                 select: 'username email _id'
-            }).exec((err, res) => {
+            }).exec((err, results) => {
                 if (err) {
                     callback(null)
                 } else {
-                    callback(null, res);
+                    callback(null, results);
                 }
             });
         }
     }, (err, results) => {
         if (err)
             console.error(err);
-        stats.users = results.users;
-        stats.usersPending = results.usersPending;
-        stats.usersWithoutOrder = results.usersWithoutOrder;
-        stats.menus = results.menus;
-        stats.orders = results.orders;
-        stats.ordersStats = results.ordersStats;
-        stats.dailyOrders = results.dailyOrders;
+        stats.users = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.users : undefined;
+        stats.usersPending = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.usersPending : undefined;
+        stats.usersWithoutOrder = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.usersWithoutOrder : undefined;
+        stats.menus = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.menus : undefined;
+        stats.orders = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.orders : undefined;
+        stats.ordersStats = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.ordersStats : undefined;
+        stats.dailyOrders = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.dailyOrders : undefined;
         stats.dailyMenu = results.dailyMenu;
+        stats.tablesStats = results.tablesStats;
         res.send(stats);
     });
 }
