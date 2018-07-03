@@ -804,7 +804,7 @@ scene.on("callback_query", ctx => {
                 return;
             }
             ctx.answerCbQuery("Sending bomb to " + bombUser.telegram.first_name + "...");
-            const message = "Boom! " + bot.getUserLink(ctx.session.user) + " just sent you " + ctx.session.slot.bombPoints() + " bombs 💣 !";
+            const message = "*Boom!* " + bot.getUserLink(ctx.session.user) + " just sent you " + ctx.session.slot.bombPoints() + " bombs 💣 !";
             ctx.telegram.sendMessage(bombUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
@@ -895,7 +895,7 @@ scene.on("callback_query", ctx => {
                 return;
             }
             ctx.answerCbQuery("Stealing beercoins from " + robbedUser.telegram.first_name + "...");
-            const message = "Ops! " + bot.getUserLink(ctx.session.user) + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
+            const message = "*Ops!* " + bot.getUserLink(ctx.session.user) + " just stole " + ctx.session.slot.robPoints() + " beercoins 💰 !";
             ctx.telegram.sendMessage(robbedUser.telegram.id, message, {
                 parse_mode: "markdown"
             }).then(() => {
