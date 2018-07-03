@@ -67,6 +67,7 @@ stage.register(require('./scenes/register').scene)
 stage.register(require('./scenes/orderRating').scene)
 stage.register(require('./scenes/slot').scene)
 stage.register(require('./scenes/shop').scene)
+stage.register(require('./scenes/hp').scene)
 stage.register(require('./scenes/nim').scene)
 
 const session = new Session({
@@ -165,6 +166,8 @@ bot.on("callback_query", ctx => {
   }
   if (ctx.update.callback_query.data == 'unsubscribe') {
     require('./scenes/settings').unsubscribe(ctx);
+  } else if (ctx.update.callback_query.data == "throwhp") {
+    require('./scenes/hp').handleHP(ctx);
   } else {
     ctx.answerCbQuery("Hmm, this options is not available anymore!");
   }
@@ -725,11 +728,11 @@ function formatWiki() {
     "\nCombining more items will increase the winnings." +
     "\n\n*Levels*" +
     "\nGaining beercoins will make you level-up.\nHigher levels means more BTB features.\nAvailable levels:" +
-    "\n1 - 10 beercoins" + 
-    "\n2 - 50 beercoins" + 
-    "\n3 - 200 beercoins" + 
-    "\n4 - 600 beercoins" + 
-    "\n5 - 1500 beercoins" + 
+    "\n1 - 10 beercoins" +
+    "\n2 - 50 beercoins" +
+    "\n3 - 200 beercoins" +
+    "\n4 - 600 beercoins" +
+    "\n5 - 1500 beercoins" +
     "\n...";
   return text;
 }

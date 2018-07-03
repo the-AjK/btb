@@ -77,6 +77,9 @@ scene.on("callback_query", ctx => {
     } else if (ctx.update.callback_query.data == "shield") {
         deleteLastMessage(ctx);
         buyShield(ctx);
+    } else if (ctx.update.callback_query.data == "hp") {
+        deleteLastMessage(ctx);
+        ctx.scene.enter('hp');
     } else if (ctx.update.callback_query.data == "news") {
         sendNews(ctx);
     } else if (ctx.update.callback_query.data == "newspremium") {
