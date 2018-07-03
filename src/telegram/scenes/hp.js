@@ -204,9 +204,7 @@ class HP {
         if (this.startCounter > 10) {
             this.startCounter -= 10;
         } else if (this.startCounter > 5) {
-            this.startCounter -= 5;
-        } else if (this.startCounter > 3) {
-            this.startCounter = 3;
+            this.startCounter = 5;
         }
         this.counter = this.startCounter;
         this.sendCountdown();
