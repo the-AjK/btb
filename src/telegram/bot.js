@@ -768,13 +768,14 @@ function formatWiki() {
     "\n - water: -1 beercoin" +
     "\nCombining more items will increase the winnings." +
     "\n\n*Levels*" +
-    "\nGaining beercoins will make you level-up.\nHigher levels means more BTB features.\nAvailable levels:" +
-    "\n1 - 10 beercoins" +
-    "\n2 - 50 beercoins" +
-    "\n3 - 200 beercoins" +
-    "\n4 - 600 beercoins" +
-    "\n5 - 1500 beercoins" +
-    "\n...";
+    "\nGaining beercoins will make you level-up.\nHigher levels means more BTB features.\nAvailable levels:";
+  let i = 1;
+  for (let p in levels.pointsLevels) {
+    text += "\n" + i + " - " + p + " beercoins";
+    if (i++ > 3)
+      break;
+  }
+  text += "\n...";
   return text;
 }
 
