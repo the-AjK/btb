@@ -52,7 +52,7 @@
     "validator": "^10.4.0"
   },
   "engines": {
-    "node": "^10.5.0",
+    "node": "^9.11.2",
     "yarn": "^1.7.0"
   },
   "devDependencies": {
