@@ -77,7 +77,7 @@ exports.enterScene = enterScene;
 
 //Utility function to leave a scene to the backTo sceneID
 function leaveScene(ctx, silent) {
-  if (this.ctx.scene.state.backTo)
+  if (ctx.scene.state.backTo)
     ctx.scene.enter(ctx.scene.state.backTo, {}, silent);
 }
 exports.leaveScene = leaveScene;
@@ -283,6 +283,9 @@ function typingEffect(ctx, text, callback) {
 exports.typingEffect = typingEffect;
 
 function textManager(ctx) {
+
+  if (!ctx.message)
+    return;
 
   if (!ctx.message.text) {
     //media stuff handler
