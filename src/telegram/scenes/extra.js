@@ -127,7 +127,9 @@ scene.on("callback_query", ctx => {
             ctx.answerCbQuery("Operation already in progress. Please wait...");
         }
     } else {
-        ctx.answerCbQuery("Okey! I have nothing to do.");
+        ctx.scene.leave();
+        //fallback to main bot scen
+        bot.callbackQueryManager(ctx);
     }
 });
 

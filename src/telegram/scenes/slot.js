@@ -931,7 +931,9 @@ scene.on("callback_query", ctx => {
             });
         });
     } else {
-        ctx.answerCbQuery("Okey! I have nothing to do.");
+        ctx.scene.leave();
+        //fallback to main bot scen
+        bot.callbackQueryManager(ctx);
     }
 });
 

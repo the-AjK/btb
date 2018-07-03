@@ -80,8 +80,9 @@ scene.on("callback_query", ctx => {
             ctx.deleteMessage(ctx.session.lastMessage.message_id);
             delete ctx.session.lastMessage;
         }
-        ctx.answerCbQuery("Okey! I have nothing to do.");
         ctx.scene.leave();
+        //fallback to main bot scen
+        bot.callbackQueryManager(ctx);
     }
 });
 

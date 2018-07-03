@@ -84,7 +84,9 @@ scene.on("callback_query", ctx => {
     } else if (ctx.update.callback_query.data == 'unsubscribe') {
         unsubscribe(ctx);
     } else {
-        ctx.answerCbQuery("Okey! I have nothing to do.");
+        ctx.scene.leave();
+        //fallback to main bot scen
+        bot.callbackQueryManager(ctx);
     }
 });
 

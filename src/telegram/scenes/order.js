@@ -692,6 +692,10 @@ scene.on("callback_query", ctx => {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     if (ctx.update.callback_query.data == 'rateit') {
         ctx.scene.enter("orderRating");
+    } else {
+        ctx.scene.leave();
+        //fallback to main bot scen
+        bot.callbackQueryManager(ctx);
     }
 });
 

@@ -77,8 +77,8 @@ exports.enterScene = enterScene;
 
 //Utility function to leave a scene to the backTo sceneID
 function leaveScene(ctx, silent) {
-  //console.log("leave wrapper")
-  ctx.scene.enter(ctx.scene.state.backTo, {}, silent);
+  if(this.ctx.scene.state.backTo)
+    ctx.scene.enter(ctx.scene.state.backTo, {}, silent);
 }
 exports.leaveScene = leaveScene;
 
@@ -694,7 +694,7 @@ bot.mention(['@tables', '@table', '@Tables', '@Table', '@all', '@All'], (ctx) =>
 
 mainScene.on("text", textManager);
 
-mainScene.on("callback_query", ctx => {
+function callbackQueryManager(ctx){
   if (ctx.session.lastMessage) {
     ctx.deleteMessage(ctx.session.lastMessage.message_id);
     delete ctx.session.lastMessage;
@@ -706,7 +706,9 @@ mainScene.on("callback_query", ctx => {
   } else {
     ctx.answerCbQuery("Hmm, this options is not available anymore!");
   }
-});
+}
+exports.callbackQueryManager = callbackQueryManager;
+mainScene.on("callback_query", callbackQueryManager);
 
 function mediaHandler(ctx) {
   if (ctx.message.audio || ctx.message.voice) {

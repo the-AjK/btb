@@ -85,7 +85,9 @@ scene.on("callback_query", ctx => {
     } else if (ctx.update.callback_query.data == "newspremium") {
         sendNews(ctx, true);
     } else {
-        ctx.answerCbQuery("Okey! I have nothing to do.");
+        ctx.scene.leave();
+        //fallback to main bot scen
+        bot.callbackQueryManager(ctx);
     }
 });
 
@@ -225,17 +227,27 @@ function formatNews(news, topUsers, dailyOrders, premium) {
                     user = bot.getUserLink(n.bombedUser);
                     text += " sent 💣 " + n.points + " bombs to " + user;
                 } else {
-                    text += " won " + n.points + " slot points 🎰"
+                    text += " won " + n.points + " slot points 🎰";
                 }
             }
         } else if (n.type != undefined) {
             //beer stuff
-            text += " sent a beer 🍺"
+            text += " sent a beer 🍺";
             if (n.drunk) {
-                text += " and made the bot drunk 😵"
+                text += " and made the bot drunk 😵";
             }
         } else if (n.menu != undefined) {
-            text += " place a daily order 🍽"
+            //menu stuff
+            text += " place a daily order 🍽";
+        } else if (n.history != undefined) {
+            //HP stuff
+            const burnedUser = n.history[n.history.length - 1].owner;
+            text += " threw an HotPotato 🥔 ";
+            if (burnedUser.email != n.owner.email) {
+                text += "! " + bot.getUserLink(burnedUser) + " got burned!";
+            } else {
+                text += "and got burned!";
+            }
         }
     }
     return text;
@@ -250,11 +262,17 @@ function sendNews(ctx, premium) {
     funList.push(function () {
         return (cb) => {
             DB.GenericEvent.find(null, null, {
-                sort: {
-                    createdAt: -1
-                },
-                limit: 70
-            }).populate('owner').populate('recipient').populate('bombedUser').populate('robbedUser').exec(cb);
+                    sort: {
+                        createdAt: -1
+                    },
+                    limit: 70
+                })
+                .populate('history.owner')
+                .populate('owner')
+                .populate('recipient')
+                .populate('bombedUser')
+                .populate('robbedUser')
+                .exec(cb);
         }
     }());
 
