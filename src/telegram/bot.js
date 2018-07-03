@@ -318,7 +318,7 @@ function textManager(ctx) {
   } else {
     ctx.session.mainCounter++;
     client.message(ctx.message.text).then((response) => {
-      console.log(JSON.stringify(response))
+      //console.log(JSON.stringify(response))
       if (response.entities && response.entities.number && response.entities.number.length >= 0) {
         const number = response.entities.number[0].value;
         console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [-number-]");
