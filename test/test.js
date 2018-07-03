@@ -1,10 +1,21 @@
 if (process.env.NODE_ENV !== "production") {
-	console.log("Loading DEV enviroment...");
-	require("dotenv").load();
+    console.log("Loading DEV enviroment...");
+    require("dotenv").load();
 }
 
-const expect = require('chai').expect,
-    manager = require('../src/manager');
+const chai = require("chai"),
+    expect = chai.expect,
+    sinon = require("sinon"),
+    sinonChai = require("sinon-chai"),
+    manager = require('../src/manager'),
+    DB = require('../src/db'),
+    roles = require("../src/roles"),
+    checkUserAccessLevel = roles.checkUserAccessLevel,
+    checkUser = roles.checkUser,
+    userRoles = roles.userRoles,
+    accessLevels = roles.accessLevels;
+
+chai.use(sinonChai);
 
 describe('getOrdersMenuDiff()', function () {
     it('should get no diff', function () {
@@ -1170,6 +1181,104 @@ describe('getOrdersMenuDiff()', function () {
         //order ID 0 shall be affected because Patate has been removed
         expect(orders[0].length).to.be.equal(2);
         expect(orders[1].length).to.be.equal(0);
+    });
+
+});
+
+class ResponseMock {
+    constructor() {
+        this.sendStatus = sinon.spy();
+        this.status = sinon.spy();
+        this.status.send = sinon.spy();
+    }
+}
+
+describe('addOrder()', function () {
+
+
+    it('should fail if no daily menu available', function () {
+
+        const req = {
+                user: {
+                    _id: "fakeID",
+                    role: userRoles.user
+                },
+                body: {
+
+                }
+            },
+            res = new ResponseMock(),
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb()
+        });
+
+        manager.orders.add(req, res);
+        expect(getDailyMenu.called).to.be.equal(true);
+        expect(res.sendStatus).to.have.been.calledWith(400);
+        getDailyMenu.restore();
+
+    });
+
+    it('should fail if no daily menu available because db error', function () {
+
+        const req = {
+                user: {
+                    _id: "fakeID",
+                    role: userRoles.user
+                },
+                body: {
+
+                }
+            },
+            res = new ResponseMock(),
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb("db error")
+        });
+
+        manager.orders.add(req, res);
+        expect(getDailyMenu.called).to.be.equal(true);
+        expect(res.sendStatus).to.have.been.calledWith(400);
+        getDailyMenu.restore();
+
+    });
+
+    it('should fail if the order table is not one of the daily menu tables', function () {
+
+        const req = {
+                user: {
+                    _id: "fakeID",
+                    role: userRoles.user
+                },
+                body: {
+                    table: "12345"
+                }
+            },
+            res = new ResponseMock(),
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
+            dailyMenu = {
+                _id: "menuID",
+                tables: [{
+                    _id: "0000"
+                }, {
+                    _id: "1111"
+                }, {
+                    _id: "2222"
+                }]
+            };
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu)
+        });
+
+        manager.orders.add(req, res);
+        expect(getDailyMenu.called).to.be.equal(true);
+        expect(res.sendStatus).to.have.been.calledWith(400);
+        getDailyMenu.restore();
+
     });
 
 });
