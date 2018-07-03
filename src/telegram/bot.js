@@ -406,6 +406,38 @@ function decodeWit(ctx, witResponse) {
         break;
       case "wiki":
         return ctx.reply(formatWiki(), keyboards.btb(ctx).opts);
+      case "sysinfo":
+        if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+          msg = "401 - Unauthorized";
+        } else {
+          return utils.systemInfo((sysInfo) => {
+            msg = "System:" +
+              "\n- time: " + moment(sysInfo.time.current).format() +
+              "\n- uptime: " + (sysInfo.time.uptime / 3600) + "h" +
+              "\n- timezone: " + sysInfo.time.timezone +
+              "\n- info:" + JSON.stringify(sysInfo.system, null, 2) +
+              "\n- versions:" + JSON.stringify(sysInfo.versions, null, 2) +
+              "\nProcess:" +
+              "\n- uptime: " + (sysInfo.time.uptime / 3600) + "h" +
+              "\n- version: " + sysInfo.process.version +
+              "\nFS:" +
+              "\n" + JSON.stringify(sysInfo.fs, null, 2) +
+              "\nMemory:" +
+              "\n- total: " + utils.bytesToSize(sysInfo.memory.total) +
+              "\n- free: " + utils.bytesToSize(sysInfo.memory.free) +
+              "\n- used: " + utils.bytesToSize(sysInfo.memory.used) +
+              "\n- active: " + utils.bytesToSize(sysInfo.memory.active) +
+              "\n- available: " + utils.bytesToSize(sysInfo.memory.available) +
+              '\nNetwork Interface Stats (' + sysInfo.network.stats.iface + "):" +
+              '\n- status: ' + sysInfo.network.stats.operstate +
+              '\n- RX bytes overall: ' + sysInfo.network.stats.rx +
+              '\n- TX bytes overall: ' + sysInfo.network.stats.tx +
+              '\n- RX bytes/sec: ' + sysInfo.network.stats.rx_sec +
+              '\n- TX bytes/sec: ' + sysInfo.network.stats.tx_sec;
+            ctx.reply(msg, keyboards.btb(ctx).opts);
+          });
+        }
+        return ctx.reply(msg, keyboards.btb(ctx).opts);
       case "activesessions":
         if (!roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
           msg = "401 - Unauthorized";
