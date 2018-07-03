@@ -441,7 +441,7 @@ function selectUserToRob(ctx) {
                 };
             ctx.session.users_inline_keyboard = new PaginatedInlineKeyboard(data, options);
             const beercoins = ctx.session.slot.robPoints();
-            console.log("User: " + ctx.session.user.email + " won " + beercoins + " beercoins");
+            console.log("User: " + ctx.session.user.email + " won " + beercoins + " beercoin bags");
             ctx.reply("You can steal " + beercoins + " beercoins 💰 !\nWho do you want to rob?", {
                 parse_mode: "markdown",
                 reply_markup: JSON.stringify({
