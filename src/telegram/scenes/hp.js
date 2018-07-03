@@ -32,6 +32,8 @@ class HP {
 
     startTimer(c) {
         this.counter = c;
+        if (this.interval)
+            clearInterval(this.interval);
         this.interval = setInterval(() => {
             if (this.counter == 0)
                 return this.stopGame();
@@ -51,43 +53,51 @@ class HP {
 
     handleHP(ctx) {
         this.ctx = ctx;
-        if (this.throwMessage) {
-            ctx.deleteMessage(this.throwMessage.message_id);
-            delete this.throwMessage;
-        }
-        DB.User.find({
-            /*"_id": {
-                "$ne": this.owner._id
-            },*/
-            "telegram.enabled": true,
-            "telegram.banned": false,
-            deleted: false
-        }, (err, users) => {
-            if (err) {
-                console.error(err);
-                this.ctx.answerCbQuery("Something went wrong!");
-                return bot.leaveScene(this.ctx, true);
-            } else {
-                utils.shuffle(users);
-                const data = users.map(u => {
-                    return {
-                        text: u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : ""),
-                        callback_data: "user_" + String(u.telegram.id)
-                    };
-                });
-                this.users_inline_keyboard = new PaginatedInlineKeyboard(data, {
-                    columns: 2,
-                    pageSize: 6
-                });
-                this.ctx.reply("Who do you want to send it to?", {
-                    parse_mode: "markdown",
-                    reply_markup: JSON.stringify({
-                        inline_keyboard: this.users_inline_keyboard.render()
-                    })
-                }).then((k) => {
-                    this.keyboardMessage = k;
-                });
-            }
+        this.clearMessages();
+        this.ctx.telegram.sendMessage(this.owner.telegram.id, this.getCountdownText(), {
+            parse_mode: "markdown"
+        }).then((m) => {
+            if (this.countdownMessage)
+                this.ctx.deleteMessage(this.countdownMessage.message_id);
+            this.countdownMessage = m;
+
+            DB.User.find({
+                /*"_id": {
+                    "$ne": this.owner._id
+                },*/
+                "telegram.enabled": true,
+                "telegram.banned": false,
+                deleted: false
+            }, (err, users) => {
+                if (err) {
+                    console.error(err);
+                    this.ctx.answerCbQuery("Something went wrong!");
+                    return bot.leaveScene(this.ctx, true);
+                } else {
+                    utils.shuffle(users);
+                    const data = users.map(u => {
+                        return {
+                            text: u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : ""),
+                            callback_data: "user_" + String(u.telegram.id)
+                        };
+                    });
+                    this.users_inline_keyboard = new PaginatedInlineKeyboard(data, {
+                        columns: 2,
+                        pageSize: 6
+                    });
+                    this.ctx.reply("Who do you want to send it to?", {
+                        parse_mode: "markdown",
+                        reply_markup: JSON.stringify({
+                            inline_keyboard: this.users_inline_keyboard.render()
+                        })
+                    }).then((k) => {
+                        if (this.keyboardMessage) {
+                            this.ctx.deleteMessage(this.keyboardMessage.message_id);
+                        }
+                        this.keyboardMessage = k;
+                    });
+                }
+            });
         });
     }
 
@@ -95,6 +105,8 @@ class HP {
         this.ctx.telegram.sendMessage(this.owner.telegram.id, this.getCountdownText(), {
             parse_mode: "markdown"
         }).then((m) => {
+            if (this.countdownMessage)
+                this.ctx.deleteMessage(this.countdownMessage.message_id);
             this.countdownMessage = m;
             this.ctx.telegram.sendMessage(this.owner.telegram.id, "*Hurry up!* Throw it away 🥔 !", {
                 parse_mode: "markdown",
@@ -107,6 +119,9 @@ class HP {
                     ]
                 })
             }).then(m2 => {
+                if (this.throwMessage) {
+                    this.ctx.deleteMessage(this.throwMessage.message_id);
+                }
                 this.throwMessage = m2;
                 this.startTimer(this.startCounter);
             });
@@ -128,19 +143,24 @@ class HP {
         console.log("HP Start: " + this.owner.email);
     }
 
-    stopGame() {
-        if (this.interval)
-            clearInterval(this.interval);
-        this.ctx.deleteMessage(this.countdownMessage.message_id);
-        delete this.countdownMessage;
-        if (this.throwMessage) {
-            this.ctx.deleteMessage(this.throwMessage.message_id);
-            delete this.throwMessage;
+    clearMessages() {
+        if (this.countdownMessage) {
+            this.ctx.telegram.deleteMessage(this.countdownMessage.chat.id, this.countdownMessage.message_id);
+            delete this.countdownMessage;
         }
         if (this.keyboardMessage) {
-            this.ctx.deleteMessage(this.keyboardMessage.message_id);
+            this.ctx.telegram.deleteMessage(this.keyboardMessage.chat.id, this.keyboardMessage.message_id);
             delete this.keyboardMessage;
         }
+        if (this.throwMessage) {
+            this.ctx.telegram.deleteMessage(this.throwMessage.chat.id, this.throwMessage.message_id);
+            delete this.throwMessage;
+        }
+    }
+
+    stopGame() {
+        clearInterval(this.interval);
+        this.clearMessages();
         let fromUserText = "";
         if (this.history.length && this.history[this.history.length - 1].owner.email != this.owner.email) {
             fromUserText += " from " + bot.getUserLink(this.history[this.history.length - 1].owner);
@@ -152,6 +172,11 @@ class HP {
                 if (err) {
                     console.error(err);
                 } else {
+                    this.history.push({
+                        createdAt: moment().format(),
+                        owner: this.owner,
+                        counter: this.counter
+                    });
                     const event = new DB.HPEvent({
                         owner: this.startPlayer,
                         history: this.history
@@ -162,10 +187,12 @@ class HP {
                         }
                     });
                     //Send notifications to the other players
-                    const burnedUserLink = bot.getUserLink(this.owner);
+                    const burnedUserLink = bot.getUserLink(this.owner),
+                        usersNotified = [this.owner.email];
                     for (let i = 0; i < this.history.length; i++) {
-                        if (this.owner.email != this.history[i].owner.email) {
-                            this.ctx.telegram.sendMessage(this.history[i].owner.telegram.id, burnedUserLink + " didn't throw the *hot potato* and got burned! 😂", {
+                        if (usersNotified.indexOf(this.history[i].owner.email) < 0) {
+                            usersNotified.push(this.history[i].owner.email);
+                            this.ctx.telegram.sendMessage(this.history[i].owner.telegram.id, burnedUserLink + " didn't throw the *Hot Potato* and got burned! 😂", {
                                 parse_mode: "markdown"
                             });
                         }
@@ -186,13 +213,9 @@ class HP {
             owner: this.owner,
             counter: this.counter
         });
-        this.ctx.deleteMessage(this.countdownMessage.message_id);
-        delete this.countdownMessage;
-        this.ctx.deleteMessage(this.keyboardMessage.message_id);
-        delete this.keyboardMessage;
-
+        this.clearMessages();
         if (user.email != this.owner.email) {
-            this.ctx.reply(bot.getUserLink(user) + " received your *Hot Potato* 🥔 !\nGood work!", {
+            this.ctx.reply(bot.getUserLink(user) + " received your *Hot Potato* 🥔 !\n*" + this.counter + " seconds* more and you would have burned! Good work!", {
                 parse_mode: "markdown"
             });
             bot.leaveScene(this.ctx, true);
@@ -232,7 +255,7 @@ scene.enter((ctx) => {
         ctx.reply("I'm sorry. You don't have enough beercoins.");
         return ctx.scene.enter('shop', {}, true);
     } else if (HotPotato.isRunning) {
-        ctx.reply("The Hot Potato is still bouncing in " + bot.getUserLink(HotPotato.owner) + "'s hands!\nPlease wait until the game ends!", {
+        ctx.reply("The *Hot Potato* is still bouncing in " + bot.getUserLink(HotPotato.owner) + "'s hands!\nPlease wait until the game ends!", {
             parse_mode: "markdown"
         });
         return ctx.scene.enter('shop', {}, true);
@@ -267,6 +290,8 @@ function updateUsersKeyboard(ctx) {
 }
 
 exports.handleHP = (ctx) => {
+    if (!HotPotato.isRunning)
+        return;
     if (!ctx.scene || ctx.scene.current.id != 'hp')
         bot.enterScene(ctx, 'hp', true);
     HotPotato.handleHP(ctx);

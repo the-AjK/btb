@@ -70,7 +70,7 @@ mainScene.enter((ctx) => {
 function enterScene(ctx, sceneID, silent) {
   //console.log("enter wrapper " + sceneID)
   ctx.scene.enter(sceneID, {
-    backTo: ctx.scene.current.id
+    backTo: ctx.scene.current ? ctx.scene.current.id : undefined
   }, silent);
 }
 exports.enterScene = enterScene;
