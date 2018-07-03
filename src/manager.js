@@ -7,6 +7,7 @@
 
 const moment = require('moment'),
     async = require('async'),
+    validator = require('validator'),
     roles = require("./roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
@@ -844,6 +845,104 @@ function _getOrders(req, res) {
     }
 }
 
+//validate an order against a menu
+function orderIsValid(order, menu) {
+
+    try {
+
+        if (!order.firstCourse && !order.secondCourse) {
+            console.error("missing field firstCourse/secondCourse");
+            return false;
+        }
+        if (!order.table || !menu.tables.reduce((r, m) => m._id == order.table ? r.concat(m._id) : r, []).length) {
+            console.error("missing table/not found");
+            return false;
+        }
+
+        //types check
+        if (order.firstCourse && order.firstCourse.item && (order.firstCourse.item + '').length == 0) {
+            console.error("invalid firstCourse item");
+            return false;
+        }
+        if (order.firstCourse && order.firstCourse.condiment && (order.firstCourse.condiment + '').length == 0) {
+            console.error("invalid firstCourse condiment");
+            return false;
+        }
+        if (order.secondCourse && order.secondCourse.item && (order.secondCourse.item + '').length == 0) {
+            console.error("invalid secondCourse item");
+            return false;
+        }
+        if (order.secondCourse && order.secondCourse.sideDishes) {
+            if (!Array.isArray(order.secondCourse.sideDishes)) {
+                console.error("invalid secondCourse sideDishes");
+                return false;
+            }
+            for (let i = 0; i < order.secondCourse.sideDishes.length; i++) {
+                if ((order.secondCourse.sideDishes[i] + '').length == 0) {
+                    console.error("invalid secondCourse sideDishes");
+                    return false;
+                }
+            }
+        }
+
+        //only one dish allowed
+        if (order.firstCourse && order.firstCourse.item && order.secondCourse && order.secondCourse.item) {
+            console.error("order only one dish allowed");
+            return false;
+        }
+
+        //firstCourse item check
+        if (order.firstCourse && order.firstCourse.item) {
+            if (!menu.firstCourse || menu.firstCourse.items.map(fc => fc.value).indexOf(order.firstCourse.item.toLowerCase()) < 0) {
+                console.error("firstCourse item not found");
+                return false;
+            }
+        }
+        //firstCourse condiment check
+        if (order.firstCourse && order.firstCourse.condiment) {
+            if (!order.firstCourse.item) {
+                console.error("invalid condiment, missing firstCourse item");
+                return false;
+            }
+            if (!menu.firstCourse || menu.firstCourse.items.filter(fc => fc.value == order.firstCourse.item.toLowerCase())[0].condiments.indexOf(order.firstCourse.condiment.toLowerCase()) < 0) {
+                console.error("order firstCourse condiment not found");
+                return false;
+            }
+        }
+
+        //secondCourse item check
+        if (order.secondCourse && order.secondCourse.item) {
+            if (!menu.secondCourse || menu.secondCourse.items.indexOf(order.secondCourse.item.toLowerCase()) < 0) {
+                console.error("order secondCourse not found");
+                return false;
+            }
+        }
+        //secondCourse sideDishes check
+        if (order.secondCourse && order.secondCourse.sideDishes) {
+            if (!order.secondCourse.item) {
+                console.error("invalid sideDishes, missing secondCourse item");
+                return false;
+            }
+            if (Array.isArray(order.secondCourse.sideDishes)) {
+                for (let i = 0; i < order.secondCourse.sideDishes.length; i++) {
+                    if (!menu.secondCourse || menu.secondCourse.sideDishes.indexOf(order.secondCourse.sideDishes[i].toLowerCase()) < 0) {
+                        console.error("secondCourse sidedish not found");
+                        return false;
+                    }
+                }
+            } else {
+                console.error("secondCourse invalid sidedishes");
+                return false;
+            }
+        }
+
+    } catch (ex) {
+        console.error(ex);
+        return false;
+    }
+    return true;
+}
+
 function _addOrder(req, res) {
     let data = req.body;
 
@@ -872,9 +971,14 @@ function _addOrder(req, res) {
             //force adding orders only for the dailyMenu
             data.menu = menu._id;
 
-            //check table
-            if (!menu.tables.reduce((r, m) => m._id == data.table ? r.concat(m._id) : r, []).length) {
-                console.error("order table is not on the daily menu");
+            //check deadline
+            if (moment().isAfter(moment(menu.deadline))) {
+                console.error("cannot add order: deadline reached")
+                return res.sendStatus(400);
+            }
+
+            //order validation against daily menu
+            if (!orderIsValid(data, menu)) {
                 return res.sendStatus(400);
             }
 
@@ -902,6 +1006,7 @@ function _updateOrder(req, res) {
         //non root user limitations
         delete data._id;
         delete data.deleted;
+        delete data.rating;
         delete data.createdAt;
         delete data.menu; //avoid to switch the menu
         delete data.owner; //avoid to switch the owner
@@ -914,15 +1019,38 @@ function _updateOrder(req, res) {
     }
     data.updatedAt = moment().format();
 
-    DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
-        if (err) {
-            console.error(err);
-            return res.sendStatus(500);
-        } else if (!order) {
-            return res.sendStatus(404);
+    DB.getDailyMenu(null, (err, menu) => {
+        if (err || !menu) {
+            console.error(err || "daily menu not found");
+            return res.sendStatus(400);
+        } else {
+            //force updating orders only for the dailyMenu
+            query.menu = menu._id;
+
+            //check deadline
+            if (moment().isAfter(moment(menu.deadline))) {
+                console.error("cannot update order: deadline reached")
+                return res.sendStatus(400);
+            }
+
+            //order validation against daily menu
+            if (!orderIsValid(data, menu)) {
+                return res.sendStatus(400);
+            }
+
+            DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
+                if (err) {
+                    console.error(err);
+                    return res.sendStatus(500);
+                } else if (!order) {
+                    return res.sendStatus(404);
+                }
+                res.sendStatus(200);
+            });
         }
-        res.sendStatus(200);
     });
+
+    
 }
 
 function _deleteOrder(req, res) {
