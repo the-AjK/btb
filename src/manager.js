@@ -846,27 +846,47 @@ function _getOrders(req, res) {
 
 function _addOrder(req, res) {
     let data = req.body;
+
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root user limitations
         delete data._id;
         delete data.deleted;
+        delete data.rating;
         delete data.updatedAt;
-        delete data.createdAt;
     }
     data.createdAt = moment().format();
+
+    //check owner
     if (!data.owner)
         data.owner = req.user._id;
     if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
         //normal user can save only its own order
         data.owner = req.user._id;
     }
-    const newOrder = new DB.Order(data);
-    newOrder.save((err, order) => {
-        if (err) {
-            console.error(err);
+
+    DB.getDailyMenu(null, (err, menu) => {
+        if (err || !menu) {
+            console.error(err || "daily menu not found");
             return res.sendStatus(400);
+        } else {
+            //force adding orders only for the dailyMenu
+            data.menu = menu._id;
+
+            //check table
+            if(!menu.tables.reduce(m => m._id == data.table).length){
+                console.error("order table is not on the daily menu");
+                return res.sendStatus(400);
+            }
+
+            const newOrder = new DB.Order(data);
+            newOrder.save((err, order) => {
+                if (err) {
+                    console.error(err);
+                    return res.sendStatus(400);
+                }
+                res.status(201).send(order);
+            });
         }
-        res.status(201).send(order);
     });
 }
 
@@ -883,6 +903,8 @@ function _updateOrder(req, res) {
         delete data._id;
         delete data.deleted;
         delete data.createdAt;
+        delete data.menu; //avoid to switch the menu
+        delete data.owner; //avoid to switch the owner
     }
     if (!data.owner)
         data.owner = req.user._id;
