@@ -1,10 +1,13 @@
 if (process.env.NODE_ENV !== "production") {
     console.log("Loading DEV enviroment...");
-    require("dotenv").load();
+    require("dotenv").load({
+        path: require("path").resolve(process.cwd(), '.testenv')
+    });
 }
 
 const chai = require("chai"),
     expect = chai.expect,
+    moment = require("moment"),
     sinon = require("sinon"),
     sinonChai = require("sinon-chai"),
     manager = require('../src/manager'),
@@ -16,6 +19,9 @@ const chai = require("chai"),
     accessLevels = roles.accessLevels;
 
 chai.use(sinonChai);
+
+//connecting to test DB
+DB.init();
 
 describe('getOrdersMenuDiff()', function () {
     it('should get no diff', function () {
@@ -1185,12 +1191,30 @@ describe('getOrdersMenuDiff()', function () {
 
 });
 
-class ResponseMock {
-    constructor() {
-        this.sendStatus = sinon.spy();
-        this.status = sinon.spy();
-        this.status.send = sinon.spy();
+function DBreset(model) {
+    let done = false;
+    model.deleteMany((err) => {
+        if (err) {
+            console.error(err);
+        }
+        done = true;
+    });
+    while (!done) {
+        require('deasync').sleep(100);
     }
+}
+
+function DBadd(model, data) {
+    let result, done = false;
+    (new model(data)).save((err, t) => {
+        if (err) {
+            console.error(err);
+        }
+        result = t;
+        done = true;
+    });
+    while (!done) require('deasync').sleep(100);
+    return result;
 }
 
 describe('addOrder()', function () {
@@ -1198,6 +1222,9 @@ describe('addOrder()', function () {
 
     it('should fail if no daily menu available', function () {
 
+        DBreset(DB.Order);
+        DBreset(DB.Table);
+
         const req = {
                 user: {
                     _id: "fakeID",
@@ -1207,22 +1234,35 @@ describe('addOrder()', function () {
 
                 }
             },
-            res = new ResponseMock(),
             getDailyMenu = sinon.stub(DB, 'getDailyMenu');
 
         getDailyMenu.callsFake((date, cb) => {
-            cb()
+            cb();
         });
 
-        manager.orders.add(req, res);
-        expect(getDailyMenu.called).to.be.equal(true);
-        expect(res.sendStatus).to.have.been.calledWith(400);
-        getDailyMenu.restore();
+        return new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                getDailyMenu.restore();
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(0);
+                    resolve();
+                });
+            });
+            manager.orders.add(req, {
+                sendStatus: sendStatus
+            });
+        });
 
     });
 
     it('should fail if no daily menu available because db error', function () {
 
+        DBreset(DB.Order);
+        DBreset(DB.Table);
+
         const req = {
                 user: {
                     _id: "fakeID",
@@ -1232,21 +1272,33 @@ describe('addOrder()', function () {
 
                 }
             },
-            res = new ResponseMock(),
             getDailyMenu = sinon.stub(DB, 'getDailyMenu');
 
         getDailyMenu.callsFake((date, cb) => {
             cb("db error")
         });
 
-        manager.orders.add(req, res);
-        expect(getDailyMenu.called).to.be.equal(true);
-        expect(res.sendStatus).to.have.been.calledWith(400);
-        getDailyMenu.restore();
-
+        return new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                getDailyMenu.restore();
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(0);
+                    resolve();
+                });
+            });
+            manager.orders.add(req, {
+                sendStatus: sendStatus
+            });
+        });
     });
 
     it('should fail if the order table is not one of the daily menu tables', function () {
+
+        DBreset(DB.Order);
+        DBreset(DB.Table);
 
         const req = {
                 user: {
@@ -1257,7 +1309,6 @@ describe('addOrder()', function () {
                     table: "12345"
                 }
             },
-            res = new ResponseMock(),
             getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
             dailyMenu = {
                 _id: "menuID",
@@ -1274,11 +1325,640 @@ describe('addOrder()', function () {
             cb(null, dailyMenu)
         });
 
-        manager.orders.add(req, res);
-        expect(getDailyMenu.called).to.be.equal(true);
-        expect(res.sendStatus).to.have.been.calledWith(400);
-        getDailyMenu.restore();
+        return new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                getDailyMenu.restore();
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(0);
+                    resolve();
+                });
+            });
+            manager.orders.add(req, {
+                sendStatus: sendStatus
+            });
+        });
 
     });
+
+    it('should disallow normal user to edit important fields', function () {
+
+        DBreset(DB.Order);
+        DBreset(DB.Table);
+        DBreset(DB.Menu);
+        DBreset(DB.User);
+        const t1 = DBadd(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = DBadd(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = DBadd(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = DBadd(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    _id: "testforceid",
+                    owner: requser._id,
+                    deleted: true,
+                    rating: 10,
+                    updatedAt: null,
+                    firstCourse: {
+                        item: "Spaghetti",
+                        condiment: "Pomodoro"
+                    }
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+
+            const send = sinon.stub();
+            send.callsFake((data) => {
+                expect(data._id).to.be.not.equal("testforceid");
+                expect(data.deleted).to.be.not.equal(true);
+                expect(data.rating).to.be.not.equal(10);
+                expect(data.updatedAt).to.be.not.equal(null);
+                expect(data.owner).to.be.equal(requser._id);
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
+                    resolve();
+                });
+            });
+
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: send
+                }
+            });
+
+            manager.orders.add(req, {
+                status: status
+            });
+
+        });
+    });
+
+    it('should disallow admin user to edit important fields', function () {
+
+        DBreset(DB.Order);
+        DBreset(DB.Table);
+        DBreset(DB.Menu);
+        DBreset(DB.User);
+        const t1 = DBadd(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = DBadd(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = DBadd(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const dailyMenu = DBadd(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    _id: "testforceid",
+                    owner: requser._id,
+                    deleted: true,
+                    rating: 10,
+                    updatedAt: null,
+                    firstCourse: {
+                        item: "Spaghetti",
+                        condiment: "Pomodoro"
+                    }
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+
+            const send = sinon.stub();
+            send.callsFake((data) => {
+                expect(data._id).to.be.not.equal("testforceid");
+                expect(data.deleted).to.be.not.equal(true);
+                expect(data.rating).to.be.not.equal(10);
+                expect(data.updatedAt).to.be.not.equal(null);
+                expect(data.owner).to.be.equal(requser._id);
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
+                    resolve();
+                });
+            });
+
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: send
+                }
+            });
+
+            manager.orders.add(req, {
+                status: status
+            });
+
+        });
+    });
+
+    it('should disallow normal user to force a different owner', function () {
+
+        DBreset(DB.Order);
+        DBreset(DB.Table);
+        DBreset(DB.Menu);
+        DBreset(DB.User);
+        const t1 = DBadd(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = DBadd(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = DBadd(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const owner = DBadd(DB.User, {
+            username: "user2",
+            password: "password",
+            salt: "salt",
+            email: "email2@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = DBadd(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    _id: "testforceid",
+                    owner: owner._id,
+                    deleted: true,
+                    rating: 10,
+                    updatedAt: null,
+                    firstCourse: {
+                        item: "Spaghetti",
+                        condiment: "Pomodoro"
+                    }
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+
+            const send = sinon.stub();
+            send.callsFake((data) => {
+                expect(data.owner).to.be.equal(requser._id);
+                expect(data.owner).to.be.not.equal(owner._id);
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
+                    resolve();
+                });
+            });
+
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: send
+                }
+            });
+
+            manager.orders.add(req, {
+                status: status
+            });
+
+        });
+    });
+
+    it('should allow admin user to force a different owner', function () {
+
+        DBreset(DB.Order);
+        DBreset(DB.Table);
+        DBreset(DB.Menu);
+        DBreset(DB.User);
+        const t1 = DBadd(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = DBadd(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = DBadd(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const owner = DBadd(DB.User, {
+            username: "user2",
+            password: "password",
+            salt: "salt",
+            email: "email2@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = DBadd(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    _id: "testforceid",
+                    owner: owner._id,
+                    deleted: true,
+                    rating: 10,
+                    updatedAt: null,
+                    firstCourse: {
+                        item: "Spaghetti",
+                        condiment: "Pomodoro"
+                    }
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+
+            const send = sinon.stub();
+            send.callsFake((data) => {
+                expect(data.owner).to.be.equal(owner._id);
+                expect(data.owner).to.be.not.equal(requser._id);
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
+                    resolve();
+                });
+            });
+
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: send
+                }
+            });
+
+            manager.orders.add(req, {
+                status: status
+            });
+
+        });
+    });
+
+    it('should allow normal user add an order', function () {
+
+        DBreset(DB.Order);
+        DBreset(DB.Table);
+        DBreset(DB.Menu);
+        DBreset(DB.User);
+        const t1 = DBadd(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = DBadd(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = DBadd(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = DBadd(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    _id: "testforceid",
+                    owner: requser._id,
+                    deleted: true,
+                    rating: 10,
+                    updatedAt: null,
+                    firstCourse: {
+                        item: "Spaghetti",
+                        condiment: "Pomodoro"
+                    }
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+
+            const send = sinon.stub();
+            send.callsFake((data) => {
+                expect(data.owner).to.be.equal(requser._id);
+                expect(data.firstCourse.item).to.be.equal("Spaghetti");
+                expect(data.firstCourse.condiment).to.be.equal("Pomodoro");
+                expect(data.secondCourse.item).to.be.equal(undefined);
+                expect(data.secondCourse.sideDishes.length).to.be.equal(0);
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
+                    resolve();
+                });
+            });
+
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: send
+                }
+            });
+
+            manager.orders.add(req, {
+                status: status
+            });
+
+        });
+    });
+
+    it('should allow admin user to add an order', function () {
+
+        DBreset(DB.Order);
+        DBreset(DB.Table);
+        DBreset(DB.Menu);
+        DBreset(DB.User);
+        const t1 = DBadd(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = DBadd(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = DBadd(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const owner = DBadd(DB.User, {
+            username: "user2",
+            password: "password",
+            salt: "salt",
+            email: "email2@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = DBadd(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    _id: "testforceid",
+                    owner: owner._id,
+                    deleted: true,
+                    rating: 10,
+                    updatedAt: null,
+                    secondCourse: {
+                        item: "Carne",
+                        sideDishes: ["Patate al forno"]
+                    }
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+
+            const send = sinon.stub();
+            send.callsFake((data) => {
+                expect(data.owner).to.be.equal(requser._id);
+                expect(data.firstCourse.item).to.be.equal(undefined);
+                expect(data.firstCourse.condiment).to.be.equal(undefined);
+                expect(data.secondCourse.item).to.be.equal("Carne");
+                expect(data.secondCourse.sideDishes.length).to.be.equal(1);
+                expect(data.secondCourse.sideDishes[0]).to.be.equal("Patate al forno");
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
+                    resolve();
+                });
+            });
+
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: send
+                }
+            });
+
+            manager.orders.add(req, {
+                status: status
+            });
+
+        });
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 });

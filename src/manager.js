@@ -873,7 +873,7 @@ function _addOrder(req, res) {
             data.menu = menu._id;
 
             //check table
-            if(!menu.tables.reduce(m => m._id == data.table).length){
+            if (!menu.tables.reduce((r, m) => m._id == data.table ? r.concat(m._id) : r, []).length) {
                 console.error("order table is not on the daily menu");
                 return res.sendStatus(400);
             }
