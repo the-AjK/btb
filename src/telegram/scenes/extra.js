@@ -134,4 +134,3 @@ scene.on("callback_query", ctx => {
 });
 
 exports.scene = scene;
-

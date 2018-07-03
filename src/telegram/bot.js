@@ -77,7 +77,7 @@ exports.enterScene = enterScene;
 
 //Utility function to leave a scene to the backTo sceneID
 function leaveScene(ctx, silent) {
-  if(this.ctx.scene.state.backTo)
+  if (this.ctx.scene.state.backTo)
     ctx.scene.enter(ctx.scene.state.backTo, {}, silent);
 }
 exports.leaveScene = leaveScene;
@@ -318,25 +318,24 @@ function textManager(ctx) {
   } else {
     ctx.session.mainCounter++;
     client.message(ctx.message.text).then((response) => {
-      //console.log(JSON.stringify(response))
+      console.log(JSON.stringify(response))
       if (response.entities && response.entities.number && response.entities.number.length >= 0) {
         const number = response.entities.number[0].value;
         console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [-number-]");
         if (response.entities.intent && response.entities.intent.length >= 0 && response.entities.intent[0].value == 'insertcoins') {
           if (roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-            levels.addPoints(ctx.session.user._id, number, true, (err) => {
+            return levels.addPoints(ctx.session.user._id, number, true, (err) => {
               if (err) {
                 console.error(err);
               } else {
                 ctx.reply(number + " beercoins added!", keyboards.btb(ctx).opts);
               }
             });
-            return;
           } else {
             return ctx.reply("401 - Unauthorized", keyboards.btb(ctx).opts);
           }
-        } else {
-          request('http://numbersapi.com/' + number, {
+        } else if (!response.entities.intent || (response.entities.intent && response.entities.intent.length >= 0 && response.entities.intent[0].value != 'toptenuser')) {
+          return request('http://numbersapi.com/' + number, {
             json: true
           }, (err, res, body) => {
             if (err) {
@@ -348,7 +347,8 @@ function textManager(ctx) {
             }
           });
         }
-      } else if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
+      }
+      if (response.entities && response.entities.intent && response.entities.intent.length >= 0) {
         ctx.session.mainCounter = 0;
         console.log("From: " + ctx.session.user.email + " Message: " + ctx.message.text + " [" + response.entities.intent[0].value + "]");
         decodeWit(ctx, response);
@@ -694,7 +694,7 @@ bot.mention(['@tables', '@table', '@Tables', '@Table', '@all', '@All'], (ctx) =>
 
 mainScene.on("text", textManager);
 
-function callbackQueryManager(ctx){
+function callbackQueryManager(ctx) {
   if (ctx.session.lastMessage) {
     ctx.deleteMessage(ctx.session.lastMessage.message_id);
     delete ctx.session.lastMessage;

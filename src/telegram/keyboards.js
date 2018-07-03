@@ -502,6 +502,7 @@ module.exports = {
                 status: "📋 Status",
                 slot: "🎰 Slot",
                 shop: "🛍 Shop",
+                top: "🔝 Top ten",
                 nim: "🎱 NIM"
             };
 
@@ -528,11 +529,16 @@ module.exports = {
                 keyboard[keyboard.length - 1].push({
                     text: cmd.shop
                 });
+                keyboard[keyboard.length - 1].push({
+                    text: cmd.top
+                });
             }
         } else if (levels.getLevel(ctx.session.user.points) > 0) {
             //level 1 user
             keyboard.push([{
                 text: cmd.shop
+            }, {
+                text: cmd.top
             }]);
         }
 
