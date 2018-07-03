@@ -249,7 +249,7 @@ function formatNews(news, topUsers, dailyOrders, premium) {
             text += " place a daily order 🍽";
         } else if (n.history != undefined) {
             //HP stuff
-            const burnedUser = n.history[n.history.length - 1].owner;
+            const burnedUser = n.history.length ? n.history[n.history.length - 1].owner : n.owner;
             text += " threw an HotPotato 🥔 ";
             if (burnedUser.email != n.owner.email) {
                 text += "! " + bot.getUserLink(burnedUser) + " got burned!";
