@@ -190,7 +190,8 @@ const tradeWizard = new WizardScene('tradeWizard',
                 const quantity = parseInt(ctx.message.text);
                 deleteLastMessage(ctx);
                 if (isNaN(quantity)) {
-                    return askQuantity(ctx, "*Invalid value!*");
+                    //return askQuantity(ctx, "*Invalid value!*");
+                    return leave(ctx);
                 } else if (quantity < 1) {
                     return askQuantity(ctx, "*Ohh come on!*");
                 } else if (ctx.session.user.points < quantity) {
