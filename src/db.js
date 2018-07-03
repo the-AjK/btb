@@ -184,10 +184,14 @@ const MenuSchema = new mongoose.Schema({
       type: [{
         value: {
           type: String,
+          lowercase: true,
           required: true
         },
         condiments: {
-          type: [String],
+          type: [{
+            type: String,
+            lowercase: true
+          }],
           default: []
         }
       }],
@@ -196,11 +200,17 @@ const MenuSchema = new mongoose.Schema({
   },
   secondCourse: {
     items: {
-      type: [String],
+      type: [{
+        type: String,
+        lowercase: true
+      }],
       default: []
     },
     sideDishes: {
-      type: [String],
+      type: [{
+        type: String,
+        lowercase: true
+      }],
       default: []
     }
   },
@@ -257,12 +267,24 @@ const OrderSchema = new mongoose.Schema({
     required: true
   },
   firstCourse: {
-    item: String,
-    condiment: String
+    item: {
+      type: String,
+      lowercase: true
+    },
+    condiment: {
+      type: String,
+      lowercase: true
+    }
   },
   secondCourse: {
-    item: String,
-    sideDishes: [String]
+    item: {
+      type: String,
+      lowercase: true
+    },
+    sideDishes: [{
+      type: String,
+      lowercase: true
+    }]
   },
   rating: {
     type: Number,
