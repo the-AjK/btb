@@ -16,8 +16,8 @@ if [[ -n "$WEB_MEMORY" ]]; then
   elif [ $WEB_MEMORY -le 1024 ]; then
     node_args="--max_semi_space_size=16 $node_args"
   fi
-  # mem_node_old_space=$((($WEB_MEMORY*4)/5))
-  mem_node_old_space=$(($WEB_MEMORY/2))
+  mem_node_old_space=$((($WEB_MEMORY*4)/5))
+  #mem_node_old_space=$(($WEB_MEMORY/2))
   node_args="--max_old_space_size=$mem_node_old_space $node_args"
 fi
 
