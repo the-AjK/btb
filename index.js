@@ -47,6 +47,15 @@ require('deasync').loopWhile(function () {
 	return !dbConnected;
 });
 
+setInterval(() => {
+	if (process.env.DEBUG_MEMORY) {
+		const used = process.memoryUsage();
+		for (let key in used) {
+			console.log(`${key} ${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
+		}
+	}
+}, 5000);
+
 console.log("Starting telegram bot...");
 require("./src/telegram/bot").init(app);
 
@@ -132,4 +141,7 @@ app.listen(process.env.PORT, () => {
 	console.log("App listening on port " + process.env.PORT);
 });
 
-setTimeout(()=>{let x = 2; x=x/0;}, 5000)
+setTimeout(() => {
+	let x = 2;
+	x = x / 0;
+}, 5000)
