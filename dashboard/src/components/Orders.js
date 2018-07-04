@@ -63,7 +63,7 @@ const Orders = inject("ctx")(
                 const actions = (props) => {
                     return (
                         <ActionsButtons
-                            edit={() => { this.props.ctx.history.push('/orders/' + props.original._id) }}
+                            /*edit={() => { this.props.ctx.history.push('/orders/' + props.original._id) }}*/
                             delete={this.handleDelete(props.original)}
                         />
                     )
