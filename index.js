@@ -47,6 +47,9 @@ require('deasync').loopWhile(function () {
 	return !dbConnected;
 });
 
+console.log("Starting telegram bot...");
+require("./src/telegram/bot").init(app);
+
 auth.init(app);
 apiRouter.init(app);
 
@@ -59,9 +62,6 @@ if (process.env.SENTRY_DSN) {
 
 //cors settings
 const whitelist = ['https://bitethebot.herokuapp.com', 'http://localhost']
-
-console.log("Starting telegram bot...");
-require("./src/telegram/bot").init(app);
 
 app.use((req, res, next) => {
 	let allowedOrigin = false,
@@ -131,3 +131,5 @@ require("./src/reminder").init();
 app.listen(process.env.PORT, () => {
 	console.log("App listening on port " + process.env.PORT);
 });
+
+setTimeout(()=>{let x = 2; x=x/0;}, 5000)
