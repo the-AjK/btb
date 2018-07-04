@@ -9,15 +9,15 @@
 node_args="index.js --color"
 
 if [[ -n "$WEB_MEMORY" ]]; then
-  # The WEB_MEMORY environment variable is set.
-  # Set the `mem_old_space_size` flag
-  # to 4/5 of the available memory.
-  # 4/5 has been determined via trial and error
-  # to be the optimum value, to try and ensure
-  # that v8 uses all of the available memory.
-  # It's not an exact science however, and so
-  # you may need to play around with this ratio.
-  mem_node_old_space=$((($WEB_MEMORY*4)/5))
+  if [ $WEB_MEMORY -le 512 ]; then
+    node_args="--max_semi_space_size=2 $node_args"
+  elif [ $WEB_MEMORY -le 768 ]; then
+    node_args="--max_semi_space_size=8 $node_args"
+  elif [ $WEB_MEMORY -le 1024 ]; then
+    node_args="--max_semi_space_size=16 $node_args"
+  fi
+  # mem_node_old_space=$((($WEB_MEMORY*4)/5))
+  mem_node_old_space=$(($WEB_MEMORY/2))
   node_args="--max_old_space_size=$mem_node_old_space $node_args"
 fi
 
