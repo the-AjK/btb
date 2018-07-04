@@ -266,12 +266,8 @@ scene.enter((ctx) => {
             ctx.session.user.dailySlotRunning = true;
             message = "You got a free run!";
         }
-        bot.typingEffect(ctx, message, (err, m) => {
-            if (err) {
-                console.error(err);
-            } else {
-                ctx.session.slot_header = m;
-            }
+        ctx.reply(message).then((m_header) => {
+            ctx.session.slot_header = m_header;
             let inline_keyboard = [
                 [{
                     text: !dailyFreeRun ? 'Spin (1 credit)' : 'Spin',

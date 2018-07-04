@@ -233,55 +233,6 @@ function sequentialReplies(ctx, interval, messages, opts, callback) {
   });
 }
 
-// Sequential message editing
-function animation(ctx, interval, animations, opts, callback) {
-  animations = JSON.parse(JSON.stringify(animations));
-  const firstAnim = animations.splice(0, 1).toString();
-  if (!firstAnim.length)
-    return callback();
-  const funList = [(cb) => {
-    ctx.reply(firstAnim, opts).then((m) => {
-      cb(null, m);
-    }, (err) => {
-      cb(err);
-    });
-  }];
-  for (let i = 0; i < animations.length; i++) {
-    funList.push(function (text) {
-      return (m, cb) => {
-        if (!text.length || text.trim() == m.text.trim())
-          //skip
-          return cb(null, m);
-        setTimeout(() => {
-          ctx.telegram.editMessageText(m.chat.id, m.message_id, null, text, opts).then((m) => {
-            cb(null, m);
-          }, (err) => {
-            cb(err);
-          });
-        }, interval);
-      }
-    }(animations[i]));
-  }
-  async.waterfall(funList, (err, result) => {
-    if (err) {
-      console.error(err);
-    }
-    if (callback)
-      callback(err, result);
-  });
-}
-exports.animation = animation;
-
-// Sequential message editing with typing effect
-function typingEffect(ctx, text, callback) {
-  let animations = [];
-  for (let i = 1; i < text.length + 1; i++) {
-    animations.push(text.substring(0, i))
-  }
-  animation(ctx, 100, animations, null, callback);
-}
-exports.typingEffect = typingEffect;
-
 function textManager(ctx) {
 
   if (!ctx.message)
@@ -480,7 +431,7 @@ function decodeWit(ctx, witResponse) {
             if (err) {
               console.error(err);
             } else {
-              typingEffect(ctx, "Top ten users:", () => {
+              ctx.reply("*Top ten users:*", keyboards.btb(ctx).opts).then(() => {
                 msg = []
                 for (let i = 0; i < topUsers.length; i++) {
                   let user = topUsers[i],
