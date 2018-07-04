@@ -257,7 +257,11 @@ function formatNews(news, topUsers, dailyOrders, premium) {
                 text += "and got burned!";
             }
         }
+        //Current maximum message length is 4096 UTF8 characters
+        if (text.length > 4000)
+            break;
     }
+
     return text;
 }
 
