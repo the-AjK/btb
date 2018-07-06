@@ -14,7 +14,9 @@ const mongoose = require("mongoose"),
 
 exports.init = function (cb) {
   console.log("DB connecting to " + process.env.MONGODB_URI.split('@')[1] + "...");
-  mongoose.connect(process.env.MONGODB_URI);
+  mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true
+  });
   db.on("error", console.error.bind(console, "connection error:"));
   db.once("open", function () {
     console.log("DB connected!");
