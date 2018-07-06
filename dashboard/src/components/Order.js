@@ -97,7 +97,7 @@ const Order = inject("ctx")(
                             //new daily order
                         }
                     } else {
-                        this.showAlert("Error", "Daily menu not available yet", () => {
+                        this.showAlert("Error", "Daily menu not available yet.\nCome back later.", () => {
                             this.props.ctx.history.push('/orders')
                         });
                     }
