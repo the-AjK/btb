@@ -27,7 +27,7 @@ exports.getOrdersLock = function () {
     return ordersLock;
 }
 
-function deleteLastMessage(ctx) {
+function deleteLastMessage(ctx){
     if (ctx.session.lastMessage) {
         ctx.deleteMessage(ctx.session.lastMessage.message_id);
         delete ctx.session.lastMessage;
@@ -373,10 +373,9 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                 callback_data: md5(sc)
             }]
         });
-        inline_keyboard.push([{
-            text: "Skip",
-            callback_data: "skip"
-        }]);
+        if (!inline_keyboard.length) {
+            return leave(ctx);
+        }
         //clear previous order draft in case user enter again in this schene
         ctx.session.order.firstCourse = {
             item: undefined,
@@ -417,13 +416,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
             }
             ctx.session.order.secondCourse.item = choosenSC;
             sendAddSideDishesQuery(ctx);
-            return ctx.wizard.next();
-        } else if (ctx.update.callback_query && ctx.update.callback_query.data == "skip") {
-            deleteLastMessage(ctx);
-            //user do not want the second course, lets show side dishes
-            ctx.session.order.secondCourse.item = '-';
-            sendAddSideDishesQuery(ctx);
-            ctx.wizard.next();
+            return ctx.wizard.next()
         } else {
             leave(ctx);
         }
@@ -460,13 +453,9 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
 
         } else if (ctx.update.callback_query && ctx.update.callback_query.data == "skipcontinue") {
             deleteLastMessage(ctx);
-            if (ctx.session.order.secondCourse.sideDishes.length == 0 && ctx.session.order.secondCourse.item == '-') {
-                ctx.reply("At least a second course or a side dish shall be selected!");
-                return leave(ctx);
-            }
             //no more side dishes to add, go ahead...
             sendTables(ctx);
-            ctx.wizard.next();
+            ctx.wizard.next()
         } else {
             leave(ctx);
         }
@@ -506,7 +495,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                 //lets save the message to delete it afterward
                 ctx.session.lastMessage = msg;
             });
-            return ctx.wizard.next();
+            return ctx.wizard.next()
         } else {
             leave(ctx);
         }

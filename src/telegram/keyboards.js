@@ -92,7 +92,7 @@ module.exports = {
                 text: cmd.first
             }]);
         }
-        if (dailyMenu.secondCourse && ((dailyMenu.secondCourse.items && dailyMenu.secondCourse.items.length) || (dailyMenu.secondCourse.sideDishes && dailyMenu.secondCourse.sideDishes.length))) {
+        if (dailyMenu.secondCourse && dailyMenu.secondCourse.items && dailyMenu.secondCourse.items.length) {
             keyboard.push([{
                 text: cmd.second
             }]);
