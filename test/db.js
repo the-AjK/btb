@@ -10,7 +10,7 @@ const DB = require('../src/db');
 //connecting to test DB
 DB.init();
 
-exports.reset = function(model) {
+exports.reset = function (model) {
     let done = false;
     model.deleteMany((err) => {
         if (err) {
@@ -23,15 +23,19 @@ exports.reset = function(model) {
     }
 }
 
-exports.add = function(model, data) {
-    let result, done = false;
-    (new model(data)).save((err, t) => {
+exports.add = function (model, data) {
+    let document = new model(data),
+        done = false;
+
+    document.save((err, t) => {
         if (err) {
             console.error(err);
+            document = null;
+        } else {
+            document = t;
         }
-        result = t;
         done = true;
     });
     while (!done) require('deasync').sleep(100);
-    return result;
+    return document;
 }

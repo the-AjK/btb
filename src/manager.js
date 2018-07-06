@@ -899,12 +899,21 @@ function orderIsValid(order, menu) {
             }
         }
         //firstCourse condiment check
-        if (order.firstCourse && order.firstCourse.condiment) {
+        if (order.firstCourse) {
             if (!order.firstCourse.item) {
                 console.error("invalid condiment, missing firstCourse item");
                 return false;
             }
-            if (!menu.firstCourse || menu.firstCourse.items.filter(fc => fc.value == order.firstCourse.item.toLowerCase())[0].condiments.indexOf(order.firstCourse.condiment.toLowerCase()) < 0) {
+            if (!menu.firstCourse) {
+                console.error("menu firstCourse missing");
+                return false;
+            }
+            const menuCondiments = menu.firstCourse.items.filter(fc => fc.value == order.firstCourse.item.toLowerCase())[0].condiments;
+            if (menuCondiments.length && !order.firstCourse.condiment) {
+                console.error("order firstCourse condiment missing");
+                return false;
+            }
+            if (menuCondiments.indexOf(order.firstCourse.condiment.toLowerCase()) < 0) {
                 console.error("order firstCourse condiment not found");
                 return false;
             }
@@ -1050,7 +1059,7 @@ function _updateOrder(req, res) {
         }
     });
 
-    
+
 }
 
 function _deleteOrder(req, res) {

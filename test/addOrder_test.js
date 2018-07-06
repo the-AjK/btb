@@ -58,7 +58,7 @@ describe('addOrder()', function () {
             cb();
         });
 
-        return new Promise((resolve, reject) => {
+        return (new Promise((resolve, reject) => {
             const sendStatus = sinon.stub();
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
@@ -72,7 +72,7 @@ describe('addOrder()', function () {
             manager.orders.add(req, {
                 sendStatus: sendStatus
             });
-        });
+        }));
 
     });
 
@@ -1123,6 +1123,84 @@ describe('addOrder()', function () {
         });
     });
 
+    it('should fail with missing required firstCourse condiment', function () {
+
+        testDB.reset(DB.Order);
+        testDB.reset(DB.Table);
+        testDB.reset(DB.Menu);
+        testDB.reset(DB.User);
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = testDB.add(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    firstCourse: {
+                        item: "Spaghetti"
+                    },
+                    owner: requser._id
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                getDailyMenu.restore();
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(0);
+                    resolve();
+                });
+            });
+            manager.orders.add(req, {
+                sendStatus: sendStatus
+            });
+        });
+    });
+
     it('should fail with firstCourse condiment and missing firstCourse item', function () {
 
         testDB.reset(DB.Order);
@@ -1201,7 +1279,7 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail with unknow secondCouser item', function () {
+    it('should fail with unknow secondCouse item', function () {
 
         testDB.reset(DB.Order);
         testDB.reset(DB.Table);
@@ -1666,6 +1744,95 @@ describe('addOrder()', function () {
                 DB.Order.count((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
+                    resolve();
+                });
+            });
+            manager.orders.add(req, {
+                sendStatus: sendStatus
+            });
+        });
+    });
+
+
+    it('should fail if the user already place a daily order', function () {
+
+        testDB.reset(DB.Order);
+        testDB.reset(DB.Table);
+        testDB.reset(DB.Menu);
+        testDB.reset(DB.User);
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = testDB.add(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().subtract(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+        const order = testDB.add(DB.Order, {
+            secondCourse: {
+                item: "Carne",
+                sideDishes: ["Pomodoro"]
+            },
+            menu: dailyMenu._id,
+            table: t1._id,
+            owner: requser._id
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    secondCourse: {
+                        item: "Carne",
+                        sideDishes: ["Pomodoro"]
+                    },
+                    owner: requser._id
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                getDailyMenu.restore();
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
                     resolve();
                 });
             });

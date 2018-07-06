@@ -8,9 +8,6 @@ if (process.env.NODE_ENV !== "production") {
 const chai = require("chai"),
     expect = chai.expect,
     manager = require('../src/manager'),
-    moment = require("moment"),
-    DB = require('../src/db'),
-    testDB = require('./db'),
     roles = require("../src/roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
@@ -20,96 +17,69 @@ const chai = require("chai"),
 describe('getOrdersMenuDiff()', function () {
     it('should get no diff', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.User);
-        const t1 = testDB.add(DB.Table, {
-            name: "table1",
-            enabled: true
-        });
-        const t2 = testDB.add(DB.Table, {
-            name: "table2",
-            enabled: true
-        });
-        const user1 = testDB.add(DB.User, {
-            username: "user1",
-            password: "password",
-            salt: "salt",
-            email: "email@a.com",
-            enabled: true,
-            role: userRoles.user
-        });
-        const user2 = testDB.add(DB.User, {
-            username: "user2",
-            password: "password",
-            salt: "salt",
-            email: "email2@a.com",
-            enabled: true,
-            role: userRoles.user
-        });
-        const oldMenu = testDB.add(DB.Menu, {
-            enabled: true,
-            label: "oldmenu",
-            day: moment(),
-            deadline: moment().add(1, 'h'),
-            owner: user1,
-            firstCourse: {
-                items: [{
-                    condiments: ["Amatriciana", "Pesto", "Pomodoro"],
-                    value: "Penne"
+        const om = {
+            "firstCourse": {
+                "items": [{
+                    "condiments": ["Amatriciana", "Pesto", "Pomodoro"],
+                    "value": "Penne"
                 }, {
-                    condiments: [],
-                    value: "Insalatona Venezia"
+                    "condiments": [],
+                    "value": "Insalatona Venezia"
                 }, {
-                    condiments: [],
-                    value: "Insalatona Bologna"
-                }]
-            },
-            secondCourse: {
-                "items": ["Bistecca", "Frittata"],
-                "sideDishes": ["Patate", "Fagioli"]
-            },
-            tables: [t1._id, t2._id]
-        });
-        const newMenu = testDB.add(DB.Menu, {
-            enabled: true,
-            label: "newmenu",
-            day: moment(),
-            deadline: moment().add(1, 'h'),
-            owner: user2,
-            firstCourse: {
-                items: [{
                     "condiments": [],
                     "value": "Insalatona Bologna"
                 }]
             },
-            secondCourse: {
-                items: ["Bistecca", "Frittata"],
-                sideDishes: ["Patate", "Fagioli"]
+            "secondCourse": {
+                "items": ["Bistecca", "Frittata"],
+                "sideDishes": ["Patate", "Fagioli"]
             },
-            tables: [t1._id, t2._id]
-        });
-        const order1 = testDB.add(DB.Order, {
-            firstCourse: {
-                item: "Insalatona Bologna"
+            "tables": ["5acbf33449a5605c11bdd7ff", "5ac23c85a5315a62dc448bb0"]
+        };
+        const m = {
+            "firstCourse": {
+                "items": [{
+                    "condiments": [],
+                    "value": "Insalatona Bologna"
+                }]
             },
-            menu: oldMenu._id,
-            table: t1._id,
-            owner: user1._id
-        });
-        const order2 = testDB.add(DB.Order, {
-            secondCourse: {
-                sideDishes: ["Fagioli"],
-                item: "Frittata"
+            "secondCourse": {
+                "items": ["Bistecca", "Frittata"],
+                "sideDishes": ["Patate", "Fagioli"]
             },
-            menu: oldMenu._id,
-            table: t1._id,
-            owner: user1._id
-        });
-        console.log(order2.toObject())
+            "tables": ["5acbf33449a5605c11bdd7ff", "5ac23c85a5315a62dc448bb0"]
+        };
 
-        const orders = manager.getOrdersMenuDiff(oldMenu.toObject(), newMenu.toObject(), [order1.toObject(), order2.toObject()]);
+        const or = [{
+            "_id": 0,
+            "firstCourse": {
+                "item": "Insalatona Bologna"
+            },
+            "table": {
+                "_id": "5acbf33449a5605c11bdd7ff",
+                "name": "table1"
+            },
+            "owner": {
+                "username": "AlbertoJK",
+                "email": "alberto.garbui@athonet.com"
+            }
+        }, {
+            "_id": 1,
+            "secondCourse": {
+                "sideDishes": ["Fagioli"],
+                "item": "Frittata"
+            },
+            "table": {
+                "_id": "5acbf33449a5605c11bdd7ff",
+                "name": "table1"
+            },
+            "owner": {
+                "username": "AlbertoJK2",
+                "email": "alberto.garbui.2@athonet.com"
+            }
+        }];
+
+        const orders = manager.getOrdersMenuDiff(om, m, or);
         expect(orders.length).to.be.equal(2);
         //no diff
         expect(orders[0].length).to.be.equal(0);
