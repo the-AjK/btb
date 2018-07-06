@@ -37,7 +37,11 @@ const limitConfig = {
   onLimitExceeded: (ctx, next) => ctx.reply("Hey bro, calm down...")
 };
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
+const botOptions = {
+  webhookReply: false //https://github.com/telegraf/telegraf/issues/440
+};
+
+const bot = new Telegraf(process.env.BOT_TOKEN, botOptions);
 bot.use(rateLimit(limitConfig));
 
 const ACTIONS = {
