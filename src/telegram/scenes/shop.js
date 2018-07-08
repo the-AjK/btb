@@ -250,11 +250,31 @@ function formatNews(news, topUsers, dailyOrders, premium) {
         } else if (n.history != undefined) {
             //HP stuff
             const burnedUser = n.history.length ? n.history[n.history.length - 1].owner : n.owner;
+            let damage = n.history.length ? n.history[n.history.length - 1].damage : 1;
             text += " threw an HotPotato 🥔 ";
+            switch (damage) {
+                case 1:
+                    damage = "first";
+                    break;
+                case 2:
+                    damage = "second";
+                    break;
+                case 3:
+                    damage = "third";
+                    break;
+                case 4:
+                    damage = "fourth";
+                    break;
+                case 5:
+                    damage = "fifth";
+                    break;
+                default:
+                    damage = "unknow";
+            }
             if (burnedUser.email != n.owner.email) {
-                text += "! " + bot.getUserLink(burnedUser) + " got burned!";
+                text += "! " + bot.getUserLink(burnedUser) + " got " + damage + " degree burns!";
             } else {
-                text += "and got burned!";
+                text += "and got " + damage + " degree burns!";
             }
         }
         //Current maximum message length is 4096 UTF8 characters

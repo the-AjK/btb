@@ -447,6 +447,10 @@ const HPEventSchema = new mongoose.Schema({
     counter: {
       type: Number,
       required: true
+    },
+    damage: {
+      type: Number,
+      default: 1
     }
   }]
 }, eventOptions);

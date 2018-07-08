@@ -27,7 +27,9 @@ class HP {
             counter: 60 //global starting counter
         };
         this.startCounter = 0 //step starting counter
-        this.counter = 0 //actual counter
+        this.counter = 0 //actual counter,
+        this.damage = 1 //hp damage level
+        this.maxDamage = 5
     }
 
     startTimer(c) {
@@ -61,14 +63,19 @@ class HP {
                 this.ctx.deleteMessage(this.countdownMessage.message_id);
             this.countdownMessage = m;
 
-            DB.User.find({
-                /*"_id": {
-                    "$ne": this.owner._id
-                },*/
+            let query = {
                 "telegram.enabled": true,
                 "telegram.banned": false,
                 deleted: false
-            }, (err, users) => {
+            };
+            //add potato owner to the user list only if we are under 10seconds countdown
+            if (this.startCounter >= 10) {
+                query._id = {
+                    "$ne": this.owner._id
+                }
+            }
+
+            DB.User.find(query, (err, users) => {
                 if (err) {
                     console.error(err);
                     this.ctx.answerCbQuery("Something went wrong!");
@@ -98,6 +105,8 @@ class HP {
                     });
                 }
             });
+        }, (err) => {
+            console.error(err);
         });
     }
 
@@ -124,7 +133,11 @@ class HP {
                 }
                 this.throwMessage = m2;
                 this.startTimer(this.startCounter);
+            }, (err) => {
+                console.error(err);
             });
+        }, (err) => {
+            console.error(err);
         });
     }
 
@@ -139,6 +152,7 @@ class HP {
         this.keyboardMessage = null;
         this.startCounter = this.config.counter;
         this.counter = this.startCounter;
+        this.damage = 1; // start with first degree burns
         this.sendCountdown();
         console.log("HP Start: " + this.owner.email);
     }
@@ -168,14 +182,15 @@ class HP {
         this.ctx.telegram.sendMessage(this.owner.telegram.id, "You didn't throw the *Hot Potato*" + fromUserText + " and got burned! 🔥", {
             parse_mode: "markdown"
         }).then(() => {
-            levels.removePoints(this.owner._id, 3, false, (err) => {
+            levels.removePoints(this.owner._id, this.damage, false, (err) => {
                 if (err) {
                     console.error(err);
                 } else {
                     this.history.push({
                         createdAt: moment().format(),
                         owner: this.owner,
-                        counter: this.counter
+                        counter: this.counter,
+                        damage: this.damage
                     });
                     const event = new DB.HPEvent({
                         owner: this.startPlayer,
@@ -215,10 +230,15 @@ class HP {
         });
         this.clearMessages();
         if (user.email != this.owner.email) {
-            this.ctx.reply(bot.getUserLink(user) + " received your *Hot Potato* 🥔 !\n*" + this.counter + " seconds* more and you would have burned! Good work!", {
+            this.ctx.reply(bot.getUserLink(user) + " received your *Hot Potato* 🥔 !\n*" + this.counter + " seconds* more and you would have burned!\nGood work!", {
                 parse_mode: "markdown"
             });
             bot.leaveScene(this.ctx, true);
+        }
+
+        //incresase damage level
+        if (this.damage < this.maxDamage) {
+            this.damage += 1;
         }
 
         //New user
@@ -234,24 +254,36 @@ class HP {
         console.log("HP Switch: " + this.owner.email);
     }
 
+    getBurningLevel() {
+        let text = "*" + this.damage + "* ";
+        for (let i = 0; i < this.maxDamage; i++) {
+            if (i < this.damage) {
+                text += "🔥"
+            }
+        }
+        return text;
+    }
+
     getCountdownText() {
         const icon = this.counter % 2 ? "🔥" : "🥔";
-        let text = icon + " *Hot Potato*, pass it on, pass it on, pass it on, hot potato, pass it on before you burn yourself!";
+        let text = icon + " *Hot Potato*, pass it on, pass it on, hot potato, pass it on before you burn yourself!";
         if (this.history.length && this.history[this.history.length - 1].owner.email != this.owner.email) {
-            text += "\n\n" + bot.getUserLink(this.history[this.history.length - 1].owner) + " threw the hot potato at you!";
+            text += "\n" + bot.getUserLink(this.history[this.history.length - 1].owner) + " threw the hot potato at you!";
         }
-        text += "\n\nYou will get burn in *" + this.counter + " second" + (this.counter > 1 ? "s" : "") + "*!";
+        text += "\n\n" + "Burning level: " + this.getBurningLevel();
+        text += "\nYou will get burn in *" + this.counter + " second" + (this.counter > 1 ? "s" : "") + "*!";
         return text;
     }
 
 }
 
-const HotPotato = new HP();
+const HotPotato = new HP(),
+    hpPrice = 3; //3beercoins
 
 const scene = new Scene('hp')
 scene.enter((ctx) => {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-    if (ctx.session.user.points < 1 && !checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+    if (ctx.session.user.points < hpPrice && !checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
         ctx.reply("I'm sorry. You don't have enough beercoins.");
         return ctx.scene.enter('shop', {}, true);
     } else if (HotPotato.isRunning) {
@@ -263,7 +295,7 @@ scene.enter((ctx) => {
     if (checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
         HotPotato.startGame(ctx);
     } else {
-        levels.removePoints(ctx.session.user._id, 1, true, (err) => {
+        levels.removePoints(ctx.session.user._id, hpPrice, true, (err) => {
             if (err) {
                 console.error(err);
                 ctx.reply("Something went wrong!");
