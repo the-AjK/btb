@@ -924,10 +924,15 @@ function orderIsValid(order, menu) {
         }
 
         //secondCourse item check
-        if (order.secondCourse && order.secondCourse.item) {
-            if (!menu.secondCourse || menu.secondCourse.items.indexOf(order.secondCourse.item.toLowerCase()) < 0) {
-                console.error("order secondCourse not found");
+        if (order.secondCourse) {
+            if (!order.secondCourse.item) {
+                console.error("order missing secondCourse item");
                 return false;
+            } else {
+                if (!menu.secondCourse || menu.secondCourse.items.indexOf(order.secondCourse.item.toLowerCase()) < 0) {
+                    console.error("order secondCourse not found");
+                    return false;
+                }
             }
         }
         //secondCourse sideDishes check
@@ -974,11 +979,10 @@ function _addOrder(req, res) {
     if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
         //normal user can save only its own order
         data.owner = req.user._id;
-    } else {
-        //admin and root
-        data.createdBy = req.user._id;
-        data.updatedBy = req.user._id;
     }
+
+    data.createdBy = req.user._id;
+    data.updatedBy = req.user._id;
 
     const ordersLock = require('./telegram/scenes/order').getOrdersLock();
     ordersLock.writeLock('order', function (release) {
@@ -1032,6 +1036,7 @@ function _addOrder(req, res) {
                             });
 
                         });
+
                     }
                 });
             }
@@ -1056,16 +1061,16 @@ function _updateOrder(req, res) {
         delete data.createdAt;
         delete data.menu; //avoid to switch the menu
         delete data.owner; //avoid to switch the owner
+        delete data.createdBy; //avoid to switch the creator
     }
     if (!data.owner)
         data.owner = req.user._id;
     if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
         //normal user can update only its own order
         data.owner = req.user._id;
-    } else {
-        //admin and root
-        data.updatedBy = req.user._id;
     }
+
+    data.updatedBy = req.user._id;
     data.updatedAt = moment().format();
 
     const ordersLock = require('./telegram/scenes/order').getOrdersLock();

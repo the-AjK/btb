@@ -22,14 +22,39 @@ const chai = require("chai"),
 
 chai.use(sinonChai);
 
+let sendMessage;
+
 describe('addOrder()', function () {
 
-    it('should fail if no daily menu available', function () {
+    before(function () {
+        // runs before all tests in this block
+        sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
+        sendMessage.callsFake((chatID, message, opts) => {
+            return new Promise((resolve, reject) => {
+                resolve();
+            });
+        });              
+    });
 
+    after(function () {
+        // runs after all tests in this block
+        sendMessage.restore();
+    });
+
+    beforeEach(function () {
+        // runs before each test in this block
         testDB.reset(DB.Order);
         testDB.reset(DB.Table);
         testDB.reset(DB.Menu);
         testDB.reset(DB.User);
+    });
+
+    afterEach(function () {
+        // runs after each test in this block
+    });
+
+    it('000 should fail if no daily menu is available', function () {
+
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -55,6 +80,7 @@ describe('addOrder()', function () {
             },
             getDailyMenu = sinon.stub(DB, 'getDailyMenu');
 
+        //getDailymenu stub dont send a daily menu
         getDailyMenu.callsFake((date, cb) => {
             cb();
         });
@@ -64,7 +90,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -77,12 +103,8 @@ describe('addOrder()', function () {
 
     });
 
-    it('should fail if no daily menu available because db error', function () {
+    it('001 should fail if no daily menu available because db error', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -108,6 +130,7 @@ describe('addOrder()', function () {
             },
             getDailyMenu = sinon.stub(DB, 'getDailyMenu');
 
+        //simulate db error
         getDailyMenu.callsFake((date, cb) => {
             cb("db error")
         });
@@ -117,7 +140,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -129,12 +152,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail if the order table is not one of the daily menu tables', function () {
+    it('002 should fail if the order table is not one of the daily menu tables', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -180,7 +199,7 @@ describe('addOrder()', function () {
         const req = {
                 user: requser,
                 body: {
-                    table: t3._id,
+                    table: t3._id, //this table is not an available table for the daily menu
                     firstCourse: {
                         item: "Spaghetti",
                         condiment: "pomodoro"
@@ -199,7 +218,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -212,12 +231,8 @@ describe('addOrder()', function () {
 
     });
 
-    it('should disallow normal user to edit important fields', function () {
+    it('003 should disallow normal user to edit important fields', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -232,7 +247,7 @@ describe('addOrder()', function () {
             salt: "salt",
             email: "email@a.com",
             enabled: true,
-            role: userRoles.user
+            role: userRoles.user //normal user
         });
         const dailyMenu = testDB.add(DB.Menu, {
             enabled: true,
@@ -260,10 +275,10 @@ describe('addOrder()', function () {
                 user: requser,
                 body: {
                     table: t1._id,
-                    _id: "testforceid",
+                    _id: "testforceid", // try to set id
                     owner: requser._id,
-                    deleted: true,
-                    rating: 10,
+                    deleted: true, //try to set delete field
+                    rating: 10, //rating
                     updatedAt: null,
                     firstCourse: {
                         item: "Spaghetti",
@@ -287,7 +302,7 @@ describe('addOrder()', function () {
                 expect(data.rating).to.be.not.equal(10);
                 expect(data.updatedAt).to.be.not.equal(null);
                 expect(data.owner).to.be.equal(requser._id);
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(1);
                     resolve();
@@ -309,12 +324,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should disallow admin user to edit important fields', function () {
+    it('004 should disallow admin user to edit important fields', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -384,7 +395,7 @@ describe('addOrder()', function () {
                 expect(data.rating).to.be.not.equal(10);
                 expect(data.updatedAt).to.be.not.equal(null);
                 expect(data.owner).to.be.equal(requser._id);
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(1);
                     resolve();
@@ -406,12 +417,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should disallow normal user to force a different owner', function () {
+    it('005 should disallow normal user to force a different owner', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -426,7 +433,7 @@ describe('addOrder()', function () {
             salt: "salt",
             email: "email@a.com",
             enabled: true,
-            role: userRoles.user
+            role: userRoles.user //normal user
         });
         const owner = testDB.add(DB.User, {
             username: "user2",
@@ -463,7 +470,7 @@ describe('addOrder()', function () {
                 body: {
                     table: t1._id,
                     _id: "testforceid",
-                    owner: owner._id,
+                    owner: owner._id, //try to set a different owner
                     deleted: true,
                     rating: 10,
                     updatedAt: null,
@@ -486,7 +493,7 @@ describe('addOrder()', function () {
             send.callsFake((data) => {
                 expect(data.owner).to.be.equal(requser._id);
                 expect(data.owner).to.be.not.equal(owner._id);
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(1);
                     resolve();
@@ -508,12 +515,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should allow admin user to force a different owner', function () {
+    it('006 should allow admin user to force a different owner', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -588,7 +591,8 @@ describe('addOrder()', function () {
             send.callsFake((data) => {
                 expect(data.owner).to.be.equal(owner._id);
                 expect(data.owner).to.be.not.equal(requser._id);
-                DB.Order.count((err, count) => {
+                expect(data.createdBy).to.be.equal(requser._id);
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(1);
                     resolve();
@@ -610,12 +614,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should allow normal user add an order', function () {
+    it('007 should allow normal user add an order', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -681,11 +681,12 @@ describe('addOrder()', function () {
             const send = sinon.stub();
             send.callsFake((data) => {
                 expect(data.owner).to.be.equal(requser._id);
+                expect(data.createdBy).to.be.equal(requser._id);
                 expect(data.firstCourse.item).to.be.equal("spaghetti");
                 expect(data.firstCourse.condiment).to.be.equal("pomodoro");
                 expect(data.secondCourse.item).to.be.equal(undefined);
                 expect(data.secondCourse.sideDishes.length).to.be.equal(0);
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(1);
                     resolve();
@@ -707,12 +708,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should allow admin user to add an order', function () {
+    it('008 should allow admin user to add an order', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -725,17 +722,9 @@ describe('addOrder()', function () {
             username: "user1",
             password: "password",
             salt: "salt",
-            email: "email@a.com",
+            email: "emailjk@at.com",
             enabled: true,
-            role: userRoles.user
-        });
-        const owner = testDB.add(DB.User, {
-            username: "user2",
-            password: "password",
-            salt: "salt",
-            email: "email2@a.com",
-            enabled: true,
-            role: userRoles.user
+            role: userRoles.admin
         });
         const dailyMenu = testDB.add(DB.Menu, {
             enabled: true,
@@ -764,7 +753,7 @@ describe('addOrder()', function () {
                 body: {
                     table: t1._id,
                     _id: "testforceid",
-                    owner: owner._id,
+                    owner: requser._id,
                     deleted: true,
                     rating: 10,
                     updatedAt: null,
@@ -786,12 +775,13 @@ describe('addOrder()', function () {
             const send = sinon.stub();
             send.callsFake((data) => {
                 expect(data.owner).to.be.equal(requser._id);
+                expect(data.createdBy).to.be.equal(requser._id);
                 expect(data.firstCourse.item).to.be.equal(undefined);
                 expect(data.firstCourse.condiment).to.be.equal(undefined);
                 expect(data.secondCourse.item).to.be.equal("carne");
                 expect(data.secondCourse.sideDishes.length).to.be.equal(1);
                 expect(data.secondCourse.sideDishes[0]).to.be.equal("patate al forno");
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(1);
                     resolve();
@@ -813,12 +803,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail if no dishes are selected', function () {
+    it('009 should fail if no dishes are selected', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -862,6 +848,7 @@ describe('addOrder()', function () {
                 body: {
                     table: t1._id,
                     owner: requser._id
+                    //no dishes selected
                 }
             },
             getDailyMenu = sinon.stub(DB, 'getDailyMenu');
@@ -876,7 +863,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -888,12 +875,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail if no table is selected', function () {
+    it('010 should fail if no table is selected', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -940,6 +923,7 @@ describe('addOrder()', function () {
                         sideDishes: ["Patate al forno"]
                     },
                     owner: requser._id
+                    //no table selected
                 }
             },
             getDailyMenu = sinon.stub(DB, 'getDailyMenu');
@@ -954,7 +938,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -966,12 +950,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail with unknow firstCourse item', function () {
+    it('011 should fail with unknow firstCourse item', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -1015,7 +995,7 @@ describe('addOrder()', function () {
                 body: {
                     table: t1._id,
                     firstCourse: {
-                        item: "Carne",
+                        item: "Carne", //wrong firstCourse
                         condiment: "Pomodoro"
                     },
                     owner: requser._id
@@ -1033,7 +1013,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -1045,12 +1025,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail with unknow firstCourse condiment', function () {
+    it('012 should fail with unknow firstCourse condiment', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -1095,7 +1071,7 @@ describe('addOrder()', function () {
                     table: t1._id,
                     firstCourse: {
                         item: "Spaghetti",
-                        condiment: "Sale e pepe"
+                        condiment: "Sale e pepe" //wrong condiment
                     },
                     owner: requser._id
                 }
@@ -1112,7 +1088,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -1124,12 +1100,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail with missing required firstCourse condiment', function () {
+    it('013 should fail with missing required firstCourse condiment', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -1173,7 +1145,7 @@ describe('addOrder()', function () {
                 body: {
                     table: t1._id,
                     firstCourse: {
-                        item: "Spaghetti"
+                        item: "Spaghetti" //spaghetti need a condiment selected
                     },
                     owner: requser._id
                 }
@@ -1190,7 +1162,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -1202,12 +1174,95 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail with firstCourse condiment and missing firstCourse item', function () {
+    it('014 should success with missing unrequired firstCourse condiment', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = testDB.add(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }, {
+                    value: "Insalatona",
+                    condiments: []
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    firstCourse: {
+                        item: "Insalatona" //Insalatona does not require a condiment
+                    },
+                    owner: requser._id
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+
+            const send = sinon.stub();
+            send.callsFake((data) => {
+                expect(data.firstCourse.item).to.be.equal("insalatona");
+                DB.Order.countDocuments((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
+                    resolve();
+                });
+            });
+
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: send
+                }
+            });
+
+            manager.orders.add(req, {
+                status: status
+            });
+
+        });
+    });
+
+    it('015 should fail with firstCourse condiment and missing firstCourse item', function () {
+
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -1251,7 +1306,7 @@ describe('addOrder()', function () {
                 body: {
                     table: t1._id,
                     firstCourse: {
-                        condiment: "Pomodoro"
+                        condiment: "Pomodoro" //missing firstCourse item
                     },
                     owner: requser._id
                 }
@@ -1268,7 +1323,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -1280,12 +1335,80 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail with unknow secondCouse item', function () {
+    it('016 should fail with empty firstCourse', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = testDB.add(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    firstCourse: {}, //empty fc
+                    owner: requser._id
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                getDailyMenu.restore();
+                DB.Order.countDocuments((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(0);
+                    resolve();
+                });
+            });
+            manager.orders.add(req, {
+                sendStatus: sendStatus
+            });
+        });
+    });
+
+    it('017 should fail with unknow secondCourse item', function () {
+
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -1329,7 +1452,7 @@ describe('addOrder()', function () {
                 body: {
                     table: t1._id,
                     secondCourse: {
-                        item: "Polpette",
+                        item: "Polpette", //unknow sc
                         sideDishes: []
                     },
                     owner: requser._id
@@ -1347,7 +1470,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -1359,12 +1482,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail with unknow secondCouser sideDish', function () {
+    it('018 should fail with unknow secondCourse sideDish', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -1409,7 +1528,7 @@ describe('addOrder()', function () {
                     table: t1._id,
                     secondCourse: {
                         item: "Carne",
-                        sideDishes: ["Patate al forno", "Prezzemolo"]
+                        sideDishes: ["Patate al forno", "Prezzemolo"] //Prezzemolo is not a valid sd
                     },
                     owner: requser._id
                 }
@@ -1426,7 +1545,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -1438,12 +1557,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail with secondCouse sideDish but missing secondCourse item', function () {
+    it('019 should fail with secondCourse sideDish but missing secondCourse item', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -1487,7 +1602,7 @@ describe('addOrder()', function () {
                 body: {
                     table: t1._id,
                     secondCourse: {
-                        sideDishes: ["Patate al forno"]
+                        sideDishes: ["Patate al forno"] //Missing sc item
                     },
                     owner: requser._id
                 }
@@ -1504,7 +1619,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -1516,12 +1631,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail with both dishes selected', function () {
+    it('020 should fail with empty secondCourse', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -1564,7 +1675,252 @@ describe('addOrder()', function () {
                 user: requser,
                 body: {
                     table: t1._id,
-                    firstCourse: {
+                    secondCourse: {}, //empty sc
+                    owner: requser._id
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                getDailyMenu.restore();
+                DB.Order.countDocuments((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(0);
+                    resolve();
+                });
+            });
+            manager.orders.add(req, {
+                sendStatus: sendStatus
+            });
+        });
+    });
+
+    it('021 should be ok without sideDishes', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = testDB.add(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    secondCourse: {
+                        item: "Melanzane",
+                        sideDishes: [] //empty sd
+                    },
+                    owner: requser._id
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+
+            const send = sinon.stub();
+            send.callsFake((data) => {
+                expect(data.secondCourse.item).to.be.equal("melanzane");
+                expect(data.secondCourse.sideDishes.length).to.be.equal(0);
+                DB.Order.countDocuments((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
+                    resolve();
+                });
+            });
+
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: send
+                }
+            });
+
+            manager.orders.add(req, {
+                status: status
+            });
+
+        });
+        
+    });
+
+    it('022 should be ok without sideDishes missing key', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = testDB.add(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    secondCourse: {
+                        item: "Melanzane" //missing sd key
+                    },
+                    owner: requser._id
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+
+            const send = sinon.stub();
+            send.callsFake((data) => {
+                expect(data.secondCourse.item).to.be.equal("melanzane");
+                expect(data.secondCourse.sideDishes.length).to.be.equal(0);
+                DB.Order.countDocuments((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
+                    resolve();
+                });
+            });
+
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: send
+                }
+            });
+
+            manager.orders.add(req, {
+                status: status
+            });
+
+        });
+        
+    });
+
+    it('023 should fail with both dishes selected', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = testDB.add(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    firstCourse: { //bot dishes selected!
                         item: "Spaghetti",
                         condiment: "Pomodoro"
                     },
@@ -1575,17 +1931,11 @@ describe('addOrder()', function () {
                     owner: requser._id
                 }
             },
-            getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
-            sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
 
         getDailyMenu.callsFake((date, cb) => {
             cb(null, dailyMenu);
             getDailyMenu.restore();
-        });
-        sendMessage.callsFake(() => {
-            return new Promise((resolve, reject) => {
-                resolve();
-            });
         });
 
         return new Promise((resolve, reject) => {
@@ -1593,8 +1943,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                sendMessage.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -1607,12 +1956,8 @@ describe('addOrder()', function () {
     });
 
 
-    it('should fail with no dishes selected', function () {
+    it('024 should fail if deadline is reached', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -1662,17 +2007,11 @@ describe('addOrder()', function () {
                     owner: requser._id
                 }
             },
-            getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
-            sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
 
         getDailyMenu.callsFake((date, cb) => {
             cb(null, dailyMenu);
             getDailyMenu.restore();
-        });
-        sendMessage.callsFake(() => {
-            return new Promise((resolve, reject) => {
-                resolve();
-            });
         });
 
         return new Promise((resolve, reject) => {
@@ -1680,8 +2019,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                sendMessage.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -1693,12 +2031,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail if deadline is reached', function () {
+    it('025 should fail with no dishes selected', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -1744,17 +2078,11 @@ describe('addOrder()', function () {
                     owner: requser._id
                 }
             },
-            getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
-            sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
 
         getDailyMenu.callsFake((date, cb) => {
             cb(null, dailyMenu);
             getDailyMenu.restore();
-        });
-        sendMessage.callsFake(() => {
-            return new Promise((resolve, reject) => {
-                resolve();
-            });
         });
 
         return new Promise((resolve, reject) => {
@@ -1762,8 +2090,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                sendMessage.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
                     resolve();
@@ -1776,12 +2103,8 @@ describe('addOrder()', function () {
     });
 
 
-    it('should fail if the user already place a daily order', function () {
+    it('026 should fail if the user already place a daily order', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             enabled: true
@@ -1802,7 +2125,7 @@ describe('addOrder()', function () {
             enabled: true,
             label: "testmenu",
             day: moment(),
-            deadline: moment().subtract(1, 'h'),
+            deadline: moment().add(1, 'h'),
             owner: requser,
             firstCourse: {
                 items: [{
@@ -1819,6 +2142,8 @@ describe('addOrder()', function () {
             },
             tables: [t1._id, t2._id]
         });
+
+        //requser order already in the db
         const order = testDB.add(DB.Order, {
             secondCourse: {
                 item: "Carne",
@@ -1840,17 +2165,11 @@ describe('addOrder()', function () {
                     owner: requser._id
                 }
             },
-            getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
-            sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
 
         getDailyMenu.callsFake((date, cb) => {
             cb(null, dailyMenu);
             getDailyMenu.restore();
-        });
-        sendMessage.callsFake(() => {
-            return new Promise((resolve, reject) => {
-                resolve();
-            });
         });
 
         return new Promise((resolve, reject) => {
@@ -1858,8 +2177,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                sendMessage.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(1);
                     resolve();
@@ -1871,12 +2189,8 @@ describe('addOrder()', function () {
         });
     });
 
-    it('should fail if the table is full', function () {
+    it('027 should fail if the table is full', function () {
 
-        testDB.reset(DB.Order);
-        testDB.reset(DB.Table);
-        testDB.reset(DB.Menu);
-        testDB.reset(DB.User);
         const t1 = testDB.add(DB.Table, {
             name: "table1",
             seats: 1,
@@ -1907,7 +2221,7 @@ describe('addOrder()', function () {
             enabled: true,
             label: "testmenu",
             day: moment(),
-            deadline: moment().subtract(1, 'h'),
+            deadline: moment().add(1, 'h'),
             owner: requser,
             firstCourse: {
                 items: [{
@@ -1945,17 +2259,11 @@ describe('addOrder()', function () {
                     owner: requser._id
                 }
             },
-            getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
-            sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
 
         getDailyMenu.callsFake((date, cb) => {
             cb(null, dailyMenu);
             getDailyMenu.restore();
-        });
-        sendMessage.callsFake(() => {
-            return new Promise((resolve, reject) => {
-                resolve();
-            });
         });
 
         return new Promise((resolve, reject) => {
@@ -1963,8 +2271,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
-                sendMessage.restore();
-                DB.Order.count((err, count) => {
+                DB.Order.countDocuments((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(1);
                     resolve();
