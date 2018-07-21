@@ -60,9 +60,10 @@ const Menus = inject("ctx")(
                 };
 
                 const actions = (props) => {
+                    const cannotEdit = !roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && moment(props.original.day).isBefore(moment(), 'day')
                     return (
                         <ActionsButtons
-                            edit={() => { this.props.ctx.history.push('/menus/' + props.original._id) }}
+                            edit={cannotEdit ? undefined : () => { this.props.ctx.history.push('/menus/' + props.original._id) }}
                             delete={roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) || props.original.enabled === false ? this.handleDelete(props.original._id) : undefined}
                         />
                     )
