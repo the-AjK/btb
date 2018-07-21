@@ -50,11 +50,11 @@ function enableDashboardUser(userID) {
                 }
                 const message = "*Congratulations!*\nYou just gained a full web access to the *BiteTheBot* dashboard!\n" +
                     "\nYour credentials are:\nusername: *" + user.email + "*\npassword: *" + user.telegram.id + "*\n" +
-                    "\nYou may change your password following the instructions in the user profile's dashboard section.\n" + 
+                    "\nYou may change your password following the instructions in the user profile's dashboard section.\n" +
                     "\n>>> [BTB Dashboard](https://bitethebot.herokuapp.com) <<<";
                 require('./bot').bot.telegram.sendMessage(user.telegram.id, message, {
                     parse_mode: "markdown"
-                }).then(()=>{
+                }).then(() => {
                     console.log("User " + user.email + " has been dashboard enabled!");
                 });
             });

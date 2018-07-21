@@ -268,25 +268,28 @@ function _getMenus(req, res) {
     //TODO add filter query
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root user limitations
-        select.deleted = -1;
+        delete select.deleted;
         query.deleted = false;
     }
 
     if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
         //user limitations
-        select.deleted = -1;
-        select.owner = -1;
-        select.enabled = -1;
-        select.tables = -1;
+        delete select.owner;
+        delete select.enabled;
+        delete select.tables;
         query.deleted = false;
         query.enabled = true; //users view only enabled menus
     }
 
     if (!id) {
-        DB.Menu.find(query, select, options).populate('tables').populate({
-            path: 'owner',
-            select: 'username email _id'
-        }).exec((err, menus) => {
+        let dbQuery = DB.Menu.find(query, select, options);
+        if (checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+            dbQuery.populate('tables').populate({
+                path: 'owner',
+                select: 'username email _id'
+            });
+        }
+        dbQuery.exec((err, menus) => {
             if (err) {
                 console.error(err);
                 return res.sendStatus(500);
@@ -295,10 +298,14 @@ function _getMenus(req, res) {
         });
     } else {
         query._id = id;
-        DB.Menu.findOne(query, select).populate('tables').populate({
-            path: 'owner',
-            select: 'username email _id'
-        }).exec((err, menu) => {
+        let dbQuery = DB.Menu.findOne(query, select);
+        if (checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+            dbQuery.populate('tables').populate({
+                path: 'owner',
+                select: 'username email _id'
+            });
+        }
+        dbQuery.exec((err, menu) => {
             if (err) {
                 console.error(err);
                 return res.sendStatus(500);
@@ -334,8 +341,24 @@ function checkDailyMenu(data, cb) {
 }
 
 function menuIsValid(menu) {
+    if (!menu.label) {
+        console.error("Menu label is required")
+        return false;
+    }
     if (!menu.day) {
         console.error("Menu date is required")
+        return false;
+    }
+    if (!menu.deadline) {
+        console.error("Menu deadline is required")
+        return false;
+    }
+    if (!moment(menu.day).isSame(moment(menu.deadline), 'day')) {
+        console.error("Menu date and deadline shall be the same day")
+        return false;
+    }
+    if (!menu.tables || !Array.isArray(menu.tables) || menu.tables.length == 0) {
+        console.error("Menu tables list is required")
         return false;
     }
     if (menu.firstCourse && menu.firstCourse.items) {
@@ -387,7 +410,7 @@ function _addMenu(req, res) {
 
     data.createdAt = moment().format();
 
-    if (!menuIsValid(data)) {
+    if (!menuIsValid(data) || moment(data.day).isBefore(moment(), 'day')) {
         res.sendStatus(400);
     } else {
         if (data.deadline) {
@@ -558,7 +581,7 @@ function _updateMenu(req, res) {
     data.updatedAt = moment().format();
     delete data.createdAt;
 
-    if (!menuIsValid(data)) {
+    if (!menuIsValid(data) || moment(data.day).isBefore(moment(), 'day')) {
         res.sendStatus(400);
     } else {
         if (data.deadline) {

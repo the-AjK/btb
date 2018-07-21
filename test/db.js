@@ -1,3 +1,10 @@
+/**
+ * db.js
+ * unit tests
+ * @author Alberto Garbui aka JK, https://github.com/the-AjK
+ */
+"use strict";
+
 if (process.env.NODE_ENV !== "production") {
     console.log("Loading DEV enviroment...");
     require("dotenv").load({

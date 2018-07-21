@@ -27,42 +27,47 @@ const MenuPreview = inject("ctx")(
     observer(
         class extends React.Component {
             render() {
-                const {classes} = this.props,
+                const { classes } = this.props,
                     menu = this.props.menu,
-                    deadlineReached = moment().isAfter(menu.deadline);
+                    deadlineReached = menu ? moment().isAfter(menu.deadline) : false;
                 return (
                     <Paper elevation={1} className={classes.paper}>
-                        <h2>Daily menu - {moment(menu.day).format("MMMM Do YYYY")}</h2>
-                        {menu.firstCourse && <div>
-                            <h4>First courses</h4>
-                            <div>{menu.firstCourse.items.map((fc, fck) => {
-                                return (<ul key={fck}>
-                                    <li>{fc.value}</li>
-                                    {fc.condiments && fc.condiments.length > 0 && <li className={classes.condimentsList}>
-                                        <ul>
-                                            {fc.condiments.map((c, k) => <li key={k}>{c}</li>)}
-                                        </ul>
-                                    </li>}
-                                </ul>)
-                            })}</div>
-                        </div>}
-                        {menu.secondCourse && menu.secondCourse.items.length > 0 && <div>
-                            <h4>Second courses</h4>
-                            <div><ul>{menu.secondCourse.items.map((sc, k) => <li key={k}>{sc}</li>)}</ul></div>
-                        </div>}
-                        {menu.secondCourse && menu.secondCourse.sideDishes.length > 0 && <div>
-                            <h4>Side dishes</h4>
-                            <div><ul>{menu.secondCourse.sideDishes.map((sd, k) => <li key={k}>{sd}</li>)}</ul></div>
-                        </div>}
-                        {menu.additionalInfos && menu.additionalInfos !== "" && <div>
-                            <h4>Additional information</h4>
-                            <p>{menu.additionalInfos}</p>
-                        </div>}
+                        {!menu && <div>
+                            <h2>Daily menu not available yet</h2>
+                        </div>
+                        }
+                        {menu && <div>
+                            <h2>Daily menu - {moment(menu.day).format("MMMM Do YYYY")}</h2>
+                            {menu.firstCourse && <div>
+                                <h4>First courses</h4>
+                                <div>{menu.firstCourse.items.map((fc, fck) => {
+                                    return (<ul key={fck}>
+                                        <li>{fc.value}</li>
+                                        {fc.condiments && fc.condiments.length > 0 && <li className={classes.condimentsList}>
+                                            <ul>
+                                                {fc.condiments.map((c, k) => <li key={k}>{c}</li>)}
+                                            </ul>
+                                        </li>}
+                                    </ul>)
+                                })}</div>
+                            </div>}
+                            {menu.secondCourse && menu.secondCourse.items.length > 0 && <div>
+                                <h4>Second courses</h4>
+                                <div><ul>{menu.secondCourse.items.map((sc, k) => <li key={k}>{sc}</li>)}</ul></div>
+                            </div>}
+                            {menu.secondCourse && menu.secondCourse.sideDishes.length > 0 && <div>
+                                <h4>Side dishes</h4>
+                                <div><ul>{menu.secondCourse.sideDishes.map((sd, k) => <li key={k}>{sd}</li>)}</ul></div>
+                            </div>}
+                            {menu.additionalInfos && menu.additionalInfos !== "" && <div>
+                                <h4>Additional information</h4>
+                                <p>{menu.additionalInfos}</p>
+                            </div>}
 
-                        {deadlineReached && <p>{"The deadline was at " + moment(menu.deadline).format("HH:mm") + ". No more orders will be accepted."}</p>}
+                            {deadlineReached && <p>{"The deadline was at " + moment(menu.deadline).format("HH:mm") + ". No more orders will be accepted."}</p>}
 
-                        {!deadlineReached && <p>{"Hurry up, the deadline is at " + moment(menu.deadline).format("HH:mm")}</p>}
-
+                            {!deadlineReached && <p>{"Hurry up, the deadline is at " + moment(menu.deadline).format("HH:mm")}</p>}
+                        </div>}
                     </Paper>
                 )
             }

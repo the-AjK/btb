@@ -67,7 +67,7 @@ const Menus = inject("ctx")(
                 };
 
                 const actions = (props) => {
-                    const cannotEdit = roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.user) ||
+                    const cannotEdit = roles.checkUser(this.props.ctx.auth.user.role, roles.userRoles.user) ||
                                         (!roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && (moment(props.original.day).isBefore(moment(), 'day') || moment().isAfter(moment(props.original.deadline).add(2, 'h')))),
                         canDelete = roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) || 
                                     (roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && props.original.enabled === false);
