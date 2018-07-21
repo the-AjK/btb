@@ -7,6 +7,14 @@
 
 const si = require('systeminformation');
 
+exports.sortObj = function (unordered_obj) {
+    const ordered_obj = {};
+    Object.keys(unordered_obj).sort().forEach(function (key) {
+        ordered_obj[key] = unordered_obj[key];
+    });
+    return ordered_obj;
+}
+
 exports.getRandomInt = function (min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);

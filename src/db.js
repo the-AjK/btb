@@ -8,6 +8,7 @@
 const mongoose = require("mongoose"),
   moment = require("moment"),
   roles = require("./roles"),
+  utils = require("./utils"),
   userRoles = roles.userRoles,
   accessLevels = roles.accessLevels,
   db = mongoose.connection;
@@ -601,7 +602,16 @@ function _decodeOrders(orders) {
     }
   }
 
-  //sorting by number of suborders
+  //sorting by fc/sc
+  for (let t in orderStats) {
+    if (orderStats[t].firstCourses) {
+      orderStats[t].firstCourses = utils.sortObj(orderStats[t].firstCourses);
+    }
+    if (orderStats[t].secondCourses) {
+      orderStats[t].secondCourses = utils.sortObj(orderStats[t].secondCourses);
+    }
+  }
+
   return orderStats;
 }
 
