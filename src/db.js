@@ -628,9 +628,10 @@ function _decodeOrders(orders) {
 exports.getDailyOrderStats = (day, cb) => {
   getDailyMenu(null, (err, menu) => {
     if (err) {
-      cb(err || "DB menu error");
+      cb(err);
     } else if (!menu) {
-      cb("Daily menu not available yet");
+      //"Daily menu not available yet"
+      cb(null, {});
     } else {
       Order.find({
         deleted: false,
@@ -648,7 +649,11 @@ exports.getDailyOrderStats = (day, cb) => {
 
 exports.getTablesStatus = (day, cb) => {
   getDailyMenu(null, (err, menu) => {
-    if (!err && menu) {
+    if (err) {
+      cb(err);
+    } else if (!menu) {
+      cb(null, {});
+    } else {
       Order.find({
         deleted: false,
         menu: menu._id
@@ -669,11 +674,9 @@ exports.getTablesStatus = (day, cb) => {
           }
           cb(null, result);
         } else {
-          cb(err || "DB error");
+          cb(err);
         }
       });
-    } else {
-      cb(err || "DB error");
     }
   });
 }
@@ -788,7 +791,12 @@ exports.getNotOrderUsers = (day, cb) => {
       cb(err)
     } else {
       getDailyMenu(day, (err, menu) => {
-        if (!err && menu) {
+        if (err) {
+          cb(err);
+        } else if (!menu) {
+          //"Daily menu not available yet"
+          cb(null, []);
+        } else {
           Order.find({
             deleted: false,
             menu: menu._id
@@ -803,11 +811,6 @@ exports.getNotOrderUsers = (day, cb) => {
               }));
             }
           });
-        } else if (!menu) {
-          cb("Daily menu not available yet");
-        } else {
-          console.error(err);
-          cb(err || "DB error");
         }
       });
     }
