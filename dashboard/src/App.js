@@ -101,15 +101,17 @@ const BTB = observer(
 
     handleDialog = {
       set: action((obj) => {
-        for (let k in obj) {
-          this.dialog[k] = obj[k];
-        }
+        delete obj.open;
+        delete this.dialog.inputNumber;
+        delete this.dialog.checkBox;
+        Object.assign(this.dialog, obj);
+        this.dialog.open = true;
       })
     }
 
-    handleDialogClose = action((response) => {
+    handleDialogClose = action((response, ...data) => {
       this.dialog.open = false
-      this.dialog.onClose(response);
+      this.dialog.onClose(response, ...data);
     })
 
     render() {
@@ -120,7 +122,7 @@ const BTB = observer(
           <Router basename={basename}>
             <MuiThemeProvider theme={theme}>
               <CssBaseline />
-              <GenericDialog {...this.dialog} handleClose={this.handleDialogClose} />
+              {this.dialog.open && <GenericDialog {...this.dialog} handleClose={this.handleDialogClose} />}
               <Switch>
                 <Route path="/login" component={Login} />
                 <PrivateRoute accessLevel={accessLevels.root} path="/messages" component={Messages} />

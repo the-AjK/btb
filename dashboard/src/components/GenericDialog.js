@@ -6,6 +6,8 @@
 // @flow
 import React from "react";
 import { observer } from "mobx-react";
+import { extendObservable, action } from "mobx";
+import { withStyles } from "@material-ui/core/styles";
 import Button from "@material-ui/core/Button";
 import FormGroup from '@material-ui/core/FormGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
@@ -15,10 +17,29 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import TextField from '@material-ui/core/TextField';
+
+const styles = theme => ({
+    textField: {
+        marginLeft: theme.spacing.unit,
+        marginRight: theme.spacing.unit,
+        width: 200,
+    },
+});
 
 const GenericDialog = observer(
     class extends React.Component {
+        constructor(props) {
+            super(props)
+            extendObservable(this, {
+                checked: props.checkBox ? props.checkBox.value : false,
+                inputNumber: props.inputNumber ? props.inputNumber.value : 0,
+                inputText: ""
+            });
+        }
+
         render() {
+            const { classes } = this.props;
             return (
                 <Dialog
                     open={this.props.open}
@@ -37,20 +58,34 @@ const GenericDialog = observer(
                                 <FormControlLabel
                                     control={
                                         <Checkbox
-                                            onChange={this.props.checkBox.onChange}
-                                            checked={this.props.checkBox.value}
+                                            onChange={action(e => this.checkBox = e.target.value)}
+                                            checked={this.checked}
                                         />
                                     }
                                     label={this.props.checkBox.label}
                                 />
                             </FormGroup>
                         }
+                        {this.props.inputNumber &&
+                            <TextField
+                                id="number"
+                                label={this.props.inputNumber.label}
+                                value={this.inputNumber}
+                                onChange={action(e => { if (e.target.value >= this.props.inputNumber.min) this.inputNumber = e.target.value })}
+                                type="number"
+                                className={classes.textField}
+                                InputLabelProps={{
+                                    shrink: true,
+                                }}
+                                margin="normal"
+                            />
+                        }
                     </DialogContent>
                     <DialogActions>
                         {this.props.showCancel && <Button onClick={() => this.props.handleClose(false)} color="primary">
                             {this.props.disagreeText || "Cancel"}
                         </Button>}
-                        <Button onClick={() => this.props.handleClose(true)} color="primary" autoFocus>
+                        <Button onClick={() => this.props.handleClose(true, this.inputNumber, this.checked)} color="primary" autoFocus>
                             {this.props.agreeText || "OK"}
                         </Button>
                     </DialogActions>
@@ -59,4 +94,4 @@ const GenericDialog = observer(
         }
     });
 
-export default GenericDialog;
+export default withStyles(styles)(GenericDialog);
