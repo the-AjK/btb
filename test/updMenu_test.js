@@ -1,5 +1,5 @@
 /**
- * addMenu_test.js
+ * updMenu_test.js
  * unit tests
  * @author Alberto Garbui aka JK, https://github.com/the-AjK
  */
@@ -29,23 +29,14 @@ const chai = require("chai"),
 
 chai.use(sinonChai);
 
-let sendMessage;
-
-describe('addMenu()', function () {
+describe('updMenu()', function () {
 
     before(function () {
         // runs before all tests in this block
-        sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
-        sendMessage.callsFake((chatID, message, opts) => {
-            return new Promise((resolve, reject) => {
-                resolve();
-            });
-        });
     });
 
     after(function () {
         // runs after all tests in this block
-        sendMessage.restore();
     });
 
     beforeEach(function () {
@@ -60,7 +51,7 @@ describe('addMenu()', function () {
         // runs after each test in this block
     });
 
-    it('000a normal user should be able to delete his own order', function () {
+    it('000 should fail if user try to update a non existing menu', function () {
 
         const t1 = testDB.add(DB.Table, {
             name: "table1",
@@ -72,7 +63,7 @@ describe('addMenu()', function () {
             salt: "salt",
             email: "email@a.com",
             enabled: true,
-            role: userRoles.user //normal user
+            role: userRoles.admin
         });
         const dailyMenu = testDB.add(DB.Menu, {
             enabled: true,
@@ -99,31 +90,221 @@ describe('addMenu()', function () {
             tables: [t1._id]
         });
         const req = {
-                user: requser,
-                params: {
-                    id: order._id
-                }
-            };
+            user: requser,
+            params: {
+                id: "" //wrong id
+            },
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(1, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Polenta"
+                    ],
+                    sideDishes: ["Patate", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
-                expect(s).to.be.equal(200);
-                DB.Order.findById(order._id, (_err, _order) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_order.deleted).to.be.equal(true);
-                    DB.Order.findById(order2._id, (_err, _order) => {
-                        expect(_err).to.be.equal(null);
-                        expect(_order.deleted).to.be.equal(false);
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(500);
+                return {
+                    send: (message) => {
                         resolve();
-                    });
-                });
+                    }
+                };
             });
-            manager.orders.delete(req, {
-                sendStatus: sendStatus
+            manager.menus.update(req, {
+                status: status
             });
         }));
     });
+
+    it('001 should fail if user try to update a non existing menu 2', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                }, {
+                    value: "Insalatona",
+                    condiments: []
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id]
+        });
+        const req = {
+            user: requser,
+            params: {
+                id: "fakeID" //wrong id
+            },
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(1, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Polenta"
+                    ],
+                    sideDishes: ["Patate", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(500);
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                };
+            });
+            manager.menus.update(req, {
+                status: status
+            });
+        }));
+    });
+
+    it('002 should fail if user try to update old menus', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: false,
+            label: "testmenu",
+            day: moment().subtract(1, 'd'),
+            deadline: moment().subtract(23, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                }, {
+                    value: "Insalatona",
+                    condiments: []
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id]
+        });
+        const req = {
+            user: requser,
+            params: {
+                id: dailyMenu._id
+            },
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(1, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Polenta"
+                    ],
+                    sideDishes: ["Patate", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        resolve();
+                    }
+                };
+            });
+            manager.menus.update(req, {
+                status: status
+            });
+        }));
+    });
+
+
 
 
 });

@@ -1754,5 +1754,193 @@ describe('updOrder()', function () {
         }));
     });
 
+    it('012 should fail if orderID is not found', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            seats: 1,
+            enabled: true
+        });
+        const t2 = testDB.add(DB.Table, {
+            name: "table2",
+            seats: 1,
+            enabled: true
+        })
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                }, {
+                    value: "Insalatona",
+                    condiments: []
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+        const order = testDB.add(DB.Order, {
+            firstCourse: {
+                item: "spaghetti",
+                condiment: "pomodoro"
+            },
+            menu: dailyMenu._id,
+            table: t1._id,
+            owner: requser._id
+        });
+
+        const req = {
+                user: requser,
+                params: {
+                    id: "" //wrong id
+                },
+                body: {
+                    table: t1._id,
+                    firstCourse: {
+                        item: "spaghetti", //change condiment
+                        condiment: "pesto"
+                    }
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return (new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(500);
+                DB.Order.find({}, (_err, _orders) => {
+                    expect(_err).to.be.equal(null);
+                    expect(_orders.length).to.be.equal(1);
+                    expect(String(_orders[0].table)).to.be.equal(String(t1._id));
+                    expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
+                    expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
+                    expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
+                    resolve();
+                });
+            });
+            manager.orders.update(req, {
+                sendStatus: sendStatus
+            });
+        }));
+    });
+
+    it('013 should fail if orderID is not found 2', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            seats: 1,
+            enabled: true
+        });
+        const t2 = testDB.add(DB.Table, {
+            name: "table2",
+            seats: 1,
+            enabled: true
+        })
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().add(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                }, {
+                    value: "Insalatona",
+                    condiments: []
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+        const order = testDB.add(DB.Order, {
+            firstCourse: {
+                item: "spaghetti",
+                condiment: "pomodoro"
+            },
+            menu: dailyMenu._id,
+            table: t1._id,
+            owner: requser._id
+        });
+
+        const req = {
+                user: requser,
+                params: {
+                    id: "fakeID" //wrong id
+                },
+                body: {
+                    table: t1._id,
+                    firstCourse: {
+                        item: "spaghetti", //change condiment
+                        condiment: "pesto"
+                    }
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return (new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(500);
+                DB.Order.find({}, (_err, _orders) => {
+                    expect(_err).to.be.equal(null);
+                    expect(_orders.length).to.be.equal(1);
+                    expect(String(_orders[0].table)).to.be.equal(String(t1._id));
+                    expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
+                    expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
+                    expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
+                    resolve();
+                });
+            });
+            manager.orders.update(req, {
+                sendStatus: sendStatus
+            });
+        }));
+    });
+
 
 });

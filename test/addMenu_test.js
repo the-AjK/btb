@@ -101,13 +101,17 @@ describe('addMenu()', function () {
         };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                resolve();
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
             });
             manager.menus.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -153,13 +157,17 @@ describe('addMenu()', function () {
         };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                resolve();
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
             });
             manager.menus.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -206,13 +214,17 @@ describe('addMenu()', function () {
         };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                resolve();
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
             });
             manager.menus.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -258,66 +270,17 @@ describe('addMenu()', function () {
         };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                resolve();
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
             });
             manager.menus.add(req, {
-                sendStatus: sendStatus
-            });
-        }));
-    });
-
-    it('004 should fail if day and deadline are not at the same day', function () {
-
-        const t1 = testDB.add(DB.Table, {
-            name: "table1",
-            enabled: true
-        });
-        const requser = testDB.add(DB.User, {
-            username: "user1",
-            password: "password",
-            salt: "salt",
-            email: "email@a.com",
-            enabled: true,
-            role: userRoles.admin
-        });
-        const req = {
-            user: requser,
-            body: {
-                enabled: true,
-                label: "testmenu",
-                day: moment(),
-                deadline: moment().add(1, 'd'),
-                firstCourse: {
-                    items: [{
-                        value: "Spaghetti",
-                        condiments: ["Pomodoro", "Carbonara", "Pesto"]
-                    }, {
-                        value: "Insalatona",
-                        condiments: []
-                    }]
-                },
-                secondCourse: {
-                    items: [
-                        "Carne",
-                        "Melanzane"
-                    ],
-                    sideDishes: ["Patate al forno", "Cavolfiore"]
-                },
-                tables: [t1._id]
-            }
-        };
-
-        return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
-                expect(s).to.be.equal(400);
-                resolve();
-            });
-            manager.menus.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -360,13 +323,17 @@ describe('addMenu()', function () {
         };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                resolve();
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
             });
             manager.menus.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -408,13 +375,17 @@ describe('addMenu()', function () {
         };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                resolve();
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
             });
             manager.menus.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -461,18 +432,22 @@ describe('addMenu()', function () {
         };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                resolve();
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
             });
             manager.menus.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
 
-    it('008 should fail if firstCourse contain an invalid value', function () {
+    it('008 should fail if firstCourse contain a duplicated value', function () {
 
         const t1 = testDB.add(DB.Table, {
             name: "table1",
@@ -498,7 +473,7 @@ describe('addMenu()', function () {
                         value: "Spaghetti",
                         condiments: ["Pomodoro", "Carbonara", "Pesto"]
                     }, {
-                        value: "Spaghetti",
+                        value: "spaghetti",
                         condiments: []
                     }]
                 },
@@ -514,13 +489,17 @@ describe('addMenu()', function () {
         };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                resolve();
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
             });
             manager.menus.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -567,13 +546,17 @@ describe('addMenu()', function () {
         };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                resolve();
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
             });
             manager.menus.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -619,18 +602,307 @@ describe('addMenu()', function () {
         };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                resolve();
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
             });
             manager.menus.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
 
-    it('0aa admin user should be able to add a dailyMenu', function () {
+    it('011 should fail if firstCourse contain a duplicated condiment', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const req = {
+            user: requser,
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(1, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "pomodoro", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Melanzane"
+                    ],
+                    sideDishes: ["Patate al forno", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
+            });
+            manager.menus.add(req, {
+                status: status
+            });
+        }));
+    });
+
+    it('012 should fail if secondCourse contain an invalid item', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const req = {
+            user: requser,
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(1, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        ""
+                    ],
+                    sideDishes: ["Patate al forno", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
+            });
+            manager.menus.add(req, {
+                status: status
+            });
+        }));
+    });
+
+    it('013 should fail if secondCourse contain a duplicated item', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const req = {
+            user: requser,
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(1, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "carne"
+                    ],
+                    sideDishes: ["Patate al forno", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
+            });
+            manager.menus.add(req, {
+                status: status
+            });
+        }));
+    });
+
+    it('014 should fail if secondCourse contain an invalid sidedish', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const req = {
+            user: requser,
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(1, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Polenta"
+                    ],
+                    sideDishes: ["", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
+            });
+            manager.menus.add(req, {
+                status: status
+            });
+        }));
+    });
+
+    it('015 should fail if secondCourse contain a duplicated sidedish', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const req = {
+            user: requser,
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(1, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Polenta"
+                    ],
+                    sideDishes: ["CavolfiorE", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
+            });
+            manager.menus.add(req, {
+                status: status
+            });
+        }));
+    });
+
+    it('016 admin user should be able to add a dailyMenu', function () {
 
         const t1 = testDB.add(DB.Table, {
             name: "table1",
@@ -678,7 +950,16 @@ describe('addMenu()', function () {
                 return {
                     send: (m) => {
                         expect(m.enabled).to.be.equal(true);
-                        resolve();
+                        expect(m.owner).to.be.equal(undefined);
+                        DB.Menu.find({}, (err, menus) => {
+                            expect(err).to.be.equal(null);
+                            expect(menus.length).to.be.equal(1);
+                            let m = menus[0];
+                            expect(m.deleted).to.be.equal(false);
+                            expect(m.enabled).to.be.equal(true);
+                            expect(String(m.owner)).to.be.equal(String(requser._id));
+                            resolve();
+                        });
                     }
                 }
             });
@@ -688,10 +969,159 @@ describe('addMenu()', function () {
         }));
     });
 
+    it('017 admin user shouldnt be able to set private fields', function () {
 
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const user2 = testDB.add(DB.User, {
+            username: "user2",
+            password: "password",
+            salt: "salt",
+            email: "email2@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const req = {
+            user: requser,
+            body: {
+                _id: "fakeID", //private fields here
+                deleted: true,
+                updatedAt: "aaaa",
+                createdAt: "bbbb",
+                owner: user2._id, // till here
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(1, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Melanzane"
+                    ],
+                    sideDishes: ["Patate al forno", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
 
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: (m) => {
+                        expect(m.enabled).to.be.equal(true);
+                        expect(m._id).to.be.not.equal("fakeID");
+                        expect(m.owner).to.be.equal(undefined);
+                        expect(m.deleted).to.be.equal(undefined);
+                        expect(m.createdAt).to.be.not.equal("bbbb");
+                        DB.Menu.find({}, (err, menus) => {
+                            expect(err).to.be.equal(null);
+                            expect(menus.length).to.be.equal(1);
+                            let m = menus[0];
+                            expect(m.deleted).to.be.equal(false);
+                            expect(m.enabled).to.be.equal(true);
+                            expect(String(m._id)).to.be.not.equal("fakeID");
+                            expect(String(m.owner)).to.be.equal(String(requser._id));
+                            expect(m.createdAt).to.be.not.equal("bbbb");
+                            resolve();
+                        });
+                    }
+                }
+            });
+            manager.menus.add(req, {
+                status: status
+            });
+        }));
+    });
 
-    it('0bb admin user should be able to add a dailyMenu', function () {
+    it('018 admin user should be able to add a disabled dailyMenu', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const req = {
+            user: requser,
+            body: {
+                enabled: false,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(1, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Melanzane"
+                    ],
+                    sideDishes: ["Patate al forno", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: (m) => {
+                        expect(m.enabled).to.be.equal(false);
+                        expect(m.owner).to.be.equal(undefined);
+                        DB.Menu.find({}, (err, menus) => {
+                            expect(err).to.be.equal(null);
+                            expect(menus.length).to.be.equal(1);
+                            let m = menus[0];
+                            expect(m.deleted).to.be.equal(false);
+                            expect(m.enabled).to.be.equal(false);
+                            expect(String(m.owner)).to.be.equal(String(requser._id));
+                            resolve();
+                        });
+                    }
+                }
+            });
+            manager.menus.add(req, {
+                status: status
+            });
+        }));
+    });
+
+    it('019 should fail if daily menu is already present', function () {
 
         const t1 = testDB.add(DB.Table, {
             name: "table1",
@@ -730,16 +1160,38 @@ describe('addMenu()', function () {
             tables: [t1._id]
         });
         const req = {
-            user: requser
+            user: requser,
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(2, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Polenta"
+                    ],
+                    sideDishes: ["Patate", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
         };
 
         return (new Promise((resolve, reject) => {
             const status = sinon.stub();
             status.callsFake((s) => {
-                expect(s).to.be.equal(201);
+                expect(s).to.be.equal(400);
                 return {
-                    send: (m) => {
-                        expect(m.label)
+                    send: (message) => {
                         resolve();
                     }
                 }
@@ -750,5 +1202,85 @@ describe('addMenu()', function () {
         }));
     });
 
+    it('020 should fail if future menu is already present', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment().add(24, 'h'),
+            deadline: moment().add(25, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                }, {
+                    value: "Insalatona",
+                    condiments: []
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id]
+        });
+        const req = {
+            user: requser,
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment().add(25, 'h'),
+                deadline: moment().add(27, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Polenta"
+                    ],
+                    sideDishes: ["Patate", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
+            });
+            manager.menus.add(req, {
+                status: status
+            });
+        }));
+    });
 
 });

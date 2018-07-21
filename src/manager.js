@@ -331,56 +331,80 @@ function checkDailyMenu(data, cb) {
                 $lt: tomorrow.toDate()
             }
         };
-    DB.Menu.findOne(query, (err, res) => {
-        if (err) {
-            console.error(err);
-        } else {
-            cb(res)
-        }
-    });
+    DB.Menu.findOne(query, cb);
 }
 
-function menuIsValid(menu) {
+//validate menu and return error
+function validateMenu(menu) {
     if (!menu.label) {
-        console.error("Menu label is required")
-        return false;
+        return "menu label is required";
     }
     if (!menu.day) {
-        console.error("Menu date is required")
-        return false;
+        return "menu date is required";
+    }
+    if (moment(menu.day).isBefore(moment(), 'day')) {
+        return "menu day shall be >= today";
     }
     if (!menu.deadline) {
-        console.error("Menu deadline is required")
-        return false;
+        return "menu deadline is required";
     }
     if (!moment(menu.day).isSame(moment(menu.deadline), 'day')) {
-        console.error("Menu date and deadline shall be the same day")
-        return false;
+        return "menu date and deadline shall be the same day";
     }
     if (!menu.tables || !Array.isArray(menu.tables) || menu.tables.length == 0) {
-        console.error("Menu tables list is required")
-        return false;
+        return "menu tables list is required";
     }
+    const firstCourses = [],
+        condiments = [];
     if (menu.firstCourse && menu.firstCourse.items) {
         for (let i = 0; i < menu.firstCourse.items.length; i++) {
             let fc = menu.firstCourse.items[i];
             if (fc.value == undefined || fc.value.trim() == "") {
-                console.error("Invalid menu firstCourse item");
-                return false;
+                return "invalid menu firstCourse item";
+            } else if (firstCourses.indexOf(fc.value.toLowerCase()) >= 0) {
+                return "duplicated firstCourse item";
             }
+            firstCourses.push(fc.value.toLowerCase())
             for (let j = 0; j < fc.condiments.length; j++) {
                 let condiment = fc.condiments[j];
                 if (condiment == undefined || condiment.trim() == "") {
-                    console.error("Invalid menu firstCourse item condiment");
-                    return false;
+                    return "invalid menu firstCourse item condiment";
+                } else if (condiments.indexOf(condiment.toLowerCase()) >= 0) {
+                    return "duplicated firstCourse condiment";
                 }
+                condiments.push(condiment.toLowerCase());
             }
         }
     } else {
-        console.error("Invalid menu firstCourse");
-        return false;
+        return "invalid menu firstCourse";
     }
-    return true;
+    const secondCourses = [],
+        sideDishes = [];
+    if (menu.secondCourse && menu.secondCourse.items) {
+        for (let i = 0; i < menu.secondCourse.items.length; i++) {
+            let sc = menu.secondCourse.items[i];
+            if (sc == undefined || sc.trim() == "") {
+                return "invalid menu secondCourse item";
+            } else if (secondCourses.indexOf(sc.toLowerCase()) >= 0) {
+                return "duplicated secondCourse item";
+            }
+            secondCourses.push(sc.toLowerCase());
+        }
+
+        for (let j = 0; j < menu.secondCourse.sideDishes.length; j++) {
+            let sd = menu.secondCourse.sideDishes[j];
+            if (sd.trim() == "") {
+                return "invalid menu secondCourse sideDish";
+            } else if (sideDishes.indexOf(sd.toLowerCase()) >= 0) {
+                return "duplicated secondCourse sideDish";
+            }
+            sideDishes.push(sd.toLowerCase());
+        }
+
+    } else {
+        return "invalid menu secondCourse"
+    }
+    return null;
 }
 
 let dailyMenuNotificationTimeout;
@@ -392,6 +416,21 @@ function notifyDailyMenu(menu) {
     dailyMenuNotificationTimeout = setTimeout(() => {
         botNotifications.dailyMenu(menu);
     }, 1000 * timeout);
+}
+
+//returns only public fields for menu add/update api
+function filteredMenuData(menu) {
+    return {
+        _id: menu._id,
+        enabled: menu.enabled,
+        label: menu.label,
+        day: menu.day,
+        deadline: menu.deadline,
+        createdAt: menu.createdAt,
+        firstCourse: menu.firstCourse,
+        secondCourse: menu.secondCourse,
+        tables: menu.tables,
+    };
 }
 
 function _addMenu(req, res) {
@@ -410,23 +449,29 @@ function _addMenu(req, res) {
 
     data.createdAt = moment().format();
 
-    if (!menuIsValid(data) || moment(data.day).isBefore(moment(), 'day')) {
-        res.sendStatus(400);
+    //force the deadline to be in the same day as menu day
+    if (data.deadline && data.day) {
+        let deadline = moment(data.deadline, "HH:mm");
+        data.deadline = moment(data.day, "YYYY-MM-DD").set('hour', deadline.hours()).set('minutes', deadline.minutes()).toISOString(true);
+    }
+
+    let menuError = validateMenu(data);
+
+    if (menuError != null) {
+        res.status(400).send(menuError);
     } else {
-        if (data.deadline) {
-            let deadline = moment(data.deadline, "HH:mm");
-            data.deadline = moment(data.day, "YYYY-MM-DD").set('hour', deadline.hours()).set('minutes', deadline.minutes()).toISOString(true);
-        }
-        checkDailyMenu(data, (dailymenu) => {
-            if (dailymenu) {
-                console.log("Daily menu already present")
-                res.status(400).send("Daily menu already present");
+        checkDailyMenu(data, (err, dailymenu) => {
+            if (err) {
+                console.error(err);
+                res.status(500).send("DB error");
+            } else if (dailymenu) {
+                res.status(400).send("daily menu already present");
             } else {
                 const newMenu = new DB.Menu(data);
                 newMenu.save((err, menu) => {
                     if (err) {
                         console.error(err);
-                        return res.sendStatus(400);
+                        return res.status(400).send("DB save error");
                     }
                     if (data.sendNotification && menu.enabled) {
                         if (moment(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
@@ -442,7 +487,8 @@ function _addMenu(req, res) {
                     bot.broadcastMessage("Daily Menu uploaded by *" + req.user.email + "*", accessLevels.root, null, true);
                     //update reminder stuff
                     reminder.initDailyReminders();
-                    res.status(201).send(menu);
+
+                    res.status(201).send(filteredMenuData(menu));
                 });
             }
         });
@@ -580,17 +626,23 @@ function _updateMenu(req, res) {
     data._id = req.params.id;
     data.updatedAt = moment().format();
     delete data.createdAt;
+    //force the deadline to be in the same day as menu day
+    if (data.deadline && data.day) {
+        let deadline = moment(data.deadline, "HH:mm");
+        data.deadline = moment(data.day, "YYYY-MM-DD").set('hour', deadline.hours()).set('minutes', deadline.minutes()).toISOString(true);
+    }
 
-    if (!menuIsValid(data) || moment(data.day).isBefore(moment(), 'day')) {
-        res.sendStatus(400);
+    const menuError = validateMenu(data);
+
+    if (menuError != null) {
+        res.status(400).send(menuError);
     } else {
-        if (data.deadline) {
-            let deadline = moment(data.deadline, "HH:mm");
-            data.deadline = moment(data.day, "YYYY-MM-DD").set('hour', deadline.hours()).set('minutes', deadline.minutes()).toISOString(true);
-        }
-        checkDailyMenu(data, (dailymenu) => {
-            if (dailymenu) {
-                res.status(400).send("Daily menu already present");
+        checkDailyMenu(data, (err, dailymenu) => {
+            if (err) {
+                console.error(err);
+                res.status(500).send("DB error");
+            } else if (dailymenu) {
+                res.status(400).send("daily menu already present");
             } else {
 
                 if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
@@ -606,15 +658,13 @@ function _updateMenu(req, res) {
                     DB.Menu.findOne(query, (err, oldMenu) => {
                         if (err) {
                             console.error(err);
-                            return res.sendStatus(400);
+                            return res.status(500).send("DB read error");
                         } else if (!oldMenu) {
-                            return res.sendStatus(404);
+                            return res.status(404).send("menu not found");
                         } else if (oldMenu.enabled && !(moment(data.day).isSame(moment(oldMenu.day), 'day'))) {
-                            console.warn("Changing menu data when menu is enabled its not allowed")
-                            return res.sendStatus(400);
+                            return res.status(400).send("changing menu data when menu is enabled its not allowed");
                         } else if (!checkUserAccessLevel(req.user.role, accessLevels.root) && moment().isAfter(moment(oldMenu.deadline).add(2, 'h'))) {
-                            console.error("Cannot update daily menu 2h after deadline");
-                            return res.sendStatus(400);
+                            return res.status(400).send("cannot update daily menu 2h after deadline");
                         }
 
                         //require the orders lock to allow people that are ordering to finish their ordering process and then update the dailyMenu
@@ -625,10 +675,10 @@ function _updateMenu(req, res) {
                             DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
                                 if (err) {
                                     console.error(err);
-                                    res.sendStatus(500);
+                                    res.status(500).send("DB save error");
                                     return release();
                                 } else if (!menu) {
-                                    res.sendStatus(404);
+                                    res.status(404).send("menu not found");
                                     return release();
                                 }
                                 if (data.sendNotification) {
@@ -684,7 +734,7 @@ function _updateMenu(req, res) {
                                 bot.broadcastMessage("Daily Menu updated by *" + req.user.email + "*", accessLevels.root, null, true);
                                 //update reminder stuff
                                 reminder.initDailyReminders();
-                                res.sendStatus(200);
+                                res.status(200).send(filteredMenuData(menu));
                             });
                         });
                     });
@@ -693,24 +743,22 @@ function _updateMenu(req, res) {
                     DB.Menu.findOne(query, (err, oldMenu) => {
                         if (err) {
                             console.error(err);
-                            return res.sendStatus(400);
+                            return res.status(500).send("DB read error");
                         } else if (!oldMenu) {
-                            return res.sendStatus(404);
+                            return res.status(404).send("menu not found");
                         } else if (oldMenu.enabled && !(moment(data.day).isSame(moment(oldMenu.day), 'day'))) {
-                            console.warn("Changing menu data when menu is enabled its not allowed")
-                            return res.sendStatus(400);
+                            return res.status(400).send("changing menu data when menu is enabled its not allowed");
                         } else if (oldMenu.enabled && moment(data.day).isBefore(moment(), 'day')) {
-                            console.warn("Cannot edit old menus");
-                            return res.sendStatus(400);
+                            return res.status(400).send("cannot edit old menus");
                         }
                         DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
                             if (err) {
                                 console.error(err);
-                                return res.sendStatus(500);
+                                return res.status(500).send("DB save error");
                             } else if (!menu) {
-                                return res.sendStatus(404);
+                                return res.status(404).send("menu not found");
                             }
-                            res.sendStatus(200);
+                            res.status(200).send(filteredMenuData(menu));
                         });
                     });
                 }
@@ -739,9 +787,9 @@ function _deleteMenu(req, res) {
                 release();
                 if (err) {
                     console.error(err);
-                    return res.sendStatus(500);
+                    return res.status(500).send("DB error");
                 } else if (!menu) {
-                    return res.sendStatus(404);
+                    return res.status(404).send("menu not found");
                 }
                 //check if its the daily menu
                 if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
@@ -750,7 +798,7 @@ function _deleteMenu(req, res) {
                     bot.broadcastMessage("Daily Menu deleted by *" + req.user.email + "*", accessLevels.root, null, true);
                     //TODO send user notifications
                 }
-                res.sendStatus(200);
+                res.status(200).send("menu deleted");
             });
         } else {
             //Root user full remove
@@ -758,9 +806,9 @@ function _deleteMenu(req, res) {
                 release();
                 if (err) {
                     console.error(err);
-                    return res.sendStatus(500);
+                    return res.status(500).send("DB error");
                 } else if (!menu) {
-                    return res.sendStatus(404);
+                    return res.status(404).send("menu not found");
                 }
                 //check if its the daily menu
                 if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
@@ -769,7 +817,7 @@ function _deleteMenu(req, res) {
                     bot.broadcastMessage("Daily Menu deleted by *" + req.user.email + "*", accessLevels.root, null, true);
                     //TODO send user notifications
                 }
-                res.sendStatus(200);
+                res.status(200).send("menu deleted");
             });
         }
     });
