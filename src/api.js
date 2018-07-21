@@ -47,8 +47,12 @@ function generateResourceAPIStack(resource) {
 }
 
 generateResourceAPIStack('users');
-generateResourceAPIStack('menus');
 generateResourceAPIStack('tables');
+
+api.get("/menus/:id?", apiLimiter, auth.checkAuthUser, manager.menus.get);
+api.post("/menus", apiLimiter, auth.checkAuthAdmin, manager.menus.add);
+api.put("/menus/:id", apiLimiter, auth.checkAuthAdmin, manager.menus.update);
+api.delete("/menus/:id", apiLimiter, auth.checkAuthAdmin, manager.menus.delete);
 
 api.get("/orders/:id?", apiLimiter, auth.checkAuthUser, manager.orders.get);
 api.post("/orders", apiLimiter, auth.checkAuthUser, manager.orders.add);

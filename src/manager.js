@@ -271,6 +271,17 @@ function _getMenus(req, res) {
         select.deleted = -1;
         query.deleted = false;
     }
+
+    if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+        //user limitations
+        select.deleted = -1;
+        select.owner = -1;
+        select.enabled = -1;
+        select.tables = -1;
+        query.deleted = false;
+        query.enabled = true; //users view only enabled menus
+    }
+
     if (!id) {
         DB.Menu.find(query, select, options).populate('tables').populate({
             path: 'owner',
