@@ -183,16 +183,40 @@ exports.ordersCompleteReminder = function () {
                 } else {
                     let message = require('./bot').formatOrderComplete(stats);
 
-                    // Last order lost 1 point
                     DB.getDailyOrders(null, (err, orders) => {
                         if (err) {
                             console.error(err);
                         } else if (orders.length) {
-                            levels.removePoints(orders[orders.length - 1].owner._id, 1, false, (err, points) => {
-                                if (err) {
-                                    console.error(err);
-                                }
+
+                            //orders are sorted by updatedAt field
+
+                            //Add 1 point to the first order owner
+                            const firstOrderOwner = orders[0].owner;
+                            bot.telegram.sendMessage(firstOrderOwner.telegram.id, "👍 You are the daily winner!\nYou were the first to place the daily order!", {
+                                parse_mode: "markdown"
+                            }).then((m) => {
+                                levels.addPoints(firstOrderOwner._id, 1, false, (err, points) => {
+                                    if (err) {
+                                        console.error(err);
+                                    }
+                                });
                             });
+
+                            //Remove 1 point to the last order owner
+                            if (orders.length > 1) {
+                                //more than 1 order
+                                const lastOrderOwner = orders[orders.length - 1].owner;
+                                bot.telegram.sendMessage(lastOrderOwner.telegram.id, "👎 You are the daily loser!\nYou were the last to place the daily order!", {
+                                    parse_mode: "markdown"
+                                }).then((m) => {
+                                    levels.removePoints(lastOrderOwner._id, 1, false, (err, points) => {
+                                        if (err) {
+                                            console.error(err);
+                                        }
+                                    });
+                                });
+
+                            }
                         }
                     });
                     //Send mail

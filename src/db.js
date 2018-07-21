@@ -531,7 +531,7 @@ exports.getDailyOrders = (day, cb) => {
         menu: menu._id
       }, null, {
         sort: {
-          createdAt: 1
+          updatedAt: 1
         }
       }).populate('owner').populate('menu').populate('table').exec(cb)
     }

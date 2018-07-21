@@ -331,24 +331,8 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                                     bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
                                 }
                                 deleteLastMessage(ctx);
-                                if (!err) {
-                                    DB.getDailyOrdersCount(null, (err, count) => {
-                                        if (err) {
-                                            console.error(err);
-                                        } else if (count == 1) {
-                                            levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
-                                                if (err) {
-                                                    console.error(err);
-                                                }
-                                            });
-                                        }
-                                        release();
-                                        leave(ctx);
-                                    });
-                                } else {
-                                    release();
-                                    leave(ctx);
-                                }
+                                release();
+                                leave(ctx);
                             });
                         }
                     });
@@ -603,24 +587,8 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                                     bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
                                 }
                                 deleteLastMessage(ctx);
-                                if (!err) {
-                                    DB.getDailyOrdersCount(null, (err, count) => {
-                                        if (err) {
-                                            console.error(err);
-                                        } else if (count == 1) {
-                                            levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
-                                                if (err) {
-                                                    console.error(err);
-                                                }
-                                            });
-                                        }
-                                        release();
-                                        leave(ctx);
-                                    });
-                                } else {
-                                    release();
-                                    leave(ctx);
-                                }
+                                release();
+                                leave(ctx);
                             });
                         }
                     });

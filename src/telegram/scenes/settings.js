@@ -111,11 +111,11 @@ function deleteDailyOrder(ctx) {
                 DB.Order.findByIdAndRemove(order._id, (err, deletedOrder) => {
                     if (!err && deletedOrder) {
                         ctx.reply("Your daily order has been deleted!", keyboards.settings(ctx).opts);
-                        levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
+                        /*levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
                             if (err) {
                                 console.error(err);
                             }
-                        });
+                        });*/
                         if (!checkUser(ctx.session.user.role, userRoles.root)) {
                             bot.broadcastMessage("Order deleted by *" + ctx.session.user.email + "* ", accessLevels.root, null, true);
                         }
