@@ -41,15 +41,15 @@ api.get("/stats", apiLimiter, auth.checkAuthUser, manager.getStats);
 
 api.post("/broadcast", apiLimiter, auth.checkAuthAdmin, manager.broadcastMessage);
 
-function generateResourceAPIStack(resource) {
-	api.get("/" + resource + "/:id?", apiLimiter, auth.checkAuthAdmin, manager[resource].get);
-	api.post("/" + resource, apiLimiter, auth.checkAuthAdmin, manager[resource].add);
-	api.put("/" + resource + "/:id", apiLimiter, auth.checkAuthAdmin, manager[resource].update);
-	api.delete("/" + resource + "/:id", apiLimiter, auth.checkAuthAdmin, manager[resource].delete);
-}
+api.get("/users/:id?", apiLimiter, auth.checkAuthAdmin, manager.users.get);
+api.post("/users", apiLimiter, auth.checkAuthRoot, manager.users.add);
+api.put("/users/:id", apiLimiter, auth.checkAuthRoot, manager.users.update);
+api.delete("/users/:id", apiLimiter, auth.checkAuthAdmin, manager.users.delete);
 
-generateResourceAPIStack('users');
-generateResourceAPIStack('tables');
+api.get("/tables/:id?", apiLimiter, auth.checkAuthAdmin, manager.tables.get);
+api.post("/tables", apiLimiter, auth.checkAuthAdmin, manager.tables.add);
+api.put("/tables/:id", apiLimiter, auth.checkAuthAdmin, manager.tables.update);
+api.delete("/tables/:id", apiLimiter, auth.checkAuthAdmin, manager.tables.delete);
 
 api.get("/menus/:id?", apiLimiter, auth.checkAuthUser, manager.menus.get);
 api.post("/menus", apiLimiter, auth.checkAuthAdmin, manager.menus.add);

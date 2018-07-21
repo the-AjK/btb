@@ -32,9 +32,25 @@ const Tables = inject("ctx")(
             }
 
             handleAddTable = () => {
-                const table = { name: "Table" + this.props.ctx.tables.tables.length, seats: 2 };
-                this.props.ctx.tables.add(table, () => {
-                    this.props.ctx.tables.fetch();
+                this.props.ctx.dialog.set({
+                    open: true,
+                    showCancel: true,
+                    inputNumber: {
+                        label: "Seats",
+                        min: 1,
+                        value: 6
+                    },
+                    onClose: (response, value) => {
+                        if (response) {
+                            console.log(value)
+                            const table = { name: "Table" + this.props.ctx.tables.tables.length, seats: value };
+                            this.props.ctx.tables.add(table, () => {
+                                this.props.ctx.tables.fetch();
+                            });
+                        }
+                    },
+                    title: "Add new table",
+                    description: "How many seats?"
                 });
             }
 
@@ -79,7 +95,7 @@ const Tables = inject("ctx")(
 
             handleName = props => () => {
                 let name = prompt("Enter table name:", props.original.name);
-                if(name !== "" && name !== props.original.name){
+                if (name !== "" && name !== props.original.name) {
                     let id = props.original._id,
                         data = { name: name };
                     this.props.ctx.tables.update(id, data, (err) => {
@@ -92,7 +108,7 @@ const Tables = inject("ctx")(
 
             handleSeats = props => () => {
                 let seats = parseInt(prompt("Enter table seats:", props.original.seats), 10);
-                if(!isNaN(seats) && seats !== 0){
+                if (!isNaN(seats) && seats !== 0) {
                     let id = props.original._id,
                         data = { seats: seats };
                     this.props.ctx.tables.update(id, data, (err) => {
@@ -136,7 +152,7 @@ const Tables = inject("ctx")(
                     }, {
                         Header: 'Seats',
                         accessor: 'seats',
-                        Cell: props => <Button onClick={this.handleSeats(props)}>{props.value}</Button>
+                        Cell: props => roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) ? <Button onClick={this.handleSeats(props)}>{props.value}</Button> : props.value
                     }, {
                         Header: 'Deleted',
                         accessor: 'deleted',
@@ -152,6 +168,7 @@ const Tables = inject("ctx")(
                         Header: 'Updated at',
                         accessor: 'updatedAt',
                         filterable: false,
+                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
                         Cell: props => { return <span title={moment(props.value).format('DD/MM/YY HH:mm:ss')}>{moment(props.value).from(moment())}</span> }
                     }, {
                         Header: 'Actions',
