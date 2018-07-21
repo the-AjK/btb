@@ -387,6 +387,10 @@ const BeerEventSchema = new mongoose.Schema({
   drunk: {
     type: Boolean,
     default: false
+  },
+  locked: {
+    type: Boolean,
+    default: false
   }
 }, eventOptions);
 

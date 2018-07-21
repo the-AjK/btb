@@ -123,6 +123,19 @@ function autoDrink() {
     }
 }
 
+function saveLockedBeerEvent(ctx) {
+    const newLockedBeer = new DB.BeerEvent({
+        owner: ctx.session.user._id,
+        drunk: drunkBot,
+        locked: true
+    });
+    newLockedBeer.save((err, beer) => {
+        if (err) {
+            console.error(err);
+        }
+    });
+}
+
 function addBeer(ctx) {
     lock.readLock('beer', function (release) {
         if (drunkBot && beerLock.username != ctx.session.user.username) {
@@ -130,12 +143,14 @@ function addBeer(ctx) {
                 parse_mode: "markdown"
             });
             console.log("Drunk beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
+            saveLockedBeerEvent(ctx);
             return release();
         } else if (drunkBot) {
             ctx.reply("😵 You got me drunk!", {
                 parse_mode: "markdown"
             });
             console.log("Drunk beer from: " + ctx.session.user.email);
+            saveLockedBeerEvent(ctx);
             return release();
         }
         if (beerLock != null) {
@@ -153,6 +168,7 @@ function addBeer(ctx) {
                 });
             }
             console.log("Locked beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
+            saveLockedBeerEvent(ctx);
             return release();
         } else {
             if (lastUserBeer && lastUserBeer.email == ctx.session.user.email && levels.getLevel(ctx.session.user.points) > 0) {
