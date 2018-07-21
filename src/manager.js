@@ -994,8 +994,8 @@ function _addOrder(req, res) {
                 //force adding orders only for the dailyMenu
                 data.menu = menu._id;
 
-                //check deadline
-                if (moment().isAfter(moment(menu.deadline))) {
+                //check deadline for non admin users
+                if (!checkUserAccessLevel(req.user.role, accessLevels.admin) && moment().isAfter(moment(menu.deadline))) {
                     console.error("cannot add order: deadline reached")
                     res.sendStatus(400);
                     return release();
@@ -1090,8 +1090,8 @@ function _updateOrder(req, res) {
                 //force updating orders only for the dailyMenu
                 query.menu = menu._id;
 
-                //check deadline
-                if (moment().isAfter(moment(menu.deadline))) {
+                //check deadline for non admin users
+                if (!checkUserAccessLevel(req.user.role, accessLevels.admin) && moment().isAfter(moment(menu.deadline))) {
                     console.error("cannot update order: deadline reached")
                     res.sendStatus(400);
                     return release();
@@ -1152,7 +1152,6 @@ function _updateOrder(req, res) {
             }
         });
     });
-
 
 }
 

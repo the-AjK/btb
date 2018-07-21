@@ -2108,7 +2108,7 @@ describe('addOrder()', function () {
     });
 
 
-    it('024 should fail if deadline is reached', function () {
+    it('024a should fail if deadline is reached for normal user', function () {
 
         const t1 = testDB.add(DB.Table, {
             name: "table1",
@@ -2179,6 +2179,86 @@ describe('addOrder()', function () {
             });
             manager.orders.add(req, {
                 sendStatus: sendStatus
+            });
+        });
+    });
+
+    it('024b should be ok if deadline is reached for admin users', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const t2 = testDB.add(DB.Table, {
+            name: "table2",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().subtract(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    secondCourse: {
+                        item: "Carne",
+                        sideDishes: ["Patate al forno"]
+                    },
+                    owner: requser._id
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+
+        return new Promise((resolve, reject) => {
+            const send = sinon.stub();
+            send.callsFake((data) => {
+                DB.Order.countDocuments((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
+                    resolve();
+                });
+            });
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: send
+                }
+            });
+            manager.orders.add(req, {
+                status: status
             });
         });
     });
