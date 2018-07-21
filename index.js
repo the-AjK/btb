@@ -10,21 +10,9 @@ if (process.env.NODE_ENV !== "production") {
 	require("dotenv").load();
 }
 
-const express = require("express"),
-	bodyParser = require("body-parser"),
-	Raven = require('raven'),
-	path = require("path"),
-	cors = require("cors"),
-	app = express(),
-	requestIp = require('request-ip'),
-	packageJSON = require('./package.json'),
-	apiRouter = require("./src/api"),
-	auth = require("./src/auth"),
-	db = require("./src/db");
-
 console.log(
 	"\n***********************************************************\n*\n" +
-	"*      BiteTheBot v" + packageJSON.version + "\n" +
+	"*      BiteTheBot v" + require('./package.json').version + "\n" +
 	"*      enviroment: " + process.env.NODE_ENV + "\n" +
 	"*      port: " + process.env.PORT + "\n*\n" +
 	"***********************************************************\n"
@@ -40,21 +28,22 @@ if (process.env.NODE_ENV == "production") {
 }
 
 let dbConnected = false;
-db.init(() => {
+require("./src/db").init(() => {
 	dbConnected = true;
 });
 require('deasync').loopWhile(function () {
 	return !dbConnected;
 });
 
-setInterval(() => {
-	if (process.env.DEBUG_MEMORY) {
-		const used = process.memoryUsage();
-		for (let key in used) {
-			console.log(`${key} ${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
-		}
-	}
-}, 5000);
+const express = require("express"),
+	bodyParser = require("body-parser"),
+	Raven = require('raven'),
+	path = require("path"),
+	cors = require("cors"),
+	app = express(),
+	requestIp = require('request-ip'),
+	apiRouter = require("./src/api"),
+	auth = require("./src/auth");
 
 console.log("Starting telegram bot...");
 require("./src/telegram/bot").init(app);

@@ -21,7 +21,7 @@ const passport = require("passport"),
 //test stuff
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").load();
-} 
+}
 
 const JWTOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -34,6 +34,7 @@ passport.use(
   new JwtStrategy(JWTOptions, function (jwt_payload, done) {
     DB.User.findOne({
       email: jwt_payload.email,
+      enabled: true,
       deleted: false
     }, function (
       err,
@@ -99,6 +100,11 @@ exports.login = function (req, res) {
       console.error(err);
       res.sendStatus(500);
     } else if (user) {
+      if (!user.enabled) {
+        //user found but not enabled
+        require("./telegram/bot").broadcastMessage("User not dashboard enabled: " + user.email + "\nip: " + req.clientIp, accessLevels.root, null, true);
+        return res.sendStatus(401);
+      }
       if (sha512(password, user.salt).hash === user.password) {
         const userData = {
           _id: user._id,

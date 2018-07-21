@@ -8,13 +8,16 @@
 const mongoose = require("mongoose"),
   moment = require("moment"),
   roles = require("./roles"),
+  utils = require("./utils"),
   userRoles = roles.userRoles,
   accessLevels = roles.accessLevels,
   db = mongoose.connection;
 
 exports.init = function (cb) {
   console.log("DB connecting to " + process.env.MONGODB_URI.split('@')[1] + "...");
-  mongoose.connect(process.env.MONGODB_URI);
+  mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true
+  });
   db.on("error", console.error.bind(console, "connection error:"));
   db.once("open", function () {
     console.log("DB connected!");
@@ -234,6 +237,11 @@ const MenuSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: this.owner
   }
 }).index({
   day: 1
@@ -290,6 +298,16 @@ const OrderSchema = new mongoose.Schema({
     type: Number,
     min: 0,
     max: 10
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: this.owner
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: this.owner
   },
   createdAt: {
     type: Date,
@@ -374,6 +392,10 @@ const BeerEventSchema = new mongoose.Schema({
   drunk: {
     type: Boolean,
     default: false
+  },
+  locked: {
+    type: Boolean,
+    default: false
   }
 }, eventOptions);
 
@@ -445,6 +467,10 @@ const HPEventSchema = new mongoose.Schema({
     counter: {
       type: Number,
       required: true
+    },
+    damage: {
+      type: Number,
+      default: 1
     }
   }]
 }, eventOptions);
@@ -514,7 +540,7 @@ exports.getDailyOrders = (day, cb) => {
         menu: menu._id
       }, null, {
         sort: {
-          createdAt: 1
+          updatedAt: 1
         }
       }).populate('owner').populate('menu').populate('table').exec(cb)
     }
@@ -585,7 +611,16 @@ function _decodeOrders(orders) {
     }
   }
 
-  //sorting by number of suborders
+  //sorting by fc/sc
+  for (let t in orderStats) {
+    if (orderStats[t].firstCourses) {
+      orderStats[t].firstCourses = utils.sortObj(orderStats[t].firstCourses);
+    }
+    if (orderStats[t].secondCourses) {
+      orderStats[t].secondCourses = utils.sortObj(orderStats[t].secondCourses);
+    }
+  }
+
   return orderStats;
 }
 
@@ -683,7 +718,7 @@ exports.getDailyOrdersCount = (day, cb) => {
       Order.find({
         deleted: false,
         menu: menu._id
-      }).count().exec(cb)
+      }).countDocuments().exec(cb)
     } else {
       cb(err || "DB error");
     }

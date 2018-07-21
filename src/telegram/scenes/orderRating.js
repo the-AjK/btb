@@ -100,8 +100,7 @@ function setOrderRating(ctx) {
             ctx.reply("You can't rate your order yet! Please wait")
         } else {
             DB.Order.findByIdAndUpdate(order._id, {
-                rating: ctx.session.rating,
-                updatedAt: moment().format()
+                rating: ctx.session.rating
             }, (err, order) => {
                 if (err) {
                     console.error(err);

@@ -90,14 +90,16 @@ function sendDailyMenuUpdate(user, message) {
 
 //Send daily menu update notification for every user in the list
 exports.dailyMenuUpdated = function (users, cb) {
-    const query = {
-            "telegram.enabled": true,
-            "telegram.banned": false,
-            "deleted": false,
-            //"settings.dailyMenu": true
-        },
-        message = "⚠️ Daily menu has been changed and your order has been deleted!\nPlease place your order again.";
+    const message = "⚠️ Daily menu has been changed and your order has been deleted!\nPlease place your order again.";
+    async.parallel(users.map(u => sendDailyMenuUpdate(u, message)), (_err) => {
+        if (cb)
+            cb(_err);
+    });
+}
 
+//Send daily menu deleted notification for every user in the list
+exports.dailyMenuDeleted = function (users, cb) {
+    const message = "⚠️ Daily menu has been removed and your order has been deleted!\nSeems like you won't eat today 😬";
     async.parallel(users.map(u => sendDailyMenuUpdate(u, message)), (_err) => {
         if (cb)
             cb(_err);
@@ -105,14 +107,7 @@ exports.dailyMenuUpdated = function (users, cb) {
 }
 
 exports.dailyMenuUpdatedNotify = function (users, cb) {
-    const query = {
-            "telegram.enabled": true,
-            "telegram.banned": false,
-            "deleted": false,
-            "settings.dailyMenu": true
-        },
-        message = "ℹ️ Daily menu has been changed\nYour order hasn't been affected tho!";
-
+    const message = "ℹ️ Daily menu has been changed\nYour order hasn't been affected tho!";
     async.parallel(users.map(u => sendDailyMenuUpdate(u, message)), (_err) => {
         if (cb)
             cb(_err);
@@ -183,16 +178,40 @@ exports.ordersCompleteReminder = function () {
                 } else {
                     let message = require('./bot').formatOrderComplete(stats);
 
-                    // Last order lost 1 point
                     DB.getDailyOrders(null, (err, orders) => {
                         if (err) {
                             console.error(err);
                         } else if (orders.length) {
-                            levels.removePoints(orders[orders.length - 1].owner._id, 1, false, (err, points) => {
-                                if (err) {
-                                    console.error(err);
-                                }
+
+                            //orders are sorted by updatedAt field
+
+                            //Add 1 point to the first order owner
+                            const firstOrderOwner = orders[0].owner;
+                            bot.telegram.sendMessage(firstOrderOwner.telegram.id, "👍 You are the daily winner!\nYou were the first to place the daily order!", {
+                                parse_mode: "markdown"
+                            }).then((m) => {
+                                levels.addPoints(firstOrderOwner._id, 1, false, (err, points) => {
+                                    if (err) {
+                                        console.error(err);
+                                    }
+                                });
                             });
+
+                            //Remove 1 point to the last order owner
+                            if (orders.length > 1) {
+                                //more than 1 order
+                                const lastOrderOwner = orders[orders.length - 1].owner;
+                                bot.telegram.sendMessage(lastOrderOwner.telegram.id, "👎 You are the daily loser!\nYou were the last to place the daily order!", {
+                                    parse_mode: "markdown"
+                                }).then((m) => {
+                                    levels.removePoints(lastOrderOwner._id, 1, false, (err, points) => {
+                                        if (err) {
+                                            console.error(err);
+                                        }
+                                    });
+                                });
+
+                            }
                         }
                     });
                     //Send mail

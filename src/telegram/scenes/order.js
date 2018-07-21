@@ -12,6 +12,7 @@ const moment = require("moment"),
     WizardScene = require('telegraf/scenes/wizard'),
     keyboards = require('../keyboards'),
     ReadWriteLock = require('rwlock'),
+    manager = require('../../manager'),
     roles = require("../../roles"),
     checkUser = roles.checkUser,
     userRoles = roles.userRoles,
@@ -27,15 +28,19 @@ exports.getOrdersLock = function () {
     return ordersLock;
 }
 
-function deleteLastMessage(ctx){
+function deleteLastMessage(ctx) {
     if (ctx.session.lastMessage) {
         ctx.deleteMessage(ctx.session.lastMessage.message_id);
         delete ctx.session.lastMessage;
     }
 }
 
-function leave(ctx) {
+function leave(ctx, force_exit) {
     deleteLastMessage(ctx);
+    if (force_exit) {
+        ctx.scene.leave();
+        return ctx.reply("✖️ You have already placed an order", keyboards.btb(ctx).opts);
+    }
     DB.getDailyUserOrder(null, ctx.session.user._id, (err, dailyOrder) => {
         let msg = "✅ *Order confirmed!*";
         if (err) {
@@ -257,32 +262,29 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
         } else if (ctx.update.callback_query && ctx.update.callback_query.data == 'confirm') {
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
             ordersLock.writeLock('order', function (release) {
-                //Deadline check
-                if (!moment().isBefore(moment(ctx.session.dailyMenu.deadline))) {
-                    let text = "*Time is up!*\nYou can't place any order after the deadline (" + moment(ctx.session.dailyMenu.deadline).format("HH:mm") + ")";
-                    if (ctx.session.lastMessage) {
-                        ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
-                            parse_mode: "markdown"
-                        });
-                        delete ctx.session.lastMessage;
-                    } else {
-                        ctx.reply(text, {
-                            parse_mode: "markdown"
-                        });
-                    }
-                    release();
-                    leave(ctx);
-                    return;
-                }
-                DB.getTablesStatus(null, (err, tables) => {
+
+                //reload the daily menu in case something has been changed
+                DB.getDailyMenu(null, (err, m) => {
                     if (err) {
                         console.error(err);
-                        ctx.reply("DB error ehm");
+                        ctx.reply("DB menu error ehm");
                         release();
                         return leave(ctx);
-                    } else if (tables[ctx.session.order.table].used >= tables[ctx.session.order.table].total) {
-                        let tableName = tables[ctx.session.order.table].name,
-                            text = "Somebody was faster than you!\n*" + tableName + "* is full. Try again.";
+                    }
+                    ctx.session.dailyMenu = m;
+
+                    //check order consistency
+                    delete ctx.session.order.secondCourse;
+                    const orderError = manager.validateOrder(ctx.session.order, ctx.session.dailyMenu);
+                    if (orderError != null) {
+                        ctx.reply(orderError);
+                        release();
+                        return leave(ctx);
+                    }
+
+                    //Deadline check
+                    if (!moment().isBefore(moment(ctx.session.dailyMenu.deadline))) {
+                        let text = "*Time is up!*\nYou can't place any order after the deadline (" + moment(ctx.session.dailyMenu.deadline).format("HH:mm") + ")";
                         if (ctx.session.lastMessage) {
                             ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
                                 parse_mode: "markdown"
@@ -294,36 +296,46 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                             });
                         }
                         release();
-                        return ctx.scene.enter('firstCourseWizard');
-                    } else {
-                        const newOrder = new DB.Order(ctx.session.order);
-                        newOrder.save((err, order) => {
-                            if (err) {
-                                console.error(err);
-                            } else if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                                bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
-                            }
-                            deleteLastMessage(ctx);
-                            if (!err) {
-                                DB.getDailyOrdersCount(null, (err, count) => {
-                                    if (err) {
-                                        console.error(err);
-                                    } else if (count == 1) {
-                                        levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
-                                            if (err) {
-                                                console.error(err);
-                                            }
-                                        });
-                                    }
-                                    release();
-                                    leave(ctx);
+                        leave(ctx);
+                        return;
+                    }
+                    DB.getTablesStatus(null, (err, tables) => {
+                        if (err) {
+                            console.error(err);
+                            ctx.reply("DB error ehm");
+                            release();
+                            return leave(ctx);
+                        } else if (tables[ctx.session.order.table].used >= tables[ctx.session.order.table].total) {
+                            let tableName = tables[ctx.session.order.table].name,
+                                text = "Somebody was faster than you!\n*" + tableName + "* is full. Try again.";
+                            if (ctx.session.lastMessage) {
+                                ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
+                                    parse_mode: "markdown"
                                 });
+                                delete ctx.session.lastMessage;
                             } else {
+                                ctx.reply(text, {
+                                    parse_mode: "markdown"
+                                });
+                            }
+                            release();
+                            return ctx.scene.enter('firstCourseWizard');
+                        } else {
+                            const newOrder = new DB.Order(ctx.session.order);
+                            newOrder.save((err, order) => {
+                                if (err) {
+                                    console.error(err);
+                                    release();
+                                    return leave(ctx, true); //force exit
+                                } else if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                                    bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
+                                }
+                                deleteLastMessage(ctx);
                                 release();
                                 leave(ctx);
-                            }
-                        });
-                    }
+                            });
+                        }
+                    });
                 });
             });
             return ctx.wizard.next()
@@ -506,32 +518,29 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
         } else if (ctx.update.callback_query && ctx.update.callback_query.data == 'confirm') {
             ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
             ordersLock.writeLock('order', function (release) {
-                //Deadline check
-                if (!moment().isBefore(moment(ctx.session.dailyMenu.deadline))) {
-                    let text = "*Time is up!*\nYou can't place any order after the deadline (" + moment(ctx.session.dailyMenu.deadline).format("HH:mm") + ")";
-                    if (ctx.session.lastMessage) {
-                        ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
-                            parse_mode: "markdown"
-                        });
-                        delete ctx.session.lastMessage;
-                    } else {
-                        ctx.reply(text, {
-                            parse_mode: "markdown"
-                        });
-                    }
-                    release();
-                    leave(ctx);
-                    return;
-                }
-                DB.getTablesStatus(null, (err, tables) => {
+
+                //reload the daily menu in case something has been changed
+                DB.getDailyMenu(null, (err, m) => {
                     if (err) {
                         console.error(err);
-                        ctx.reply("DB error ehm");
+                        ctx.reply("DB menu error ehm");
                         release();
-                        return leave(ctx)
-                    } else if (tables[ctx.session.order.table].used >= tables[ctx.session.order.table].total) {
-                        let tableName = tables[ctx.session.order.table].name,
-                            text = "Somebody was faster than you!\n*" + tableName + "* is full. Try again.";
+                        return leave(ctx);
+                    }
+                    ctx.session.dailyMenu = m;
+
+                    //check order consistency
+                    delete ctx.session.order.firstCourse;
+                    const orderError = manager.validateOrder(ctx.session.order, ctx.session.dailyMenu);
+                    if (orderError != null) {
+                        ctx.reply(orderError);
+                        release();
+                        return leave(ctx);
+                    }
+
+                    //Deadline check
+                    if (!moment().isBefore(moment(ctx.session.dailyMenu.deadline))) {
+                        let text = "*Time is up!*\nYou can't place any order after the deadline (" + moment(ctx.session.dailyMenu.deadline).format("HH:mm") + ")";
                         if (ctx.session.lastMessage) {
                             ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
                                 parse_mode: "markdown"
@@ -543,36 +552,46 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                             });
                         }
                         release();
-                        return ctx.scene.enter('secondCourseWizard');
-                    } else {
-                        const newOrder = new DB.Order(ctx.session.order);
-                        newOrder.save((err, order) => {
-                            if (err) {
-                                console.error(err);
-                            } else if (!checkUser(ctx.session.user.role, userRoles.root)) {
-                                bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
-                            }
-                            deleteLastMessage(ctx);
-                            if (!err) {
-                                DB.getDailyOrdersCount(null, (err, count) => {
-                                    if (err) {
-                                        console.error(err);
-                                    } else if (count == 1) {
-                                        levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
-                                            if (err) {
-                                                console.error(err);
-                                            }
-                                        });
-                                    }
-                                    release();
-                                    leave(ctx);
+                        leave(ctx);
+                        return;
+                    }
+                    DB.getTablesStatus(null, (err, tables) => {
+                        if (err) {
+                            console.error(err);
+                            ctx.reply("DB error ehm");
+                            release();
+                            return leave(ctx)
+                        } else if (tables[ctx.session.order.table].used >= tables[ctx.session.order.table].total) {
+                            let tableName = tables[ctx.session.order.table].name,
+                                text = "Somebody was faster than you!\n*" + tableName + "* is full. Try again.";
+                            if (ctx.session.lastMessage) {
+                                ctx.telegram.editMessageText(ctx.session.lastMessage.chat.id, ctx.session.lastMessage.message_id, null, text, {
+                                    parse_mode: "markdown"
                                 });
+                                delete ctx.session.lastMessage;
                             } else {
+                                ctx.reply(text, {
+                                    parse_mode: "markdown"
+                                });
+                            }
+                            release();
+                            return ctx.scene.enter('secondCourseWizard');
+                        } else {
+                            const newOrder = new DB.Order(ctx.session.order);
+                            newOrder.save((err, order) => {
+                                if (err) {
+                                    console.error(err);
+                                    release();
+                                    return leave(ctx, true); //force exit
+                                } else if (!checkUser(ctx.session.user.role, userRoles.root)) {
+                                    bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
+                                }
+                                deleteLastMessage(ctx);
                                 release();
                                 leave(ctx);
-                            }
-                        });
-                    }
+                            });
+                        }
+                    });
                 });
             });
             return ctx.wizard.next()

@@ -12,6 +12,8 @@ import GridListTile from '@material-ui/core/GridListTile';
 import GridListTileBar from '@material-ui/core/GridListTileBar';
 import Subheader from '@material-ui/core/ListSubheader';
 import Autorenew from "@material-ui/icons/Autorenew";
+import MenuPreview from './MenuPreview';
+import Grid from "@material-ui/core/Grid";
 
 const styles = theme => ({
     root: {
@@ -74,7 +76,7 @@ const Home = inject("ctx")(
                         title: 'Orders',
                         cols: 1,
                         action: () => { this.props.ctx.history.push("/orders") },
-                        value: this.props.ctx.stats.dailyOrders + " (" + this.props.ctx.stats.orders + ")",
+                        value: this.props.ctx.stats.orders,
                     }, {
                         img: "/static/images/home_smoke.gif",
                         title: 'Active Users',
@@ -112,23 +114,35 @@ const Home = inject("ctx")(
                     ];
                 }
                 return (
-                    <div className={classes.root}>
-                        <GridList cellHeight={180} cols={3} className={classes.gridList}>
-                            <GridListTile key="Subheader" cols={3} style={{ height: 'auto' }}>
-                                <Subheader component="div">BTB - Smart Menu Ordering System {this.props.ctx.stats.isLoading ? <Autorenew /> : ""}</Subheader>
-                            </GridListTile>
-                            {tileData.map(tile => (
-                                <GridListTile key={tile.img} cols={tile.cols || 1}>
-                                    <img src={tile.img} alt={tile.title} />
-                                    <GridListTileBar
-                                        className={tile.action ? classes.tileBar : undefined}
-                                        onClick={tile.action}
-                                        title={tile.title}
-                                        subtitle={<span className={classes.value}>{tile.value}</span>}
-                                    />
-                                </GridListTile>
-                            ))}
-                        </GridList>
+                    <div>
+                        <Grid container direction={"row"}>
+                            <Grid item xs={12}>
+                                <div className={classes.root}>
+                                    <GridList cellHeight={180} cols={3} className={classes.gridList}>
+                                        <GridListTile key="Subheader" cols={3} style={{ height: 'auto' }}>
+                                            <Subheader component="div">BTB - Smart Menu Ordering System {this.props.ctx.stats.isLoading ? <Autorenew /> : ""}</Subheader>
+                                        </GridListTile>
+                                        {tileData.map(tile => (
+                                            <GridListTile key={tile.img} cols={tile.cols || 1}>
+                                            <img src={tile.img} alt={tile.title} />
+                                            <GridListTileBar
+                                                className={tile.action ? classes.tileBar : undefined}
+                                                onClick={tile.action}
+                                                title={tile.title}
+                                                subtitle={<span className={classes.value}>{tile.value}</span>}
+                                            />
+                                        </GridListTile>
+                                        ))}
+                                        {false && <GridListTile key="menu" cols={3}>
+                                        <MenuPreview menu={this.props.ctx.stats.dailyMenu} />
+                                        </GridListTile>}
+                                    </GridList>
+                                </div>
+                            </Grid>
+                            <Grid item xs={6}>
+                                
+                            </Grid>
+                        </Grid>
                     </div>
                 );
             }

@@ -37,7 +37,11 @@ const limitConfig = {
   onLimitExceeded: (ctx, next) => ctx.reply("Hey bro, calm down...")
 };
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
+const botOptions = {
+  webhookReply: false //https://github.com/telegraf/telegraf/issues/440
+};
+
+const bot = new Telegraf(process.env.BOT_TOKEN, botOptions);
 bot.use(rateLimit(limitConfig));
 
 const ACTIONS = {
@@ -189,7 +193,7 @@ exports.getUserLink = getUserLink;
 
 // sequentialReplies wrapper with constant interval
 function replies(ctx, messages, opts, callback) {
-  const interval = 2500;
+  const interval = 1000;
   sequentialReplies(ctx, interval, messages, opts, callback);
 }
 
@@ -836,7 +840,7 @@ function formatOrder(order, user) {
       text = text + "*" + order.secondCourse.sideDishes[i] + "*";
     }
   }
-  text = text + "\n\n__List of people at__ *" + order.table.name + "*:";
+  text = text + "\n\n__List of people at__ *" + order.table.name + "*";
   let tableUsers = false;
   DB.getTableParticipants(null, order.table._id, (err, orders) => {
     if (err) {
@@ -850,6 +854,7 @@ function formatOrder(order, user) {
     return tableUsers === false;
   });
   if (tableUsers && tableUsers.length) {
+    text += " (" + tableUsers.length + "/" + order.table.seats + "):";
     for (let i = 0; i < tableUsers.length; i++) {
       let tableUser = tableUsers[i];
       text = text + "\n - " + getUserLink(tableUser);
@@ -858,7 +863,7 @@ function formatOrder(order, user) {
       }
     }
   } else {
-    text = text + "\n* - No participants";
+    text += ":\n* - No participants";
   }
   if (moment().isBefore(moment("13:00", "HH:mm")))
     text = text + "\n\nare you hungry? 🤤";

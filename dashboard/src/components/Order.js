@@ -12,10 +12,11 @@ import Grid from "@material-ui/core/Grid";
 import FormGroup from '@material-ui/core/FormGroup';
 import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
-import FormHelperText from '@material-ui/core/FormHelperText';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Radio from '@material-ui/core/Radio';
 import RadioGroup from '@material-ui/core/RadioGroup';
+import DoneIcon from "@material-ui/icons/Done"
+import WarningIcon from "@material-ui/icons/Warning"
 
 
 import ExpansionPanel from '@material-ui/core/ExpansionPanel';
@@ -39,11 +40,13 @@ const styles = theme => ({
     },
     heading: {
         fontSize: theme.typography.pxToRem(18),
-        flexBasis: '33.33%',
         flexShrink: 0,
     },
     additionalInfos: {
         padding: "1em 2em 1em 2em"
+    },
+    panelIcon: {
+        marginRight: "0.5em"
     }
 });
 
@@ -80,6 +83,12 @@ const Order = inject("ctx")(
                         console.error(err);
                         alert(err)
                     } else if (this.props.ctx.stats.dailyMenu && this.props.ctx.stats.dailyMenu.enabled) {
+                        if (!this.props.ctx.roles.checkUserAccessLevel(this.props.ctx.auth.user.role, this.props.ctx.roles.accessLevels.admin) && 
+                            moment().isAfter(moment(this.props.ctx.stats.dailyMenu.deadline))) {
+                            this.showAlert("Error", "The deadline was at " + moment(this.props.ctx.stats.dailyMenu.deadline).format('HH:mm') + ". No more orders will be accepted.", () => {
+                                this.props.ctx.history.push('/orders')
+                            });
+                        }
                         if (this.id && this.id !== "new") {
                             this.loadingMessage = "loading daily order..."
                             props.ctx.orders.get(this.id, action((err, order) => {
@@ -97,18 +106,18 @@ const Order = inject("ctx")(
                             //new daily order
                         }
                     } else {
-                        this.showAlert("Error", "Daily menu not available yet", () => {
+                        this.showAlert("Error", "Daily menu not available yet.\nCome back later.", () => {
                             this.props.ctx.history.push('/orders')
                         });
                     }
                 });
             }
 
-            firstCourseHasCondiments(fc){
-                if(!this.props.ctx.stats.dailyMenu || !this.props.ctx.stats.dailyMenu.firstCourse || !this.props.ctx.stats.dailyMenu.firstCourse.items)
+            firstCourseHasCondiments(fc) {
+                if (!this.props.ctx.stats.dailyMenu || !this.props.ctx.stats.dailyMenu.firstCourse || !this.props.ctx.stats.dailyMenu.firstCourse.items)
                     return false;
-                for(let i=0; i<this.props.ctx.stats.dailyMenu.firstCourse.items.length; i++){
-                    if(this.props.ctx.stats.dailyMenu.firstCourse.items[i].value === fc){
+                for (let i = 0; i < this.props.ctx.stats.dailyMenu.firstCourse.items.length; i++) {
+                    if (this.props.ctx.stats.dailyMenu.firstCourse.items[i].value === fc) {
                         return this.props.ctx.stats.dailyMenu.firstCourse.items[i].condiments && this.props.ctx.stats.dailyMenu.firstCourse.items[i].condiments.length > 0;
                     }
                 }
@@ -231,7 +240,7 @@ const Order = inject("ctx")(
                 let data = Object.assign({
                     menu: this.props.ctx.stats.dailyMenu._id
                 }, this.order);
-                data.owner = this.order.owner._id != "guest" ? this.order.owner._id : undefined;
+                data.owner = String(this.order.owner._id) !== "guest" ? this.order.owner._id : undefined;
                 data.firstCourse = this.order.firstCourse && this.order.firstCourse.item ? this.order.firstCourse : undefined;
                 data.secondCourse = this.order.secondCourse && this.order.secondCourse.item ? this.order.secondCourse : undefined;
                 console.log(data)
@@ -312,11 +321,6 @@ const Order = inject("ctx")(
                                             alignItems={"stretch"}
                                             spacing={16}
                                         >
-                                            <Grid item xs={12}>
-                                                {this.now.format()}
-                                                {JSON.stringify(this.order)}
-                                            </Grid>
-
                                             {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) &&
                                                 <Grid item xs={12}>
                                                     <h2>Owner</h2>
@@ -345,7 +349,7 @@ const Order = inject("ctx")(
                                                     <h3>Deadline: {deadline.hours() + "h " + deadline.minutes() + "m " + deadline.seconds() + "s"}</h3>
                                                 }
                                                 {!deadlineReached &&
-                                                    <h3>The deadline was at {moment(this.props.ctx.stats.dailyMenu.deadline).format("HH:mm")}. No more orders will be accepted.</h3>
+                                                    <h3>The deadline was at {moment(this.props.ctx.stats.dailyMenu.deadline).format("HH:mm")}. {!roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) ? "No more orders will be accepted." : ""}</h3>
                                                 }
                                             </Grid>
 
@@ -356,7 +360,9 @@ const Order = inject("ctx")(
                                                 {this.props.ctx.stats.dailyMenu.firstCourse.items.length > 0 &&
                                                     <ExpansionPanel expanded={this.sections.firstCourse} onChange={action((e, v) => this.sections.firstCourse = v)}>
                                                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                                                            <Typography className={classes.heading}>First course</Typography>
+                                                            {this.order.firstCourse.item ? <DoneIcon className={classes.panelIcon} /> : ""}
+                                                            {!this.order.firstCourse.item && !this.order.secondCourse.item ? <WarningIcon className={classes.panelIcon} /> : ""}
+                                                            <Typography className={classes.heading}>First course {this.order.firstCourse.item ? ("(" + this.order.firstCourse.item + ")") : ""}</Typography>
                                                         </ExpansionPanelSummary>
                                                         <ExpansionPanelDetails>
                                                             <Grid container
@@ -408,7 +414,9 @@ const Order = inject("ctx")(
                                                 {this.props.ctx.stats.dailyMenu.secondCourse.items.length > 0 &&
                                                     <ExpansionPanel expanded={this.sections.secondCourse} onChange={action((e, v) => this.sections.secondCourse = v)}>
                                                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                                                            <Typography className={classes.heading}>Second course</Typography>
+                                                            {this.order.secondCourse.item ? <DoneIcon className={classes.panelIcon} /> : ""}
+                                                            {!this.order.firstCourse.item && !this.order.secondCourse.item ? <WarningIcon className={classes.panelIcon} /> : ""}
+                                                            <Typography className={classes.heading}>Second course {this.order.secondCourse.item ? ("(" + this.order.secondCourse.item + ")") : ""}</Typography>
                                                         </ExpansionPanelSummary>
                                                         <ExpansionPanelDetails>
                                                             <Grid container>
@@ -452,7 +460,8 @@ const Order = inject("ctx")(
                                             <Grid item xs={12}>
                                                 <ExpansionPanel expanded={this.sections.tables} onChange={action((e, v) => this.sections.tables = v)}>
                                                     <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                                                        <Typography className={classes.heading}>Tables</Typography>
+                                                        {this.order.table ? <DoneIcon className={classes.panelIcon} /> : <WarningIcon className={classes.panelIcon} />}
+                                                        <Typography className={classes.heading}>Tables {this.order.table ? ("(" + this.props.ctx.stats.dailyMenu.tables.filter(t => t._id === this.order.table)[0].name + ")") : ""}</Typography>
                                                     </ExpansionPanelSummary>
                                                     <ExpansionPanelDetails>
                                                         <Grid container>
@@ -480,6 +489,10 @@ const Order = inject("ctx")(
 
                                             {false && <Grid item xs={12}>
                                                 {JSON.stringify(this.props.ctx.stats)}
+                                            </Grid>}
+
+                                            {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && <Grid item xs={12}>
+                                                {JSON.stringify(this.order)}
                                             </Grid>}
 
                                         </Grid>

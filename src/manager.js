@@ -8,6 +8,7 @@
 const moment = require('moment'),
     async = require('async'),
     validator = require('validator'),
+    levels = require('./levels'),
     roles = require("./roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
@@ -267,14 +268,28 @@ function _getMenus(req, res) {
     //TODO add filter query
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root user limitations
-        select.deleted = -1;
+        delete select.deleted;
         query.deleted = false;
     }
+
+    if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+        //user limitations
+        delete select.owner;
+        delete select.enabled;
+        delete select.tables;
+        query.deleted = false;
+        query.enabled = true; //users view only enabled menus
+    }
+
     if (!id) {
-        DB.Menu.find(query, select, options).populate('tables').populate({
-            path: 'owner',
-            select: 'username email _id'
-        }).exec((err, menus) => {
+        let dbQuery = DB.Menu.find(query, select, options);
+        if (checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+            dbQuery.populate('tables').populate({
+                path: 'owner',
+                select: 'username email _id'
+            });
+        }
+        dbQuery.exec((err, menus) => {
             if (err) {
                 console.error(err);
                 return res.sendStatus(500);
@@ -283,10 +298,14 @@ function _getMenus(req, res) {
         });
     } else {
         query._id = id;
-        DB.Menu.findOne(query, select).populate('tables').populate({
-            path: 'owner',
-            select: 'username email _id'
-        }).exec((err, menu) => {
+        let dbQuery = DB.Menu.findOne(query, select);
+        if (checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+            dbQuery.populate('tables').populate({
+                path: 'owner',
+                select: 'username email _id'
+            });
+        }
+        dbQuery.exec((err, menu) => {
             if (err) {
                 console.error(err);
                 return res.sendStatus(500);
@@ -312,40 +331,80 @@ function checkDailyMenu(data, cb) {
                 $lt: tomorrow.toDate()
             }
         };
-    DB.Menu.findOne(query, (err, res) => {
-        if (err) {
-            console.error(err);
-        } else {
-            cb(res)
-        }
-    });
+    DB.Menu.findOne(query, cb);
 }
 
-function menuIsValid(menu) {
-    if (!menu.day) {
-        console.error("Menu date is required")
-        return false;
+//validate menu and return error
+function validateMenu(menu) {
+    if (!menu.label) {
+        return "menu label is required";
     }
+    if (!menu.day) {
+        return "menu date is required";
+    }
+    if (moment(menu.day).isBefore(moment(), 'day')) {
+        return "menu day shall be >= today";
+    }
+    if (!menu.deadline) {
+        return "menu deadline is required";
+    }
+    if (!moment(menu.day).isSame(moment(menu.deadline), 'day')) {
+        return "menu date and deadline shall be the same day";
+    }
+    if (!menu.tables || !Array.isArray(menu.tables) || menu.tables.length == 0) {
+        return "menu tables list is required";
+    }
+    const firstCourses = [],
+        condiments = [];
     if (menu.firstCourse && menu.firstCourse.items) {
         for (let i = 0; i < menu.firstCourse.items.length; i++) {
             let fc = menu.firstCourse.items[i];
             if (fc.value == undefined || fc.value.trim() == "") {
-                console.error("Invalid menu firstCourse item");
-                return false;
+                return "invalid menu firstCourse item";
+            } else if (firstCourses.indexOf(fc.value.toLowerCase()) >= 0) {
+                return "duplicated firstCourse item";
             }
+            firstCourses.push(fc.value.toLowerCase())
             for (let j = 0; j < fc.condiments.length; j++) {
                 let condiment = fc.condiments[j];
                 if (condiment == undefined || condiment.trim() == "") {
-                    console.error("Invalid menu firstCourse item condiment");
-                    return false;
+                    return "invalid menu firstCourse item condiment";
+                } else if (condiments.indexOf(condiment.toLowerCase()) >= 0) {
+                    return "duplicated firstCourse condiment";
                 }
+                condiments.push(condiment.toLowerCase());
             }
         }
     } else {
-        console.error("Invalid menu firstCourse");
-        return false;
+        return "invalid menu firstCourse";
     }
-    return true;
+    const secondCourses = [],
+        sideDishes = [];
+    if (menu.secondCourse && menu.secondCourse.items) {
+        for (let i = 0; i < menu.secondCourse.items.length; i++) {
+            let sc = menu.secondCourse.items[i];
+            if (sc == undefined || sc.trim() == "") {
+                return "invalid menu secondCourse item";
+            } else if (secondCourses.indexOf(sc.toLowerCase()) >= 0) {
+                return "duplicated secondCourse item";
+            }
+            secondCourses.push(sc.toLowerCase());
+        }
+
+        for (let j = 0; j < menu.secondCourse.sideDishes.length; j++) {
+            let sd = menu.secondCourse.sideDishes[j];
+            if (sd.trim() == "") {
+                return "invalid menu secondCourse sideDish";
+            } else if (sideDishes.indexOf(sd.toLowerCase()) >= 0) {
+                return "duplicated secondCourse sideDish";
+            }
+            sideDishes.push(sd.toLowerCase());
+        }
+
+    } else {
+        return "invalid menu secondCourse"
+    }
+    return null;
 }
 
 let dailyMenuNotificationTimeout;
@@ -357,6 +416,21 @@ function notifyDailyMenu(menu) {
     dailyMenuNotificationTimeout = setTimeout(() => {
         botNotifications.dailyMenu(menu);
     }, 1000 * timeout);
+}
+
+//returns only public fields for menu add/update api
+function filteredMenuData(menu) {
+    return {
+        _id: menu._id,
+        enabled: menu.enabled,
+        label: menu.label,
+        day: menu.day,
+        deadline: menu.deadline,
+        createdAt: menu.createdAt,
+        firstCourse: menu.firstCourse,
+        secondCourse: menu.secondCourse,
+        tables: menu.tables,
+    };
 }
 
 function _addMenu(req, res) {
@@ -374,24 +448,31 @@ function _addMenu(req, res) {
     }
 
     data.createdAt = moment().format();
+    data.updatedBy = req.user._id;
 
-    if (!menuIsValid(data)) {
-        res.sendStatus(400);
+    //force the deadline to be in the same day as menu day
+    if (data.deadline && data.day) {
+        let deadline = moment(data.deadline, "HH:mm");
+        data.deadline = moment(data.day, "YYYY-MM-DD").set('hour', deadline.hours()).set('minutes', deadline.minutes()).toISOString(true);
+    }
+
+    let menuError = validateMenu(data);
+
+    if (menuError != null) {
+        res.status(400).send(menuError);
     } else {
-        if (data.deadline) {
-            let deadline = moment(data.deadline, "HH:mm");
-            data.deadline = moment(data.day, "YYYY-MM-DD").set('hour', deadline.hours()).set('minutes', deadline.minutes()).toISOString(true);
-        }
-        checkDailyMenu(data, (dailymenu) => {
-            if (dailymenu) {
-                console.log("Daily menu already present")
-                res.status(400).send("Daily menu already present");
+        checkDailyMenu(data, (err, dailymenu) => {
+            if (err) {
+                console.error(err);
+                res.status(500).send("DB error");
+            } else if (dailymenu) {
+                res.status(400).send("daily menu already present");
             } else {
                 const newMenu = new DB.Menu(data);
                 newMenu.save((err, menu) => {
                     if (err) {
                         console.error(err);
-                        return res.sendStatus(400);
+                        return res.status(400).send("DB save error");
                     }
                     if (data.sendNotification && menu.enabled) {
                         if (moment(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
@@ -407,7 +488,8 @@ function _addMenu(req, res) {
                     bot.broadcastMessage("Daily Menu uploaded by *" + req.user.email + "*", accessLevels.root, null, true);
                     //update reminder stuff
                     reminder.initDailyReminders();
-                    res.status(201).send(menu);
+
+                    res.status(201).send(filteredMenuData(menu));
                 });
             }
         });
@@ -536,65 +618,74 @@ function _updateMenu(req, res) {
     if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
         //non root user limitations
         delete data.deleted;
-        data.owner = req.user._id;
-    }
-    if (!data.owner) {
-        data.owner = req.user._id;
     }
 
-    data._id = req.params.id;
-    data.updatedAt = moment().format();
+    //avoid update private fields
+    delete data.owner;
     delete data.createdAt;
 
-    if (!menuIsValid(data)) {
-        res.sendStatus(400);
-    } else {
-        if (data.deadline) {
+    data.updatedAt = moment().format();
+    data.updatedBy = req.user._id;
+
+    DB.Menu.findOne(query, (err, oldMenu) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("DB read error");
+        } else if (!oldMenu) {
+            return res.status(404).send("menu not found");
+        } else if (oldMenu.enabled && data.day && !(moment(data.day).isSame(moment(oldMenu.day), 'day'))) {
+            return res.status(400).send("changing menu data when menu is enabled its not allowed");
+        } else if (moment(oldMenu.day).isBefore(moment(), 'day')) {
+            return res.status(400).send("cannot edit old menus");
+        } else if (!checkUserAccessLevel(req.user.role, accessLevels.root) && moment().isAfter(moment(oldMenu.deadline).add(2, 'h'))) {
+            return res.status(400).send("cannot update daily menu 2h after deadline");
+        }
+
+        //force the deadline to be in the same day as menu day
+        if (data.deadline && data.day) {
             let deadline = moment(data.deadline, "HH:mm");
             data.deadline = moment(data.day, "YYYY-MM-DD").set('hour', deadline.hours()).set('minutes', deadline.minutes()).toISOString(true);
         }
-        checkDailyMenu(data, (dailymenu) => {
-            if (dailymenu) {
-                res.status(400).send("Daily menu already present");
-            } else {
 
-                if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
-                    //non root user limitations
-                    delete data._id;
-                    delete data.deleted;
-                    delete data.createdAt;
-                    data.owner = req.user._id;
-                }
+        //force same id as the oldMenuID
+        data._id = oldMenu._id;
 
-                if (moment(data.day).isSame(moment(), 'day')) {
-                    //is updating the daily menu
-                    DB.Menu.findOne(query, (err, oldMenu) => {
-                        if (err) {
-                            console.error(err);
-                            return res.sendStatus(400);
-                        } else if (!oldMenu) {
-                            return res.sendStatus(404);
-                        } else if (oldMenu.enabled && !(moment(data.day).isSame(moment(oldMenu.day), 'day'))) {
-                            console.warn("Changing menu data when menu is enabled its not allowed")
-                            return res.sendStatus(400);
-                        }
-                        DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
-                            if (err) {
-                                console.error(err);
-                                return res.sendStatus(500);
-                            } else if (!menu) {
-                                return res.sendStatus(404);
-                            }
-                            if (data.sendNotification) {
-                                if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
-                                    if (!oldMenu.enabled && menu.enabled) {
-                                        console.log("Daily menu has been enabled!")
-                                        notifyDailyMenu(menu);
-                                    } else if (menu.enabled) {
+        const menuError = validateMenu(data);
+        if (menuError != null) {
+            res.status(400).send(menuError);
+        } else {
+            checkDailyMenu(data, (err, dailymenu) => {
+                if (err) {
+                    console.error(err);
+                    res.status(500).send("DB error");
+                } else if (dailymenu) {
+                    res.status(400).send("daily menu already present");
+                } else {
 
-                                        //Daily menu was already enabled, lets check the orders
-                                        const ordersLock = require('./telegram/scenes/order').getOrdersLock();
-                                        ordersLock.writeLock('order', function (release) {
+                    if (moment(data.day).isSame(moment(), 'day')) {
+                        //is updating the daily menu
+
+                        //require the orders lock to allow people that are ordering to finish their ordering process and then update the dailyMenu
+                        //in case of conflicts the users will be notified afterward
+                        const ordersLock = require('./telegram/scenes/order').getOrdersLock();
+                        ordersLock.writeLock('order', function (release) {
+
+                            DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
+                                if (err) {
+                                    console.error(err);
+                                    res.status(500).send("DB save error");
+                                    return release();
+                                } else if (!menu) {
+                                    res.status(404).send("menu not found");
+                                    return release();
+                                }
+                                if (data.sendNotification) {
+                                    if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
+                                        if (!oldMenu.enabled && menu.enabled) {
+                                            console.log("Daily menu has been enabled!")
+                                            notifyDailyMenu(menu);
+                                            release();
+                                        } else if (menu.enabled) {
 
                                             getDailyOrdersMenuDiff(oldMenu, menu, (err, result) => {
                                                 if (err) {
@@ -629,46 +720,39 @@ function _updateMenu(req, res) {
 
                                                 }
                                             });
-
-                                        });
+                                        } else {
+                                            release();
+                                        }
+                                    } else {
+                                        release();
                                     }
+                                } else {
+                                    release();
                                 }
-                            }
-                            bot.broadcastMessage("Daily Menu updated by *" + req.user.email + "*", accessLevels.root, null, true);
-                            //update reminder stuff
-                            reminder.initDailyReminders();
-                            res.sendStatus(200);
+                                bot.broadcastMessage("Daily Menu updated by *" + req.user.email + "*", accessLevels.root, null, true);
+                                //update reminder stuff
+                                reminder.initDailyReminders();
+                                res.status(200).send(filteredMenuData(menu));
+                            });
                         });
-                    });
-                } else {
-                    //updating another menu
-                    DB.Menu.findOne(query, (err, oldMenu) => {
-                        if (err) {
-                            console.error(err);
-                            return res.sendStatus(400);
-                        } else if (!oldMenu) {
-                            return res.sendStatus(404);
-                        } else if (oldMenu.enabled && !(moment(data.day).isSame(moment(oldMenu.day), 'day'))) {
-                            console.warn("Changing menu data when menu is enabled its not allowed")
-                            return res.sendStatus(400);
-                        } else if (oldMenu.enabled && moment(data.day).isBefore(moment(), 'day')) {
-                            console.warn("Cannot edit old menus");
-                            return res.sendStatus(400);
-                        }
+                    } else {
+
                         DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
                             if (err) {
                                 console.error(err);
-                                return res.sendStatus(500);
+                                return res.status(500).send("DB save error");
                             } else if (!menu) {
-                                return res.sendStatus(404);
+                                return res.status(404).send("menu not found");
                             }
-                            res.sendStatus(200);
+                            res.status(200).send(filteredMenuData(menu));
                         });
-                    });
+
+                    }
                 }
-            }
-        })
-    }
+            })
+        }
+
+    });
 }
 
 function _deleteMenu(req, res) {
@@ -688,40 +772,88 @@ function _deleteMenu(req, res) {
                     new: false
                 };
             DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
-                release();
                 if (err) {
                     console.error(err);
-                    return res.sendStatus(500);
+                    return res.status(500).send("DB error");
                 } else if (!menu) {
-                    return res.sendStatus(404);
+                    return res.status(404).send("menu not found");
                 }
                 //check if its the daily menu
                 if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
                     clearTimeout(dailyMenuNotificationTimeout);
                     reminder.initDailyReminders();
                     bot.broadcastMessage("Daily Menu deleted by *" + req.user.email + "*", accessLevels.root, null, true);
-                    //TODO send user notifications
+                    //delete daily orders
+                    DB.Order.find({
+                        deleted: false,
+                        menu: menu._id
+                    }).populate('owner').exec((er, orders) => {
+                        if (er) {
+                            console.error(er);
+                            return release();
+                        }
+                        DB.Order.deleteMany({
+                            menu: menu._id
+                        }, (_err) => {
+                            if (_err) {
+                                console.error(_err);
+                                release();
+                            } else {
+                                console.log("Orders deleted!");
+                                //and lets notify the related users
+                                botNotifications.dailyMenuDeleted(orders.map(o => o.owner), () => {
+                                    release();
+                                });
+                            }
+                        });
+                    });
+                } else {
+                    release();
                 }
-                res.sendStatus(200);
+                res.status(200).send("menu deleted");
             });
         } else {
             //Root user full remove
             DB.Menu.findOneAndRemove(query, (err, menu) => {
-                release();
                 if (err) {
                     console.error(err);
-                    return res.sendStatus(500);
+                    return res.status(500).send("DB error");
                 } else if (!menu) {
-                    return res.sendStatus(404);
+                    return res.status(404).send("menu not found");
                 }
                 //check if its the daily menu
                 if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
                     clearTimeout(dailyMenuNotificationTimeout);
                     reminder.initDailyReminders();
                     bot.broadcastMessage("Daily Menu deleted by *" + req.user.email + "*", accessLevels.root, null, true);
-                    //TODO send user notifications
+                    //delete daily orders
+                    DB.Order.find({
+                        deleted: false,
+                        menu: menu._id
+                    }).populate('owner').exec((er, orders) => {
+                        if (er) {
+                            console.error(er);
+                            return release();
+                        }
+                        DB.Order.deleteMany({
+                            menu: menu._id
+                        }, (_err) => {
+                            if (_err) {
+                                console.error(_err);
+                                release();
+                            } else {
+                                console.log("Orders deleted!");
+                                //and lets notify the related users
+                                botNotifications.dailyMenuDeleted(orders.map(o => o.owner), () => {
+                                    release();
+                                });
+                            }
+                        });
+                    });
+                } else {
+                    release();
                 }
-                res.sendStatus(200);
+                res.status(200).send("menu deleted");
             });
         }
     });
@@ -808,7 +940,7 @@ function _getOrders(req, res) {
         query.deleted = false;
     }
     if (!id) {
-        DB.Order.count(query, (err, totalOrders) => {
+        DB.Order.countDocuments(query, (err, totalOrders) => {
             if (err) {
                 console.error(err);
                 return res.sendStatus(500);
@@ -846,102 +978,97 @@ function _getOrders(req, res) {
 }
 
 //validate an order against a menu
-function orderIsValid(order, menu) {
+function validateOrder(order, menu) {
 
     try {
 
+        if (order.firstCourse && order.secondCourse) {
+            return "only one dish is allowed";
+        }
         if (!order.firstCourse && !order.secondCourse) {
-            console.error("missing field firstCourse/secondCourse");
-            return false;
+            return "missing field firstCourse/secondCourse";
         }
         if (!order.table || !menu.tables.reduce((r, m) => m._id == order.table ? r.concat(m._id) : r, []).length) {
-            console.error("missing table/not found");
-            return false;
+            return "missing table/not found";
         }
 
         //types check
         if (order.firstCourse && order.firstCourse.item && (order.firstCourse.item + '').length == 0) {
-            console.error("invalid firstCourse item");
-            return false;
+            return "invalid firstCourse item";
         }
         if (order.firstCourse && order.firstCourse.condiment && (order.firstCourse.condiment + '').length == 0) {
-            console.error("invalid firstCourse condiment");
-            return false;
+            return "invalid firstCourse condiment";
         }
         if (order.secondCourse && order.secondCourse.item && (order.secondCourse.item + '').length == 0) {
-            console.error("invalid secondCourse item");
-            return false;
+            return "invalid secondCourse item";
         }
         if (order.secondCourse && order.secondCourse.sideDishes) {
             if (!Array.isArray(order.secondCourse.sideDishes)) {
-                console.error("invalid secondCourse sideDishes");
-                return false;
+                return "invalid secondCourse sideDishes";
             }
             for (let i = 0; i < order.secondCourse.sideDishes.length; i++) {
                 if ((order.secondCourse.sideDishes[i] + '').length == 0) {
-                    console.error("invalid secondCourse sideDishes");
-                    return false;
+                    return "invalid secondCourse sideDishes";
                 }
             }
-        }
-
-        //only one dish allowed
-        if (order.firstCourse && order.firstCourse.item && order.secondCourse && order.secondCourse.item) {
-            console.error("order only one dish allowed");
-            return false;
         }
 
         //firstCourse item check
         if (order.firstCourse && order.firstCourse.item) {
             if (!menu.firstCourse || menu.firstCourse.items.map(fc => fc.value).indexOf(order.firstCourse.item.toLowerCase()) < 0) {
-                console.error("firstCourse item not found");
-                return false;
+                return "firstCourse item not found";
             }
         }
         //firstCourse condiment check
-        if (order.firstCourse && order.firstCourse.condiment) {
+        if (order.firstCourse) {
             if (!order.firstCourse.item) {
-                console.error("invalid condiment, missing firstCourse item");
-                return false;
+                return "invalid condiment, missing firstCourse item";
             }
-            if (!menu.firstCourse || menu.firstCourse.items.filter(fc => fc.value == order.firstCourse.item.toLowerCase())[0].condiments.indexOf(order.firstCourse.condiment.toLowerCase()) < 0) {
-                console.error("order firstCourse condiment not found");
-                return false;
+            if (!menu.firstCourse) {
+                return "menu firstCourse missing";
+            }
+            const menuCondiments = menu.firstCourse.items.filter(fc => fc.value == order.firstCourse.item.toLowerCase())[0].condiments;
+            if (menuCondiments.length && !order.firstCourse.condiment) {
+                return "order firstCourse condiment missing";
+            }
+            if (order.firstCourse.condiment && menuCondiments.indexOf(order.firstCourse.condiment.toLowerCase()) < 0) {
+                return "order firstCourse condiment not found";
             }
         }
 
         //secondCourse item check
-        if (order.secondCourse && order.secondCourse.item) {
-            if (!menu.secondCourse || menu.secondCourse.items.indexOf(order.secondCourse.item.toLowerCase()) < 0) {
-                console.error("order secondCourse not found");
-                return false;
+        if (order.secondCourse) {
+            if (!order.secondCourse.item) {
+                return "order missing secondCourse item";
+            } else {
+                if (!menu.secondCourse || menu.secondCourse.items.indexOf(order.secondCourse.item.toLowerCase()) < 0) {
+                    return "order secondCourse not found";
+                }
             }
         }
         //secondCourse sideDishes check
         if (order.secondCourse && order.secondCourse.sideDishes) {
             if (!order.secondCourse.item) {
-                console.error("invalid sideDishes, missing secondCourse item");
-                return false;
+                return "invalid sideDishes, missing secondCourse item";
             }
             if (Array.isArray(order.secondCourse.sideDishes)) {
                 for (let i = 0; i < order.secondCourse.sideDishes.length; i++) {
                     if (!menu.secondCourse || menu.secondCourse.sideDishes.indexOf(order.secondCourse.sideDishes[i].toLowerCase()) < 0) {
-                        console.error("secondCourse sidedish not found");
-                        return false;
+                        return "secondCourse sidedish not found";
                     }
                 }
             } else {
-                console.error("secondCourse invalid sidedishes");
-                return false;
+                return "secondCourse invalid sidedishes";
             }
         }
 
     } catch (ex) {
         console.error(ex);
-        return false;
+        return "Uncaught exception";
     }
-    return true;
+    return null;
 }
+exports.validateOrder = validateOrder;
 
 function _addOrder(req, res) {
     let data = req.body;
@@ -963,40 +1090,77 @@ function _addOrder(req, res) {
         data.owner = req.user._id;
     }
 
-    DB.getDailyMenu(null, (err, menu) => {
-        if (err || !menu) {
-            console.error(err || "daily menu not found");
-            return res.sendStatus(400);
-        } else {
-            //force adding orders only for the dailyMenu
-            data.menu = menu._id;
+    data.createdBy = req.user._id;
+    data.updatedBy = req.user._id;
 
-            //check deadline
-            if (moment().isAfter(moment(menu.deadline))) {
-                console.error("cannot add order: deadline reached")
-                return res.sendStatus(400);
-            }
+    const ordersLock = require('./telegram/scenes/order').getOrdersLock();
+    ordersLock.writeLock('order', function (release) {
 
-            //order validation against daily menu
-            if (!orderIsValid(data, menu)) {
-                return res.sendStatus(400);
-            }
+        DB.getDailyMenu(null, (err, menu) => {
+            if (err) {
+                console.error(err);
+                res.status(500).send("DB error");
+                return release();
+            } else if (!menu) {
+                res.status(400).send("daily menu not found");
+                return release();
+            } else {
+                //force adding orders only for the dailyMenu
+                data.menu = menu._id;
 
-            const newOrder = new DB.Order(data);
-            newOrder.save((err, order) => {
-                if (err) {
-                    console.error(err);
-                    return res.sendStatus(400);
+                //check deadline for non admin users
+                if (!checkUserAccessLevel(req.user.role, accessLevels.admin) && moment().isAfter(moment(menu.deadline))) {
+                    res.status(400).send("deadline reached");
+                    return release();
                 }
-                res.status(201).send(order);
-            });
-        }
+
+                //order validation against daily menu
+                const orderError = validateOrder(data, menu);
+                if (orderError != null) {
+                    res.status(400).send(orderError);
+                    return release();
+                }
+
+                DB.getTablesStatus(null, (err, tables) => {
+                    if (err) {
+                        console.error(err);
+                        res.status(500).send("DB read table error");
+                        return release();
+                    } else if (tables[data.table].used >= tables[data.table].total) {
+                        res.status(400).send("table is full");
+                        return release();
+                    } else {
+                        const newOrder = new DB.Order(data);
+                        newOrder.save((err, order) => {
+                            if (err) {
+                                console.error(err);
+                                res.status(500).send("DB save error");
+                                return release();
+                            }
+                            res.status(201).send(order);
+                            release();
+                            order.populate('owner').populate('createdBy').execPopulate().then((_order) => {
+                                console.log("New web order: " + _order.owner.email + " [" + _order.createdBy.email + "]");
+                                let message = "Your *order* has been successfully added" + (_order.createdBy.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(_order.createdBy) + "!"));
+                                telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
+                                    parse_mode: "markdown"
+                                });
+                            });
+
+                        });
+
+                    }
+                });
+            }
+        });
+
     });
 }
 
 function _updateOrder(req, res) {
     const query = {
-            _id: req.params.id
+            _id: req.params.id,
+            deleted: false
         },
         data = req.body,
         options = {
@@ -1010,87 +1174,197 @@ function _updateOrder(req, res) {
         delete data.createdAt;
         delete data.menu; //avoid to switch the menu
         delete data.owner; //avoid to switch the owner
+        delete data.createdBy; //avoid to switch the creator
     }
-    if (!data.owner)
-        data.owner = req.user._id;
+
     if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
         //normal user can update only its own order
-        data.owner = req.user._id;
+        query.owner = req.user._id;
     }
+
+    data.updatedBy = req.user._id;
     data.updatedAt = moment().format();
 
-    DB.getDailyMenu(null, (err, menu) => {
-        if (err || !menu) {
-            console.error(err || "daily menu not found");
-            return res.sendStatus(400);
-        } else {
-            //force updating orders only for the dailyMenu
-            query.menu = menu._id;
-
-            //check deadline
-            if (moment().isAfter(moment(menu.deadline))) {
-                console.error("cannot update order: deadline reached")
-                return res.sendStatus(400);
-            }
-
-            //order validation against daily menu
-            if (!orderIsValid(data, menu)) {
-                return res.sendStatus(400);
-            }
-
-            DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
-                if (err) {
-                    console.error(err);
-                    return res.sendStatus(500);
-                } else if (!order) {
-                    return res.sendStatus(404);
-                }
-                res.sendStatus(200);
-            });
-        }
+    //only one dish is allowed, lets unset the other one
+    data.$unset = data.firstCourse ? ({
+        secondCourse: ""
+    }) : ({
+        firstCourse: ""
     });
 
-    
+    const ordersLock = require('./telegram/scenes/order').getOrdersLock();
+    ordersLock.writeLock('order', function (release) {
+
+        DB.getDailyMenu(null, (err, menu) => {
+            if (err) {
+                console.error(err);
+                res.status(500).send("DB error");
+                return release();
+            } else if (!menu) {
+                res.status(400).send("daily menu not found");
+                return release();
+            } else {
+                //force updating orders only for the dailyMenu
+                query.menu = menu._id;
+
+                //check deadline for non admin users
+                if (!checkUserAccessLevel(req.user.role, accessLevels.admin) && moment().isAfter(moment(menu.deadline))) {
+                    res.status(400).send("deadline reached");
+                    return release();
+                }
+
+                //order validation against daily menu
+                const orderError = validateOrder(data, menu);
+                if (orderError != null) {
+                    res.status(400).send(orderError);
+                    return release();
+                }
+
+                DB.Order.findOne(query, (err, order) => {
+                    if (err) {
+                        console.error(err);
+                        res.status(500).send("DB error");
+                        return release();
+                    } else if (!order) {
+                        res.status(404).send("Order not found");
+                        return release();
+                    }
+
+                    DB.getTablesStatus(null, (err, tables) => {
+                        if (err) {
+                            res.status(500).send("DB read table error");
+                            return release();
+                        } else if (order.table && order.table != data.table && tables[data.table].used >= tables[data.table].total) {
+                            res.status(400).send("table is full");
+                            return release();
+                        } else {
+                            //table checking done, lets update the order
+                            DB.Order.findByIdAndUpdate(order._id, data, options, (err, updatedOrder) => {
+                                if (err) {
+                                    console.error(err);
+                                    res.status(500).send("DB save error");
+                                    return release();
+                                }
+
+                                res.status(200).send(updatedOrder);
+                                release();
+
+                                //User notification
+                                updatedOrder.populate('owner').populate('updatedBy').execPopulate().then((_order) => {
+                                    console.log("Web order updated: " + _order.owner.email + " [" + _order.updatedBy.email + "]");
+                                    let message = "Your *order* has been updated" + (_order.updatedBy.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(_order.updatedBy) + "!"));
+                                    telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
+                                        parse_mode: "markdown"
+                                    });
+                                });
+
+                            });
+                        }
+                    });
+
+                });
+            }
+        });
+    });
+
 }
 
 function _deleteOrder(req, res) {
     const query = {
-        _id: req.params.id
+        _id: req.params.id,
+        deleted: false
     };
     if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
         //normal user can delete only its own order
         query.owner = req.user._id;
     }
-    if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
-        //non root users SHALL update ONLY the deleted flag
-        const data = {
-                deleted: true,
-                updatedAt: moment().format()
-            },
-            options = {
-                new: false
-            };
-        DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
-            if (err) {
-                console.error(err);
-                return res.sendStatus(500);
-            } else if (!order) {
-                return res.sendStatus(404);
-            }
-            res.sendStatus(200);
-        });
-    } else {
-        //Root user full remove
-        DB.Order.findOneAndRemove(query, (err, order) => {
-            if (err) {
-                console.error(err);
-                return res.sendStatus(500);
-            } else if (!order) {
-                return res.sendStatus(404);
-            }
-            res.sendStatus(200);
-        });
-    }
+
+    const ordersLock = require('./telegram/scenes/order').getOrdersLock();
+    ordersLock.writeLock('order', function (release) {
+
+        if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
+            //non root users SHALL update ONLY the deleted flag
+            const data = {
+                    deleted: true,
+                    updatedAt: moment().format(),
+                    updatedBy: req.user._id
+                },
+                options = {
+                    new: true
+                };
+            DB.Order.findOne(query, (err, order) => {
+                if (err) {
+                    console.error(err);
+                    res.status(500).send("DB error");
+                    return release();
+                } else if (!order) {
+                    res.status(404).send("Order not found");
+                    return release();
+                }
+
+                order.populate('owner').populate('menu').execPopulate().then((_order) => {
+
+                    // normal users check for menu deadline
+                    if (!checkUserAccessLevel(req.user.role, accessLevels.admin) && moment(_order.menu.deadline).isBefore(moment())) {
+                        res.status(400).send("deadline reached");
+                        return release();
+                    }
+                    if (!checkUserAccessLevel(req.user.role, accessLevels.root) && !moment.utc(_order.menu.day).isSame(moment(), 'day')) {
+                        //for non root users, avoid to delete old orders
+                        res.status(400).send("cannot delete old orders");
+                        return release();
+                    }
+
+                    DB.Order.findByIdAndUpdate(order._id, data, options, (err, deletedOrder) => {
+                        if (err) {
+                            console.error(err);
+                            res.status(500).send("DB error");
+                            return release();
+                        }
+                        res.status(200).send("OK");
+                        release();
+                        console.log("Web order deleted: " + _order.owner.email + " [" + req.user.email + "]");
+
+                        //remove one point if the user is deleting its own order
+                        if (req.user.email == _order.owner.email) {
+                            levels.removePoints(_order.owner._id, 1, false, (err) => {
+                                if (err) {
+                                    console.error(err);
+                                }
+                            });
+                        }
+
+                        let message = "Your *order* has been deleted" + (req.user.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(req.user) + "!"));
+                        telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
+                            parse_mode: "markdown"
+                        });
+                    });
+                });
+            });
+        } else {
+            delete query.deleted;
+            //Root user full remove
+            DB.Order.findOneAndRemove(query, (err, order) => {
+                if (err) {
+                    console.error(err);
+                    res.status(500).send("DB error");
+                    return release();
+                } else if (!order) {
+                    res.status(404).send("Order not found");
+                    return release();
+                }
+                res.status(200).send("OK");
+                release();
+                order.populate('owner').execPopulate().then((_order) => {
+                    console.log("Web order deleted: " + _order.owner.email + " [" + req.user.email + "]");
+                    let message = "Your *order* has been deleted" + (req.user.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(req.user) + "!"));
+                    telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
+                        parse_mode: "markdown"
+                    });
+                });
+            });
+        }
+    });
 }
 
 //Tables stuff
@@ -1173,6 +1447,7 @@ function _updateTable(req, res) {
         delete data._id;
         delete data.deleted;
         delete data.createdAt;
+        delete data.seats;
     }
 
     data.updatedAt = moment().format();
@@ -1253,73 +1528,25 @@ exports.tables = {
 };
 
 exports.getStats = function (req, res) {
-    let stats = {
-        users: 1,
-        dailyOrders: 2,
-        orders: 3,
-        menus: 4,
-        dailyMenuStatus: false
-    }
-
-    async.parallel({
+    let funList = {
         users: (callback) => {
-            DB.User.count({
+            DB.User.countDocuments({
                 deleted: false,
                 "telegram.enabled": true
-            }, callback)
-        },
-        usersPending: (callback) => {
-            DB.User.count({
-                deleted: false,
-                "telegram.enabled": false
-            }, callback)
+            }, callback);
         },
         menus: (callback) => {
-            DB.Menu.count({
+            DB.Menu.countDocuments({
                 deleted: false
-            }, callback)
+            }, callback);
         },
         orders: (callback) => {
-            DB.Order.count({
+            DB.Order.countDocuments({
                 deleted: false
-            }, callback)
-        },
-        usersWithoutOrder: (callback) => {
-            DB.getNotOrderUsers(null, (err, users) => {
-                if (err) {
-                    return callback(null, []);
-                }
-                callback(null, users);
-            });
+            }, callback);
         },
         tablesStats: (callback) => {
-            DB.getTablesStatus(null, (err, tablesStats) => {
-                if (err) {
-                    return callback(null, {});
-                }
-                callback(null, tablesStats);
-            })
-        },
-        ordersStats: (callback) => {
-            DB.getDailyOrderStats(null, (err, stats) => {
-                if (err) {
-                    return callback(null, null);
-                }
-                //console.log(stats)
-                callback(null, {
-                    stats: stats,
-                    text: bot.formatOrderComplete(stats)
-                });
-            })
-        },
-        dailyOrders: (callback) => {
-            DB.getDailyOrdersCount(null, (err, dailyOrders) => {
-                if (err) {
-                    callback(null, 0)
-                } else {
-                    callback(null, dailyOrders);
-                }
-            });
+            DB.getTablesStatus(null, callback);
         },
         dailyMenu: (callback) => {
             const today = moment().startOf("day"),
@@ -1334,29 +1561,110 @@ exports.getStats = function (req, res) {
             DB.Menu.findOne(query).populate('tables').populate({
                 path: 'owner',
                 select: 'username email _id'
-            }).exec((err, results) => {
-                if (err) {
-                    callback(null)
-                } else {
-                    callback(null, results);
+            }).exec(callback);
+        },
+        sessions: (callback) => {
+            let activeSessions = bot.session.getTopSessions();
+            callback(null, activeSessions.map(s => {
+                return {
+                    user: s.user.email,
+                    count: s.count
                 }
-            });
+            }));
         }
-    }, (err, results) => {
-        if (err)
+    };
+
+    //root and admin users only stats
+    if (checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+
+        funList.usersPending = (callback) => {
+            DB.User.countDocuments({
+                deleted: false,
+                "telegram.enabled": false
+            }, callback);
+        };
+
+        funList.usersWithoutOrder = (callback) => {
+            DB.getNotOrderUsers(null, callback);
+        };
+
+        funList.ordersStats = (callback) => {
+            DB.getDailyOrderStats(null, (err, stats) => {
+                if (err) {
+                    return callback(err);
+                }
+                callback(null, {
+                    stats: stats,
+                    text: bot.formatOrderComplete(stats)
+                });
+            });
+        };
+
+    }
+
+    async.parallel(funList, (err, results) => {
+        if (err) {
             console.error(err);
-        stats.users = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.users : undefined;
-        stats.usersPending = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.usersPending : undefined;
-        stats.usersWithoutOrder = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.usersWithoutOrder : undefined;
-        stats.menus = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.menus : undefined;
-        stats.orders = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.orders : undefined;
-        stats.ordersStats = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.ordersStats : undefined;
-        stats.dailyOrders = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.dailyOrders : undefined;
-        stats.dailyMenu = results.dailyMenu;
-        stats.tablesStats = results.tablesStats;
-        res.send(stats);
+            return res.sendStatus(500);
+        }
+        res.status(200).send(results);
     });
 }
+
+exports.getEvents = (req, res) => {
+    let query = {},
+        select = {
+            "owner.email": 1,
+        },
+        options = {
+            offset: req.query.offset || undefined,
+            limit: req.query.limit || 100,
+            sort: {
+                updatedAt: -1
+            }
+        };
+    if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
+        //non root user limitations
+
+    }
+    DB.GenericEvent.find(query, select, options).exec((err, events) => {
+        if (err) {
+            console.error(err);
+            return res.sendStatus(500);
+        }
+        res.send(events);
+    });
+}
+/*
+let query = {
+
+    },
+    select = "-_id -__v -kind",
+    options = {
+        offset: undefined,
+        limit: 100,
+        sort: {
+            createdAt: -1
+        }
+    };
+
+
+DB.SlotEvent.find(query, select, options).populate({
+    path: "owner",
+    select: "email -_id"
+}).populate({
+    path: "bombedUser",
+    select: "email -_id"
+}).populate({
+    path: "robbedUser",
+    select: "email -_id"
+}).exec((err, events) => {
+    if (err) {
+        console.error(err);
+    }
+    console.log(events)
+    console.log(events.length)
+});*/
 
 exports.getSuggestions = (req, res) => {
     DB.getMenuSuggestions((err, suggestions) => {

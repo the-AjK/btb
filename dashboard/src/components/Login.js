@@ -5,6 +5,7 @@
  */
 // @flow
 import React, { Component } from "react";
+import ReactDOM from "react-dom";
 import { Redirect } from "react-router-dom";
 import { extendObservable, action } from "mobx";
 import { observer, inject } from "mobx-react";
@@ -50,7 +51,9 @@ const styles = theme => ({
     padding: "0 4em 1em 4em"
   },
   canvas: {
-    position: "absolute"
+    zIndex: -100,
+    position: "absolute",
+    width: "100%"
   }
 });
 
@@ -317,7 +320,7 @@ const startBackgrounAnimation = () => {
   }, false);
 
   window.addEventListener('touchmove', function (e) {
-    e.preventDefault();
+    //e.preventDefault();
     var np = nPart();
     if (np) np.res_(e.touches[0].clientX, e.touches[0].clientY);
   }, false);
@@ -336,32 +339,45 @@ const startBackgrounAnimation = () => {
 
 }
 
-const Login = class extends Component {
-  componentDidMount() {
-    startBackgrounAnimation();
-  }
-  render() {
-    const { classes } = this.props;
-    return (
-      <Grid container className={classes.root}>
-        <canvas id='canv' className={classes.canvas}></canvas>
-        <Grid item xs={12}>
-          <Grid
-            container
-            className={classes.row}
-            direction={"row"}
-            justify={"center"}
-            alignItems={"center"}
-          >
-            <Grid item xs={8} md={3}>
-              <LoginForm {...this.props} />
+const Login = inject("ctx")(
+  observer(
+    class extends Component {
+      constructor() {
+        super();
+        extendObservable(this, {
+          mouse: { x: 0, y: 0 }
+        });
+      }
+      componentDidMount() {
+        //startBackgrounAnimation();
+      }
+      _onMouseMove = action((e) => {
+        //const w = e.target.getBoundingClientRect();
+        this.mouse.x = e.clientX;
+        this.mouse.y = e.clientY;
+      });
+      render() {
+        const { classes } = this.props;
+        return (
+          <Grid container className={classes.root} onMouseMove={this._onMouseMove.bind(this)}>
+            <Grid item xs={12}>
+              <canvas id='canv' className={classes.canvas}></canvas>
+              <Grid
+                container
+                className={classes.row}
+                direction={"row"}
+                justify={"center"}
+                alignItems={"center"}
+              >
+                <Grid item xs={8} md={3}>
+                  <LoginForm mouse={this.mouse} {...this.props} />
+                </Grid>
+              </Grid>
             </Grid>
           </Grid>
-        </Grid>
-      </Grid>
-    );
-  }
-};
+        );
+      }
+    }));
 
 const LoginForm = inject("ctx")(
   observer(
@@ -369,6 +385,9 @@ const LoginForm = inject("ctx")(
       constructor() {
         super();
         extendObservable(this, {
+          logoEl: React.createRef(),
+          passInput: React.createRef(),
+          mouseTimeout: null,
           form: {
             fields: {
               email: {
@@ -428,6 +447,7 @@ const LoginForm = inject("ctx")(
       };
 
       login = () => {
+        startBackgrounAnimation();
         this.props.ctx.auth.login(
           this.form.fields.email.value,
           this.form.fields.password.value,
@@ -438,6 +458,13 @@ const LoginForm = inject("ctx")(
           }
         );
       };
+
+      componentDidUpdate = action(() => {
+        let logo = ReactDOM.findDOMNode(this.logoEl);
+        if (logo)
+          this.logoRect = logo.getBoundingClientRect();
+        this.passInputEl = ReactDOM.findDOMNode(this.passInput.current);
+      })
 
       render() {
         const { classes } = this.props;
@@ -459,6 +486,41 @@ const LoginForm = inject("ctx")(
           return <Redirect to="/" />;
         }
 
+        let logo = "btb_noeyes.png",
+          x = 0,
+          y = 0,
+          deltaX = 150,
+          deltaY = 20;
+        if (this.logoRect) {
+          x = this.logoRect.left + (this.logoRect.width / 2);
+          y = this.logoRect.top + (this.logoRect.height / 4);
+        }
+        if (this.props.mouse.x < (x - deltaX)) {
+          if (this.props.mouse.y < (y - deltaY)) {
+            logo = 'btb_lu.png';
+          } else if (this.props.mouse.y > (y - deltaY) && this.props.mouse.y < (y + deltaY)) {
+            logo = 'btb_ll.png';
+          } else {
+            logo = 'btb_l.png';
+          }
+        } else if (this.props.mouse.x > (x - deltaX) && this.props.mouse.x < (x + deltaX)) {
+          if (this.props.mouse.y < (y - deltaY)) {
+            logo = 'btb_u.png';
+          } else if (this.props.mouse.y > (y - deltaY) && this.props.mouse.y < (y + deltaY)) {
+            logo = 'btb.png';
+          } else {
+            logo = 'btb_d.png';
+          }
+        } else {
+          if (this.props.mouse.y < (y - deltaY)) {
+            logo = 'btb_ru.png';
+          } else if (this.props.mouse.y > (y - deltaY) && this.props.mouse.y < (y + deltaY)) {
+            logo = 'btb_rr.png';
+          } else {
+            logo = 'btb_r.png';
+          }
+        }
+
         return (
           <div>
             {!this.props.ctx.auth.isLoading &&
@@ -467,8 +529,10 @@ const LoginForm = inject("ctx")(
                   <Slide in={true} timeout={500} direction={"down"}>
                     <img
                       className={classes.logo}
+                      id="logo"
+                      ref={e => { this.logoEl = e; }}
                       alt="BTB"
-                      src="/static/images/btb.png"
+                      src={"/static/images/" + logo}
                     />
                   </Slide>
                   <form noValidate autoComplete="on">
@@ -533,11 +597,11 @@ const LoginForm = inject("ctx")(
                 </Fade>
               )}
 
-            {this.props.ctx.auth.isLoading && (
+            {this.props.ctx.auth.isLoading && 
               <Fade in={true} timeout={1000}>
                 <LinearProgress />
               </Fade>
-            )}
+            }
 
             {this.form.meta.error && (
               <Fade in={true} timeout={1000}>

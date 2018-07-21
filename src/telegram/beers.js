@@ -30,6 +30,38 @@ exports.botIsDrunk = function () {
     return drunkBot;
 }
 
+function enableDashboardUser(userID) {
+    DB.User.findOne({
+        _id: userID,
+        enabled: false,
+        deleted: false,
+        role: userRoles.user,
+        "telegram.enabled": true,
+        "telegram.banned": false
+    }, (err, user) => {
+        if (err) {
+            console.error(err);
+        } else if (user) {
+            user.enabled = true;
+            user.updatedAt = moment();
+            user.save((_err, _user) => {
+                if (_err) {
+                    return console.error(_err);
+                }
+                const message = "*Congratulations!*\nYou just gained a full web access to the *BiteTheBot* dashboard!\n" +
+                    "\nYour credentials are:\nusername: *" + user.email + "*\npassword: *" + user.telegram.id + "*\n" +
+                    "\nYou may change your password following the instructions in the user profile's dashboard section.\n" +
+                    "\n>>> [BTB Dashboard](https://bitethebot.herokuapp.com) <<<";
+                require('./bot').bot.telegram.sendMessage(user.telegram.id, message, {
+                    parse_mode: "markdown"
+                }).then(() => {
+                    console.log("User " + user.email + " has been dashboard enabled!");
+                });
+            });
+        }
+    });
+}
+
 function drinkBeer(user) {
     const minDrinkingTime = 60000 * 30, //30min
         maxDrinkingTime = 60000 * 60, //60min
@@ -42,6 +74,7 @@ function drinkBeer(user) {
         drinkingTime = Math.round(utils.getRandomInt(minDrunkDrinkingTime, maxDrunkDrinkingTime));
     }
     console.log("Beer lock for: " + beerLock.email + " [" + Math.round(drinkingTime / 60000) + "mins]");
+    //enableDashboardUser(user._id);
     setTimeout(() => {
         lock.writeLock('beer', function (release) {
             beerLock = null;
@@ -80,6 +113,7 @@ function autoDrink() {
         setDrinkingSchedule(beerLockTimeout);
     } else {
         drinkBeer({
+            _id: 0,
             email: "btb@btb.com",
             username: "BiteTheBot"
         });
@@ -89,6 +123,19 @@ function autoDrink() {
     }
 }
 
+function saveLockedBeerEvent(ctx) {
+    const newLockedBeer = new DB.BeerEvent({
+        owner: ctx.session.user._id,
+        drunk: drunkBot,
+        locked: true
+    });
+    newLockedBeer.save((err, beer) => {
+        if (err) {
+            console.error(err);
+        }
+    });
+}
+
 function addBeer(ctx) {
     lock.readLock('beer', function (release) {
         if (drunkBot && beerLock.username != ctx.session.user.username) {
@@ -96,12 +143,14 @@ function addBeer(ctx) {
                 parse_mode: "markdown"
             });
             console.log("Drunk beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
+            saveLockedBeerEvent(ctx);
             return release();
         } else if (drunkBot) {
             ctx.reply("😵 You got me drunk!", {
                 parse_mode: "markdown"
             });
             console.log("Drunk beer from: " + ctx.session.user.email);
+            saveLockedBeerEvent(ctx);
             return release();
         }
         if (beerLock != null) {
@@ -119,6 +168,7 @@ function addBeer(ctx) {
                 });
             }
             console.log("Locked beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
+            saveLockedBeerEvent(ctx);
             return release();
         } else {
             if (lastUserBeer && lastUserBeer.email == ctx.session.user.email && levels.getLevel(ctx.session.user.points) > 0) {
