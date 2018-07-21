@@ -20,7 +20,6 @@ const moment = require('moment'),
     bot = require("./telegram/bot"),
     telegramBot = require("./telegram/bot").bot,
     botNotifications = require('./telegram/notifications'),
-    session = require('./telegram/session'),
     DB = require("./db");
 
 function _getUsers(req, res) {
@@ -1448,6 +1447,7 @@ function _updateTable(req, res) {
         delete data._id;
         delete data.deleted;
         delete data.createdAt;
+        delete data.seats;
     }
 
     data.updatedAt = moment().format();
@@ -1548,9 +1548,6 @@ exports.getStats = function (req, res) {
         tablesStats: (callback) => {
             DB.getTablesStatus(null, callback);
         },
-        dailyOrders: (callback) => {
-            DB.getDailyOrdersCount(null, callback);
-        },
         dailyMenu: (callback) => {
             const today = moment().startOf("day"),
                 tomorrow = moment(today).add(1, "days"),
@@ -1567,7 +1564,7 @@ exports.getStats = function (req, res) {
             }).exec(callback);
         },
         sessions: (callback) => {
-            let activeSessions = session.getTopSessions();
+            let activeSessions = bot.session.getTopSessions();
             callback(null, activeSessions.map(s => {
                 return {
                     owner: s.owner.email,
@@ -1630,7 +1627,7 @@ exports.getEvents = (req, res) => {
         //non root user limitations
 
     }
-    DB.GenericEvent.find(query, select, options, (err, events) => {
+    DB.GenericEvent.find(query, select, options).exec((err, events) => {
         if (err) {
             console.error(err);
             return res.sendStatus(500);
@@ -1638,6 +1635,36 @@ exports.getEvents = (req, res) => {
         res.send(events);
     });
 }
+
+let query = {
+
+    },
+    select = "-_id -__v -kind",
+    options = {
+        offset: undefined,
+        limit: 100,
+        sort: {
+            createdAt: -1
+        }
+    };
+
+
+DB.SlotEvent.find(query, select, options).populate({
+    path: "owner",
+    select: "email -_id"
+}).populate({
+    path: "bombedUser",
+    select: "email -_id"
+}).populate({
+    path: "robbedUser",
+    select: "email -_id"
+}).exec((err, events) => {
+    if (err) {
+        console.error(err);
+    }
+    console.log(events)
+    console.log(events.length)
+});
 
 exports.getSuggestions = (req, res) => {
     DB.getMenuSuggestions((err, suggestions) => {
