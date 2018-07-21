@@ -76,7 +76,7 @@ const Home = inject("ctx")(
                         title: 'Orders',
                         cols: 1,
                         action: () => { this.props.ctx.history.push("/orders") },
-                        value: this.props.ctx.stats.dailyOrders + " (" + this.props.ctx.stats.orders + ")",
+                        value: this.props.ctx.stats.orders,
                     }, {
                         img: "/static/images/home_smoke.gif",
                         title: 'Active Users',
@@ -115,9 +115,8 @@ const Home = inject("ctx")(
                 }
                 return (
                     <div>
-
                         <Grid container direction={"row"}>
-                            <Grid item xs={6}>
+                            <Grid item xs={12}>
                                 <div className={classes.root}>
                                     <GridList cellHeight={180} cols={3} className={classes.gridList}>
                                         <GridListTile key="Subheader" cols={3} style={{ height: 'auto' }}>
@@ -134,9 +133,9 @@ const Home = inject("ctx")(
                                             />
                                         </GridListTile>
                                         ))}
-                                        <GridListTile key="menu" cols={3}>
+                                        {false && <GridListTile key="menu" cols={3}>
                                         <MenuPreview menu={this.props.ctx.stats.dailyMenu} />
-                                        </GridListTile>
+                                        </GridListTile>}
                                     </GridList>
                                 </div>
                             </Grid>

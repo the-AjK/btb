@@ -61,7 +61,7 @@ const Orders = inject("ctx")(
                 };
 
                 const actions = (props) => {
-                    const canEdit = moment(props.original.createdAt).isSame(moment(), 'date'),
+                    const canEdit = false && moment(props.original.createdAt).isSame(moment(), 'date'),
                         canDelete = roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) || 
                                     (roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && props.original.menu && moment(props.original.menu.day).isSame(moment(), 'day')) || 
                                     (props.original.menu && moment(props.original.menu.deadline).isAfter(moment()));
@@ -217,9 +217,9 @@ const Orders = inject("ctx")(
                                 store={this.props.ctx.orders}
                                 showPagination={true}
                             />
-                            <FloatingAddButton
+                            {false && <FloatingAddButton
                                 onClick={() => this.props.ctx.history.push('/orders/new')}
-                            />
+                            />}
                         </Grid>
                     </Grid>
                 );

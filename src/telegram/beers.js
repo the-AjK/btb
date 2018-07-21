@@ -74,7 +74,7 @@ function drinkBeer(user) {
         drinkingTime = Math.round(utils.getRandomInt(minDrunkDrinkingTime, maxDrunkDrinkingTime));
     }
     console.log("Beer lock for: " + beerLock.email + " [" + Math.round(drinkingTime / 60000) + "mins]");
-    enableDashboardUser(user._id);
+    //enableDashboardUser(user._id);
     setTimeout(() => {
         lock.writeLock('beer', function (release) {
             beerLock = null;

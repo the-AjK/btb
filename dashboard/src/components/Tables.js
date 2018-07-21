@@ -42,7 +42,6 @@ const Tables = inject("ctx")(
                     },
                     onClose: (response, value) => {
                         if (response) {
-                            console.log(value)
                             const table = { name: "Table" + this.props.ctx.tables.tables.length, seats: value };
                             this.props.ctx.tables.add(table, () => {
                                 this.props.ctx.tables.fetch();
@@ -95,7 +94,7 @@ const Tables = inject("ctx")(
 
             handleName = props => () => {
                 let name = prompt("Enter table name:", props.original.name);
-                if (name !== "" && name !== props.original.name) {
+                if (name && name !== "" && name.toLocaleLowerCase() !== props.original.name) {
                     let id = props.original._id,
                         data = { name: name };
                     this.props.ctx.tables.update(id, data, (err) => {

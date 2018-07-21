@@ -1567,7 +1567,7 @@ exports.getStats = function (req, res) {
             let activeSessions = bot.session.getTopSessions();
             callback(null, activeSessions.map(s => {
                 return {
-                    owner: s.owner.email,
+                    user: s.user.email,
                     count: s.count
                 }
             }));
@@ -1635,7 +1635,7 @@ exports.getEvents = (req, res) => {
         res.send(events);
     });
 }
-
+/*
 let query = {
 
     },
@@ -1664,7 +1664,7 @@ DB.SlotEvent.find(query, select, options).populate({
     }
     console.log(events)
     console.log(events.length)
-});
+});*/
 
 exports.getSuggestions = (req, res) => {
     DB.getMenuSuggestions((err, suggestions) => {

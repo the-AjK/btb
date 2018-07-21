@@ -665,9 +665,9 @@ module.exports = {
 
         keyboard.push([{
             text: cmd.trade
-        }, {
+        }/*, {
             text: cmd.hp
-        }]);
+        }*/]);
 
         keyboard.push([{
             text: cmd.back
