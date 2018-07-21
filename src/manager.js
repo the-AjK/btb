@@ -582,23 +582,28 @@ function _updateMenu(req, res) {
                             console.error("Cannot update daily menu 2h after deadline");
                             return res.sendStatus(400);
                         }
-                        DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
-                            if (err) {
-                                console.error(err);
-                                return res.sendStatus(500);
-                            } else if (!menu) {
-                                return res.sendStatus(404);
-                            }
-                            if (data.sendNotification) {
-                                if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
-                                    if (!oldMenu.enabled && menu.enabled) {
-                                        console.log("Daily menu has been enabled!")
-                                        notifyDailyMenu(menu);
-                                    } else if (menu.enabled) {
 
-                                        //Daily menu was already enabled, lets check the orders
-                                        const ordersLock = require('./telegram/scenes/order').getOrdersLock();
-                                        ordersLock.writeLock('order', function (release) {
+                        //require the orders lock to allow people that are ordering to finish their ordering process and then update the dailyMenu
+                        //in case of conflicts the users will be notified afterward
+                        const ordersLock = require('./telegram/scenes/order').getOrdersLock();
+                        ordersLock.writeLock('order', function (release) {
+
+                            DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
+                                if (err) {
+                                    console.error(err);
+                                    res.sendStatus(500);
+                                    return release();
+                                } else if (!menu) {
+                                    res.sendStatus(404);
+                                    return release();
+                                }
+                                if (data.sendNotification) {
+                                    if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
+                                        if (!oldMenu.enabled && menu.enabled) {
+                                            console.log("Daily menu has been enabled!")
+                                            notifyDailyMenu(menu);
+                                            release();
+                                        } else if (menu.enabled) {
 
                                             getDailyOrdersMenuDiff(oldMenu, menu, (err, result) => {
                                                 if (err) {
@@ -633,15 +638,20 @@ function _updateMenu(req, res) {
 
                                                 }
                                             });
-
-                                        });
+                                        } else {
+                                            release();
+                                        }
+                                    } else {
+                                        release();
                                     }
+                                } else {
+                                    release();
                                 }
-                            }
-                            bot.broadcastMessage("Daily Menu updated by *" + req.user.email + "*", accessLevels.root, null, true);
-                            //update reminder stuff
-                            reminder.initDailyReminders();
-                            res.sendStatus(200);
+                                bot.broadcastMessage("Daily Menu updated by *" + req.user.email + "*", accessLevels.root, null, true);
+                                //update reminder stuff
+                                reminder.initDailyReminders();
+                                res.sendStatus(200);
+                            });
                         });
                     });
                 } else {
@@ -958,6 +968,7 @@ function orderIsValid(order, menu) {
     }
     return true;
 }
+exports.orderIsValid = orderIsValid;
 
 function _addOrder(req, res) {
     let data = req.body;
@@ -1195,7 +1206,7 @@ function _deleteOrder(req, res) {
                         res.sendStatus(400);
                         return release();
                     }
-                    if(!checkUserAccessLevel(req.user.role, accessLevels.root) && !moment.utc(_order.menu.day).isSame(moment(), 'day')){
+                    if (!checkUserAccessLevel(req.user.role, accessLevels.root) && !moment.utc(_order.menu.day).isSame(moment(), 'day')) {
                         //for non root users, avoid to delete old orders
                         res.sendStatus(400);
                         return release();
