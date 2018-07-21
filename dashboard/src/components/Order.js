@@ -12,10 +12,11 @@ import Grid from "@material-ui/core/Grid";
 import FormGroup from '@material-ui/core/FormGroup';
 import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
-import FormHelperText from '@material-ui/core/FormHelperText';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Radio from '@material-ui/core/Radio';
 import RadioGroup from '@material-ui/core/RadioGroup';
+import DoneIcon from "@material-ui/icons/Done"
+import WarningIcon from "@material-ui/icons/Warning"
 
 
 import ExpansionPanel from '@material-ui/core/ExpansionPanel';
@@ -39,11 +40,13 @@ const styles = theme => ({
     },
     heading: {
         fontSize: theme.typography.pxToRem(18),
-        flexBasis: '33.33%',
         flexShrink: 0,
     },
     additionalInfos: {
         padding: "1em 2em 1em 2em"
+    },
+    panelIcon: {
+        marginRight: "0.5em"
     }
 });
 
@@ -356,7 +359,9 @@ const Order = inject("ctx")(
                                                 {this.props.ctx.stats.dailyMenu.firstCourse.items.length > 0 &&
                                                     <ExpansionPanel expanded={this.sections.firstCourse} onChange={action((e, v) => this.sections.firstCourse = v)}>
                                                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                                                            <Typography className={classes.heading}>First course</Typography>
+                                                        {this.order.firstCourse.item ? <DoneIcon className={classes.panelIcon}/> : ""}
+                                                        {!this.order.firstCourse.item && !this.order.secondCourse.item ? <WarningIcon className={classes.panelIcon}/> : ""}
+                                                            <Typography className={classes.heading}>First course {this.order.firstCourse.item ? ("(" + this.order.firstCourse.item + ")") : ""}</Typography>
                                                         </ExpansionPanelSummary>
                                                         <ExpansionPanelDetails>
                                                             <Grid container
@@ -408,7 +413,9 @@ const Order = inject("ctx")(
                                                 {this.props.ctx.stats.dailyMenu.secondCourse.items.length > 0 &&
                                                     <ExpansionPanel expanded={this.sections.secondCourse} onChange={action((e, v) => this.sections.secondCourse = v)}>
                                                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                                                            <Typography className={classes.heading}>Second course</Typography>
+                                                        {this.order.secondCourse.item ? <DoneIcon className={classes.panelIcon}/> : ""}
+                                                        {!this.order.firstCourse.item && !this.order.secondCourse.item ? <WarningIcon className={classes.panelIcon}/> : ""}
+                                                            <Typography className={classes.heading}>Second course {this.order.secondCourse.item ? ("(" + this.order.secondCourse.item + ")") : ""}</Typography>
                                                         </ExpansionPanelSummary>
                                                         <ExpansionPanelDetails>
                                                             <Grid container>
@@ -452,6 +459,7 @@ const Order = inject("ctx")(
                                             <Grid item xs={12}>
                                                 <ExpansionPanel expanded={this.sections.tables} onChange={action((e, v) => this.sections.tables = v)}>
                                                     <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                                                        {this.order.table ? <DoneIcon className={classes.panelIcon}/> : <WarningIcon className={classes.panelIcon}/>}
                                                         <Typography className={classes.heading}>Tables</Typography>
                                                     </ExpansionPanelSummary>
                                                     <ExpansionPanelDetails>
