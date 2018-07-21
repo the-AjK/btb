@@ -577,6 +577,9 @@ function _updateMenu(req, res) {
                         } else if (oldMenu.enabled && !(moment(data.day).isSame(moment(oldMenu.day), 'day'))) {
                             console.warn("Changing menu data when menu is enabled its not allowed")
                             return res.sendStatus(400);
+                        } else if (!checkUserAccessLevel(req.user.role, accessLevels.root) && moment().isAfter(moment(oldMenu.deadline).add(2, 'h'))) {
+                            console.error("Cannot update daily menu 2h after deadline");
+                            return res.sendStatus(400);
                         }
                         DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
                             if (err) {
