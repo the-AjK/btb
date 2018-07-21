@@ -1,5 +1,17 @@
 # Change Log
 
+## [1.0.0-RC18](https://github.com/the-AjK/btb/tree/1.0.0-RC18) (2018-07-21)
+
+[Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC17...1.0.0-RC18)
+
+### Changes
+
+- Release1.0 presettings
+
+### Bugfixes
+
+- Various bugfixes
+
 ## [1.0.0-RC17](https://github.com/the-AjK/btb/tree/1.0.0-RC17) (2018-06-23)
 
 [Full Changelog](https://github.com/the-AjK/btb/compare/1.0.0-RC16...1.0.0-RC17)
