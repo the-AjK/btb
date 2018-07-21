@@ -83,7 +83,7 @@ const Order = inject("ctx")(
                         console.error(err);
                         alert(err)
                     } else if (this.props.ctx.stats.dailyMenu && this.props.ctx.stats.dailyMenu.enabled) {
-                        if(moment().isAfter(moment(this.props.ctx.stats.dailyMenu.deadline))){
+                        if (moment().isAfter(moment(this.props.ctx.stats.dailyMenu.deadline))) {
                             this.showAlert("Error", "The deadline was at " + moment(this.props.ctx.stats.dailyMenu.deadline).format('HH:mm') + ". No more orders will be accepted.", () => {
                                 this.props.ctx.history.push('/orders')
                             });
@@ -112,11 +112,11 @@ const Order = inject("ctx")(
                 });
             }
 
-            firstCourseHasCondiments(fc){
-                if(!this.props.ctx.stats.dailyMenu || !this.props.ctx.stats.dailyMenu.firstCourse || !this.props.ctx.stats.dailyMenu.firstCourse.items)
+            firstCourseHasCondiments(fc) {
+                if (!this.props.ctx.stats.dailyMenu || !this.props.ctx.stats.dailyMenu.firstCourse || !this.props.ctx.stats.dailyMenu.firstCourse.items)
                     return false;
-                for(let i=0; i<this.props.ctx.stats.dailyMenu.firstCourse.items.length; i++){
-                    if(this.props.ctx.stats.dailyMenu.firstCourse.items[i].value === fc){
+                for (let i = 0; i < this.props.ctx.stats.dailyMenu.firstCourse.items.length; i++) {
+                    if (this.props.ctx.stats.dailyMenu.firstCourse.items[i].value === fc) {
                         return this.props.ctx.stats.dailyMenu.firstCourse.items[i].condiments && this.props.ctx.stats.dailyMenu.firstCourse.items[i].condiments.length > 0;
                     }
                 }
@@ -239,7 +239,7 @@ const Order = inject("ctx")(
                 let data = Object.assign({
                     menu: this.props.ctx.stats.dailyMenu._id
                 }, this.order);
-                data.owner = this.order.owner._id != "guest" ? this.order.owner._id : undefined;
+                data.owner = String(this.order.owner._id) !== "guest" ? this.order.owner._id : undefined;
                 data.firstCourse = this.order.firstCourse && this.order.firstCourse.item ? this.order.firstCourse : undefined;
                 data.secondCourse = this.order.secondCourse && this.order.secondCourse.item ? this.order.secondCourse : undefined;
                 console.log(data)
@@ -364,8 +364,8 @@ const Order = inject("ctx")(
                                                 {this.props.ctx.stats.dailyMenu.firstCourse.items.length > 0 &&
                                                     <ExpansionPanel expanded={this.sections.firstCourse} onChange={action((e, v) => this.sections.firstCourse = v)}>
                                                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                                                        {this.order.firstCourse.item ? <DoneIcon className={classes.panelIcon}/> : ""}
-                                                        {!this.order.firstCourse.item && !this.order.secondCourse.item ? <WarningIcon className={classes.panelIcon}/> : ""}
+                                                            {this.order.firstCourse.item ? <DoneIcon className={classes.panelIcon} /> : ""}
+                                                            {!this.order.firstCourse.item && !this.order.secondCourse.item ? <WarningIcon className={classes.panelIcon} /> : ""}
                                                             <Typography className={classes.heading}>First course {this.order.firstCourse.item ? ("(" + this.order.firstCourse.item + ")") : ""}</Typography>
                                                         </ExpansionPanelSummary>
                                                         <ExpansionPanelDetails>
@@ -418,8 +418,8 @@ const Order = inject("ctx")(
                                                 {this.props.ctx.stats.dailyMenu.secondCourse.items.length > 0 &&
                                                     <ExpansionPanel expanded={this.sections.secondCourse} onChange={action((e, v) => this.sections.secondCourse = v)}>
                                                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                                                        {this.order.secondCourse.item ? <DoneIcon className={classes.panelIcon}/> : ""}
-                                                        {!this.order.firstCourse.item && !this.order.secondCourse.item ? <WarningIcon className={classes.panelIcon}/> : ""}
+                                                            {this.order.secondCourse.item ? <DoneIcon className={classes.panelIcon} /> : ""}
+                                                            {!this.order.firstCourse.item && !this.order.secondCourse.item ? <WarningIcon className={classes.panelIcon} /> : ""}
                                                             <Typography className={classes.heading}>Second course {this.order.secondCourse.item ? ("(" + this.order.secondCourse.item + ")") : ""}</Typography>
                                                         </ExpansionPanelSummary>
                                                         <ExpansionPanelDetails>
@@ -464,7 +464,7 @@ const Order = inject("ctx")(
                                             <Grid item xs={12}>
                                                 <ExpansionPanel expanded={this.sections.tables} onChange={action((e, v) => this.sections.tables = v)}>
                                                     <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                                                        {this.order.table ? <DoneIcon className={classes.panelIcon}/> : <WarningIcon className={classes.panelIcon}/>}
+                                                        {this.order.table ? <DoneIcon className={classes.panelIcon} /> : <WarningIcon className={classes.panelIcon} />}
                                                         <Typography className={classes.heading}>Tables</Typography>
                                                     </ExpansionPanelSummary>
                                                     <ExpansionPanelDetails>

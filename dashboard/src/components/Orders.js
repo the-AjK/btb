@@ -61,10 +61,12 @@ const Orders = inject("ctx")(
                 };
 
                 const actions = (props) => {
+                    const canEdit = moment(props.original.createdAt).isSame(moment(), 'date'),
+                        canDelete = roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) || (props.original.menu && moment(props.original.menu.deadline).isAfter(moment()));
                     return (
                         <ActionsButtons
-                            edit={moment(props.original.createdAt).isSame(moment(), 'date') ? () => { this.props.ctx.history.push('/orders/' + props.original._id) } : undefined}
-                            delete={this.handleDelete(props.original)}
+                            edit={canEdit ? () => { this.props.ctx.history.push('/orders/' + props.original._id) } : undefined}
+                            delete={canDelete ? this.handleDelete(props.original) : undefined}
                         />
                     )
                 };
@@ -92,6 +94,10 @@ const Orders = inject("ctx")(
                         id: 'secondCourse.item',
                         Header: 'Second course',
                         accessor: d => { return d.secondCourse ? d.secondCourse.item : '-' }
+                    }, {
+                        id: 'secondCourse.sideDishes',
+                        Header: 'Side dishes',
+                        accessor: d => { return d.secondCourse ? d.secondCourse.sideDishes : '-' }
                     }, {
                         id: 'table.name',
                         Header: 'Table',

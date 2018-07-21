@@ -854,6 +854,10 @@ function orderIsValid(order, menu) {
 
     try {
 
+        if (order.firstCourse && order.secondCourse) {
+            console.error("only one dish is allowed");
+            return false;
+        }
         if (!order.firstCourse && !order.secondCourse) {
             console.error("missing field firstCourse/secondCourse");
             return false;
@@ -887,12 +891,6 @@ function orderIsValid(order, menu) {
                     return false;
                 }
             }
-        }
-
-        //only one dish allowed
-        if (order.firstCourse && order.firstCourse.item && order.secondCourse && order.secondCourse.item) {
-            console.error("order only one dish allowed");
-            return false;
         }
 
         //firstCourse item check
@@ -1047,7 +1045,8 @@ function _addOrder(req, res) {
 
 function _updateOrder(req, res) {
     const query = {
-            _id: req.params.id
+            _id: req.params.id,
+            deleted: false
         },
         data = req.body,
         options = {
@@ -1063,15 +1062,21 @@ function _updateOrder(req, res) {
         delete data.owner; //avoid to switch the owner
         delete data.createdBy; //avoid to switch the creator
     }
-    if (!data.owner)
-        data.owner = req.user._id;
+
     if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
         //normal user can update only its own order
-        data.owner = req.user._id;
+        query.owner = req.user._id;
     }
 
     data.updatedBy = req.user._id;
     data.updatedAt = moment().format();
+
+    //only one dish is allowed, lets unset the other one
+    data.$unset = data.firstCourse ? ({
+        secondCourse: ""
+    }) : ({
+        firstCourse: ""
+    });
 
     const ordersLock = require('./telegram/scenes/order').getOrdersLock();
     ordersLock.writeLock('order', function (release) {
@@ -1098,42 +1103,51 @@ function _updateOrder(req, res) {
                     return release();
                 }
 
-                DB.getTablesStatus(null, (err, tables) => {
+                DB.Order.findOne(query, (err, order) => {
                     if (err) {
-                        res.sendStatus(400);
+                        console.error(err);
+                        res.sendStatus(500);
                         return release();
-                        //TODO check if the user already selected this table, in case skip table status checking 
-                    } else if (tables[data.table].used >= tables[data.table].total) {
-                        console.error("cannot update order: table is full")
-                        res.sendStatus(400);
+                    } else if (!order) {
+                        res.sendStatus(404);
                         return release();
-                    } else {
-
-                        DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
-                            if (err) {
-                                console.error(err);
-                                res.sendStatus(500);
-                                return release();
-                            } else if (!order) {
-                                res.sendStatus(404);
-                                return release();
-                            }
-                            res.sendStatus(200);
-                            release();
-
-                            //TODO check and remove one point if the user previously got one point as first daily order winner
-
-                            //User notification
-                            order.populate('owner').populate('updatedBy').execPopulate().then((_order) => {
-                                console.log("Web order updated: " + _order.owner.email + " [" + _order.updatedBy.email + "]");
-                                let message = "Your *order* has been updated" + (_order.updatedBy.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(_order.updatedBy) + "!"));
-                                telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
-                                    parse_mode: "markdown"
-                                });
-                            });
-
-                        });
                     }
+
+                    DB.getTablesStatus(null, (err, tables) => {
+                        if (err) {
+                            res.sendStatus(400);
+                            return release();
+                        } else if (order.table && order.table != data.table && tables[data.table].used >= tables[data.table].total) {
+                            console.error("cannot update order: table is full")
+                            res.sendStatus(400);
+                            return release();
+                        } else {
+                            //table checking done, lets update the order
+                            DB.Order.findByIdAndUpdate(order._id, data, options, (err, updatedOrder) => {
+                                if (err) {
+                                    console.error(err);
+                                    res.sendStatus(500);
+                                    return release();
+                                }
+
+                                res.status(200).send(updatedOrder);
+                                release();
+
+                                //TODO check and remove one point if the user previously got one point as first daily order winner
+
+                                //User notification
+                                updatedOrder.populate('owner').populate('updatedBy').execPopulate().then((_order) => {
+                                    console.log("Web order updated: " + _order.owner.email + " [" + _order.updatedBy.email + "]");
+                                    let message = "Your *order* has been updated" + (_order.updatedBy.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(_order.updatedBy) + "!"));
+                                    telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
+                                        parse_mode: "markdown"
+                                    });
+                                });
+
+                            });
+                        }
+                    });
+
                 });
             }
         });
@@ -1144,7 +1158,8 @@ function _updateOrder(req, res) {
 
 function _deleteOrder(req, res) {
     const query = {
-        _id: req.params.id
+        _id: req.params.id,
+        deleted: false
     };
     if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
         //normal user can delete only its own order
@@ -1162,9 +1177,9 @@ function _deleteOrder(req, res) {
                     updatedBy: req.user._id
                 },
                 options = {
-                    new: false
+                    new: true
                 };
-            DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
+            DB.Order.findOne(query, (err, order) => {
                 if (err) {
                     console.error(err);
                     res.sendStatus(500);
@@ -1173,28 +1188,43 @@ function _deleteOrder(req, res) {
                     res.sendStatus(404);
                     return release();
                 }
-                res.sendStatus(200);
-                release();
 
-                order.populate('owner').populate('updatedBy').execPopulate().then((_order) => {
-                    console.log("Web order deleted: " + _order.owner.email + " [" + _order.updatedBy.email + "]");
+                order.populate('owner').populate('menu').execPopulate().then((_order) => {
 
-                    //remove one point if the user is deleting its own order
-                    if (_order.updatedBy.email == _order.owner.email) {
-                        levels.removePoints(_order.owner._id, 1, false, (err) => {
-                            if (err) {
-                                console.error(err);
-                            }
-                        });
+                    // normal users check for menu deadline
+                    if (!checkUserAccessLevel(req.user.role, accessLevels.admin) && moment(_order.menu.deadline).isBefore(moment())) {
+                        res.sendStatus(400);
+                        return release();
                     }
 
-                    let message = "Your *order* has been deleted" + (_order.updatedBy.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(_order.updatedBy) + "!"));
-                    telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
-                        parse_mode: "markdown"
+                    DB.Order.findByIdAndUpdate(order._id, data, options, (err, deletedOrder) => {
+                        if (err) {
+                            console.error(err);
+                            res.sendStatus(500);
+                            return release();
+                        }
+                        res.sendStatus(200);
+                        release();
+                        console.log("Web order deleted: " + _order.owner.email + " [" + req.user.email + "]");
+
+                        //remove one point if the user is deleting its own order
+                        if (req.user.email == _order.owner.email) {
+                            levels.removePoints(_order.owner._id, 1, false, (err) => {
+                                if (err) {
+                                    console.error(err);
+                                }
+                            });
+                        }
+
+                        let message = "Your *order* has been deleted" + (req.user.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(req.user) + "!"));
+                        telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
+                            parse_mode: "markdown"
+                        });
                     });
                 });
             });
         } else {
+            delete query.deleted;
             //Root user full remove
             DB.Order.findOneAndRemove(query, (err, order) => {
                 if (err) {
@@ -1209,7 +1239,7 @@ function _deleteOrder(req, res) {
                 release();
                 order.populate('owner').execPopulate().then((_order) => {
                     console.log("Web order deleted: " + _order.owner.email + " [" + req.user.email + "]");
-                    let message = "Your *order* has been deleted" + (req.user.email == _order.owner.email == 0 ? "!" : (" by " + bot.getUserLink(req.user) + "!"));
+                    let message = "Your *order* has been deleted" + (req.user.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(req.user) + "!"));
                     telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
                         parse_mode: "markdown"
                     });

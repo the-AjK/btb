@@ -27,15 +27,19 @@ exports.getOrdersLock = function () {
     return ordersLock;
 }
 
-function deleteLastMessage(ctx){
+function deleteLastMessage(ctx) {
     if (ctx.session.lastMessage) {
         ctx.deleteMessage(ctx.session.lastMessage.message_id);
         delete ctx.session.lastMessage;
     }
 }
 
-function leave(ctx) {
+function leave(ctx, force_exit) {
     deleteLastMessage(ctx);
+    if (force_exit) {
+        ctx.scene.leave();
+        return ctx.reply("✖️ You have already placed an order", keyboards.btb(ctx).opts);
+    }
     DB.getDailyUserOrder(null, ctx.session.user._id, (err, dailyOrder) => {
         let msg = "✅ *Order confirmed!*";
         if (err) {
@@ -300,6 +304,8 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                         newOrder.save((err, order) => {
                             if (err) {
                                 console.error(err);
+                                release();
+                                return leave(ctx, true); //force exit
                             } else if (!checkUser(ctx.session.user.role, userRoles.root)) {
                                 bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
                             }
@@ -549,6 +555,8 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                         newOrder.save((err, order) => {
                             if (err) {
                                 console.error(err);
+                                release();
+                                return leave(ctx, true); //force exit
                             } else if (!checkUser(ctx.session.user.role, userRoles.root)) {
                                 bot.broadcastMessage("New order from *" + ctx.session.user.email + "*", accessLevels.root, null, true);
                             }
