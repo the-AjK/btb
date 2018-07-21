@@ -20,6 +20,7 @@ const moment = require('moment'),
     bot = require("./telegram/bot"),
     telegramBot = require("./telegram/bot").bot,
     botNotifications = require('./telegram/notifications'),
+    session = require('./telegram/session'),
     DB = require("./db");
 
 function _getUsers(req, res) {
@@ -1527,73 +1528,28 @@ exports.tables = {
 };
 
 exports.getStats = function (req, res) {
-    let stats = {
-        users: 1,
-        dailyOrders: 2,
-        orders: 3,
-        menus: 4,
-        dailyMenuStatus: false
-    }
-
-    async.parallel({
+    let funList = {
         users: (callback) => {
             DB.User.countDocuments({
                 deleted: false,
                 "telegram.enabled": true
-            }, callback)
-        },
-        usersPending: (callback) => {
-            DB.User.countDocuments({
-                deleted: false,
-                "telegram.enabled": false
-            }, callback)
+            }, callback);
         },
         menus: (callback) => {
             DB.Menu.countDocuments({
                 deleted: false
-            }, callback)
+            }, callback);
         },
         orders: (callback) => {
             DB.Order.countDocuments({
                 deleted: false
-            }, callback)
-        },
-        usersWithoutOrder: (callback) => {
-            DB.getNotOrderUsers(null, (err, users) => {
-                if (err) {
-                    return callback(null, []);
-                }
-                callback(null, users);
-            });
+            }, callback);
         },
         tablesStats: (callback) => {
-            DB.getTablesStatus(null, (err, tablesStats) => {
-                if (err) {
-                    return callback(null, {});
-                }
-                callback(null, tablesStats);
-            })
-        },
-        ordersStats: (callback) => {
-            DB.getDailyOrderStats(null, (err, stats) => {
-                if (err) {
-                    return callback(null, null);
-                }
-                //console.log(stats)
-                callback(null, {
-                    stats: stats,
-                    text: bot.formatOrderComplete(stats)
-                });
-            })
+            DB.getTablesStatus(null, callback);
         },
         dailyOrders: (callback) => {
-            DB.getDailyOrdersCount(null, (err, dailyOrders) => {
-                if (err) {
-                    callback(null, 0)
-                } else {
-                    callback(null, dailyOrders);
-                }
-            });
+            DB.getDailyOrdersCount(null, callback);
         },
         dailyMenu: (callback) => {
             const today = moment().startOf("day"),
@@ -1608,27 +1564,78 @@ exports.getStats = function (req, res) {
             DB.Menu.findOne(query).populate('tables').populate({
                 path: 'owner',
                 select: 'username email _id'
-            }).exec((err, results) => {
-                if (err) {
-                    callback(null)
-                } else {
-                    callback(null, results);
+            }).exec(callback);
+        },
+        sessions: (callback) => {
+            let activeSessions = session.getTopSessions();
+            callback(null, activeSessions.map(s => {
+                return {
+                    owner: s.owner.email,
+                    count: s.count
                 }
-            });
+            }));
         }
-    }, (err, results) => {
-        if (err)
+    };
+
+    //root and admin users only stats
+    if (checkUserAccessLevel(req.user.role, accessLevels.admin)) {
+
+        funList.usersPending = (callback) => {
+            DB.User.countDocuments({
+                deleted: false,
+                "telegram.enabled": false
+            }, callback);
+        };
+
+        funList.usersWithoutOrder = (callback) => {
+            DB.getNotOrderUsers(null, callback);
+        };
+
+        funList.ordersStats = (callback) => {
+            DB.getDailyOrderStats(null, (err, stats) => {
+                if (err) {
+                    return callback(err);
+                }
+                callback(null, {
+                    stats: stats,
+                    text: bot.formatOrderComplete(stats)
+                });
+            });
+        };
+
+    }
+
+    async.parallel(funList, (err, results) => {
+        if (err) {
             console.error(err);
-        stats.users = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.users : undefined;
-        stats.usersPending = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.usersPending : undefined;
-        stats.usersWithoutOrder = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.usersWithoutOrder : undefined;
-        stats.menus = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.menus : undefined;
-        stats.orders = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.orders : undefined;
-        stats.ordersStats = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.ordersStats : undefined;
-        stats.dailyOrders = checkUserAccessLevel(req.user.role, accessLevels.admin) ? results.dailyOrders : undefined;
-        stats.dailyMenu = results.dailyMenu;
-        stats.tablesStats = results.tablesStats;
-        res.send(stats);
+            return res.sendStatus(500);
+        }
+        res.status(200).send(results);
+    });
+}
+
+exports.getEvents = (req, res) => {
+    let query = {},
+        select = {
+            "owner.email": 1,
+        },
+        options = {
+            offset: req.query.offset || undefined,
+            limit: req.query.limit || 100,
+            sort: {
+                updatedAt: -1
+            }
+        };
+    if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
+        //non root user limitations
+
+    }
+    DB.GenericEvent.find(query, select, options, (err, events) => {
+        if (err) {
+            console.error(err);
+            return res.sendStatus(500);
+        }
+        res.send(events);
     });
 }
 

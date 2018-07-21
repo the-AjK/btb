@@ -36,7 +36,9 @@ api.get("/logout", loginLimiter, auth.checkAuthUser, auth.logout);
 
 api.post("/profile", apiLimiter, auth.checkAuthUser, auth.updateProfile);
 api.get("/suggestions", apiLimiter, auth.checkAuthAdmin, manager.getSuggestions);
+api.get("/events", apiLimiter, auth.checkAuthUser, manager.getEvents);
 api.get("/stats", apiLimiter, auth.checkAuthUser, manager.getStats);
+
 api.post("/broadcast", apiLimiter, auth.checkAuthAdmin, manager.broadcastMessage);
 
 function generateResourceAPIStack(resource) {
