@@ -275,9 +275,9 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
 
                     //check order consistency
                     delete ctx.session.order.secondCourse;
-                    if (!manager.orderIsValid(ctx.session.order, ctx.session.dailyMenu)) {
-                        console.error(err);
-                        ctx.reply("Invalid order, daily menu has been changed.");
+                    const orderError = manager.validateOrder(ctx.session.order, ctx.session.dailyMenu);
+                    if (orderError != null) {
+                        ctx.reply(orderError);
                         release();
                         return leave(ctx);
                     }
@@ -531,9 +531,9 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
 
                     //check order consistency
                     delete ctx.session.order.firstCourse;
-                    if (!manager.orderIsValid(ctx.session.order, ctx.session.dailyMenu)) {
-                        console.error(err);
-                        ctx.reply("Invalid order, daily menu has been changed.");
+                    const orderError = manager.validateOrder(ctx.session.order, ctx.session.dailyMenu);
+                    if (orderError != null) {
+                        ctx.reply(orderError);
                         release();
                         return leave(ctx);
                     }

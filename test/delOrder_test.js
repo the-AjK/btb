@@ -125,28 +125,33 @@ describe('delOrder()', function () {
             owner: user._id
         });
         const req = {
-                user: requser,
-                params: {
-                    id: order._id
-                }
-            };
+            user: requser,
+            params: {
+                id: order._id
+            }
+        };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(200);
-                DB.Order.findById(order._id, (_err, _order) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_order.deleted).to.be.equal(true);
-                    DB.Order.findById(order2._id, (_err, _order) => {
-                        expect(_err).to.be.equal(null);
-                        expect(_order.deleted).to.be.equal(false);
-                        resolve();
-                    });
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.findById(order._id, (_err, _order) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_order.deleted).to.be.equal(true);
+                            DB.Order.findById(order2._id, (_err, _order) => {
+                                expect(_err).to.be.equal(null);
+                                expect(_order.deleted).to.be.equal(false);
+                                resolve();
+                            });
+                        });
+                    }
+                }
             });
             manager.orders.delete(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -216,28 +221,33 @@ describe('delOrder()', function () {
             owner: user._id
         });
         const req = {
-                user: requser,
-                params: {
-                    id: order._id
-                }
-            };
+            user: requser,
+            params: {
+                id: order._id
+            }
+        };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(200);
-                DB.Order.findById(order._id, (_err, _order) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_order.deleted).to.be.equal(true);
-                    DB.Order.findById(order2._id, (_err, _order) => {
-                        expect(_err).to.be.equal(null);
-                        expect(_order.deleted).to.be.equal(false);
-                        resolve();
-                    });
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.findById(order._id, (_err, _order) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_order.deleted).to.be.equal(true);
+                            DB.Order.findById(order2._id, (_err, _order) => {
+                                expect(_err).to.be.equal(null);
+                                expect(_order.deleted).to.be.equal(false);
+                                resolve();
+                            });
+                        });
+                    }
+                }
             });
             manager.orders.delete(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -307,28 +317,33 @@ describe('delOrder()', function () {
             owner: user._id
         });
         const req = {
-                user: requser,
-                params: {
-                    id: order._id
-                }
-            };
+            user: requser,
+            params: {
+                id: order._id
+            }
+        };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(200);
-                DB.Order.findById(order2._id, (_err, _order) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_order.deleted).to.be.equal(false);
-                    DB.Order.findById(order._id, (_err, _order) => {
-                        expect(_err).to.be.equal(null);
-                        expect(_order).to.be.equal(null);
-                        resolve();
-                    });
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.findById(order2._id, (_err, _order) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_order.deleted).to.be.equal(false);
+                            DB.Order.findById(order._id, (_err, _order) => {
+                                expect(_err).to.be.equal(null);
+                                expect(_order).to.be.equal(null);
+                                resolve();
+                            });
+                        });
+                    }
+                }
             });
             manager.orders.delete(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -398,28 +413,33 @@ describe('delOrder()', function () {
             owner: user._id
         });
         const req = {
-                user: requser,
-                params: {
-                    id: order2._id //try to delete somebody else order
-                }
-            };
+            user: requser,
+            params: {
+                id: order2._id //try to delete somebody else order
+            }
+        };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(404);
-                DB.Order.findById(order._id, (_err, _order) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_order.deleted).to.be.equal(false);
-                    DB.Order.findById(order2._id, (_err, _order) => {
-                        expect(_err).to.be.equal(null);
-                        expect(_order.deleted).to.be.equal(false);
-                        resolve();
-                    });
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.findById(order._id, (_err, _order) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_order.deleted).to.be.equal(false);
+                            DB.Order.findById(order2._id, (_err, _order) => {
+                                expect(_err).to.be.equal(null);
+                                expect(_order.deleted).to.be.equal(false);
+                                resolve();
+                            });
+                        });
+                    }
+                }
             });
             manager.orders.delete(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -489,28 +509,33 @@ describe('delOrder()', function () {
             owner: user._id
         });
         const req = {
-                user: requser,
-                params: {
-                    id: order2._id
-                }
-            };
+            user: requser,
+            params: {
+                id: order2._id
+            }
+        };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(200);
-                DB.Order.findById(order._id, (_err, _order) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_order.deleted).to.be.equal(false);
-                    DB.Order.findById(order2._id, (_err, _order) => {
-                        expect(_err).to.be.equal(null);
-                        expect(_order.deleted).to.be.equal(true);
-                        resolve();
-                    });
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.findById(order._id, (_err, _order) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_order.deleted).to.be.equal(false);
+                            DB.Order.findById(order2._id, (_err, _order) => {
+                                expect(_err).to.be.equal(null);
+                                expect(_order.deleted).to.be.equal(true);
+                                resolve();
+                            });
+                        });
+                    }
+                }
             });
             manager.orders.delete(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -566,7 +591,7 @@ describe('delOrder()', function () {
                 item: "spaghetti",
                 condiment: "pomodoro"
             },
-            deleted: true,  //deleted order
+            deleted: true, //deleted order
             menu: dailyMenu._id,
             table: t1._id,
             owner: requser._id
@@ -581,28 +606,33 @@ describe('delOrder()', function () {
             owner: user._id
         });
         const req = {
-                user: requser,
-                params: {
-                    id: order._id
-                }
-            };
+            user: requser,
+            params: {
+                id: order._id
+            }
+        };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(200);
-                DB.Order.findById(order2._id, (_err, _order) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_order.deleted).to.be.equal(false);
-                    DB.Order.findById(order._id, (_err, _order) => {
-                        expect(_err).to.be.equal(null);
-                        expect(_order).to.be.equal(null);
-                        resolve();
-                    });
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.findById(order2._id, (_err, _order) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_order.deleted).to.be.equal(false);
+                            DB.Order.findById(order._id, (_err, _order) => {
+                                expect(_err).to.be.equal(null);
+                                expect(_order).to.be.equal(null);
+                                resolve();
+                            });
+                        });
+                    }
+                }
             });
             manager.orders.delete(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -672,28 +702,33 @@ describe('delOrder()', function () {
             owner: user._id
         });
         const req = {
-                user: requser,
-                params: {
-                    id: order._id
-                }
-            };
+            user: requser,
+            params: {
+                id: order._id
+            }
+        };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                DB.Order.findById(order._id, (_err, _order) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_order.deleted).to.be.equal(false);
-                    DB.Order.findById(order2._id, (_err, _order) => {
-                        expect(_err).to.be.equal(null);
-                        expect(_order.deleted).to.be.equal(false);
-                        resolve();
-                    });
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.findById(order._id, (_err, _order) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_order.deleted).to.be.equal(false);
+                            DB.Order.findById(order2._id, (_err, _order) => {
+                                expect(_err).to.be.equal(null);
+                                expect(_order.deleted).to.be.equal(false);
+                                resolve();
+                            });
+                        });
+                    }
+                }
             });
             manager.orders.delete(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -763,28 +798,33 @@ describe('delOrder()', function () {
             owner: user._id
         });
         const req = {
-                user: requser,
-                params: {
-                    id: order._id
-                }
-            };
+            user: requser,
+            params: {
+                id: order._id
+            }
+        };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                DB.Order.findById(order._id, (_err, _order) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_order.deleted).to.be.equal(false);
-                    DB.Order.findById(order2._id, (_err, _order) => {
-                        expect(_err).to.be.equal(null);
-                        expect(_order.deleted).to.be.equal(false);
-                        resolve();
-                    });
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.findById(order._id, (_err, _order) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_order.deleted).to.be.equal(false);
+                            DB.Order.findById(order2._id, (_err, _order) => {
+                                expect(_err).to.be.equal(null);
+                                expect(_order.deleted).to.be.equal(false);
+                                resolve();
+                            });
+                        });
+                    }
+                }
             });
             manager.orders.delete(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -854,28 +894,33 @@ describe('delOrder()', function () {
             owner: user._id
         });
         const req = {
-                user: requser,
-                params: {
-                    id: order._id
-                }
-            };
+            user: requser,
+            params: {
+                id: order._id
+            }
+        };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                DB.Order.findById(order._id, (_err, _order) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_order.deleted).to.be.equal(false);
-                    DB.Order.findById(order2._id, (_err, _order) => {
-                        expect(_err).to.be.equal(null);
-                        expect(_order.deleted).to.be.equal(false);
-                        resolve();
-                    });
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.findById(order._id, (_err, _order) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_order.deleted).to.be.equal(false);
+                            DB.Order.findById(order2._id, (_err, _order) => {
+                                expect(_err).to.be.equal(null);
+                                expect(_order.deleted).to.be.equal(false);
+                                resolve();
+                            });
+                        });
+                    }
+                }
             });
             manager.orders.delete(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -945,31 +990,35 @@ describe('delOrder()', function () {
             owner: user._id
         });
         const req = {
-                user: requser,
-                params: {
-                    id: order._id
-                }
-            };
+            user: requser,
+            params: {
+                id: order._id
+            }
+        };
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(200);
-                DB.Order.findById(order._id, (_err, _order) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_order).to.be.equal(null);
-                    DB.Order.findById(order2._id, (_err, _order) => {
-                        expect(_err).to.be.equal(null);
-                        expect(_order.deleted).to.be.equal(false);
-                        resolve();
-                    });
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.findById(order._id, (_err, _order) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_order).to.be.equal(null);
+                            DB.Order.findById(order2._id, (_err, _order) => {
+                                expect(_err).to.be.equal(null);
+                                expect(_order.deleted).to.be.equal(false);
+                                resolve();
+                            });
+                        });
+                    }
+                }
             });
             manager.orders.delete(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
-
 
 });

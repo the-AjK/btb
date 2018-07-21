@@ -117,17 +117,22 @@ describe('updOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }
             });
             manager.orders.update(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
 
@@ -169,17 +174,22 @@ describe('updOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
-                expect(s).to.be.equal(400);
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(500);
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }
             });
             manager.orders.update(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -259,21 +269,26 @@ describe('updOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                DB.Order.find({}, (_err, _orders) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_orders.length).to.be.equal(1);
-                    expect(String(_orders[0].table)).to.be.equal(String(t1._id));
-                    expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
-                    expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
-                    expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
-                    resolve();
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.find({}, (_err, _orders) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_orders.length).to.be.equal(1);
+                            expect(String(_orders[0].table)).to.be.equal(String(t1._id));
+                            expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
+                            expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
+                            expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
+                            resolve();
+                        });
+                    }
+                }
             });
             manager.orders.update(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
 
@@ -372,21 +387,26 @@ describe('updOrder()', function () {
         });
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                DB.Order.find({}, (_err, _orders) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_orders.length).to.be.equal(2);
-                    expect(String(_orders[0].table)).to.be.equal(String(t1._id));
-                    expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
-                    expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
-                    expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
-                    resolve();
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.find({}, (_err, _orders) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_orders.length).to.be.equal(2);
+                            expect(String(_orders[0].table)).to.be.equal(String(t1._id));
+                            expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
+                            expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
+                            expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
+                            resolve();
+                        });
+                    }
+                }
             });
             manager.orders.update(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
 
@@ -1140,25 +1160,30 @@ describe('updOrder()', function () {
         });
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(404);
-                DB.Order.find({}, (_err, _orders) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_orders.length).to.be.equal(2);
-                    expect(String(_orders[0].table)).to.be.equal(String(t1._id));
-                    expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
-                    expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
-                    expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
-                    expect(String(_orders[1].table)).to.be.equal(String(t2._id));
-                    expect(String(_orders[1].owner)).to.be.equal(String(user._id));
-                    expect(_orders[1].firstCourse.item).to.be.equal("spaghetti");
-                    expect(_orders[1].firstCourse.condiment).to.be.equal("carbonara");
-                    resolve();
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.find({}, (_err, _orders) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_orders.length).to.be.equal(2);
+                            expect(String(_orders[0].table)).to.be.equal(String(t1._id));
+                            expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
+                            expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
+                            expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
+                            expect(String(_orders[1].table)).to.be.equal(String(t2._id));
+                            expect(String(_orders[1].owner)).to.be.equal(String(user._id));
+                            expect(_orders[1].firstCourse.item).to.be.equal("spaghetti");
+                            expect(_orders[1].firstCourse.condiment).to.be.equal("carbonara");
+                            resolve();
+                        });
+                    }
+                }
             });
             manager.orders.update(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -1259,25 +1284,30 @@ describe('updOrder()', function () {
         });
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(404);
-                DB.Order.find({}, (_err, _orders) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_orders.length).to.be.equal(2);
-                    expect(String(_orders[0].table)).to.be.equal(String(t1._id));
-                    expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
-                    expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
-                    expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
-                    expect(String(_orders[1].table)).to.be.equal(String(t2._id));
-                    expect(String(_orders[1].owner)).to.be.equal(String(user._id));
-                    expect(_orders[1].firstCourse.item).to.be.equal("spaghetti");
-                    expect(_orders[1].firstCourse.condiment).to.be.equal("carbonara");
-                    resolve();
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.find({}, (_err, _orders) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_orders.length).to.be.equal(2);
+                            expect(String(_orders[0].table)).to.be.equal(String(t1._id));
+                            expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
+                            expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
+                            expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
+                            expect(String(_orders[1].table)).to.be.equal(String(t2._id));
+                            expect(String(_orders[1].owner)).to.be.equal(String(user._id));
+                            expect(_orders[1].firstCourse.item).to.be.equal("spaghetti");
+                            expect(_orders[1].firstCourse.condiment).to.be.equal("carbonara");
+                            resolve();
+                        });
+                    }
+                }
             });
             manager.orders.update(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -1735,21 +1765,26 @@ describe('updOrder()', function () {
         });
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                DB.Order.find({}, (_err, _orders) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_orders.length).to.be.equal(1);
-                    expect(String(_orders[0].table)).to.be.equal(String(t1._id));
-                    expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
-                    expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
-                    expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
-                    resolve();
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.find({}, (_err, _orders) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_orders.length).to.be.equal(1);
+                            expect(String(_orders[0].table)).to.be.equal(String(t1._id));
+                            expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
+                            expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
+                            expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
+                            resolve();
+                        });
+                    }
+                }
             });
             manager.orders.update(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -1829,21 +1864,26 @@ describe('updOrder()', function () {
         });
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(500);
-                DB.Order.find({}, (_err, _orders) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_orders.length).to.be.equal(1);
-                    expect(String(_orders[0].table)).to.be.equal(String(t1._id));
-                    expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
-                    expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
-                    expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
-                    resolve();
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.find({}, (_err, _orders) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_orders.length).to.be.equal(1);
+                            expect(String(_orders[0].table)).to.be.equal(String(t1._id));
+                            expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
+                            expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
+                            expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
+                            resolve();
+                        });
+                    }
+                }
             });
             manager.orders.update(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });
@@ -1923,21 +1963,26 @@ describe('updOrder()', function () {
         });
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(500);
-                DB.Order.find({}, (_err, _orders) => {
-                    expect(_err).to.be.equal(null);
-                    expect(_orders.length).to.be.equal(1);
-                    expect(String(_orders[0].table)).to.be.equal(String(t1._id));
-                    expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
-                    expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
-                    expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
-                    resolve();
-                });
+                return {
+                    send: (message) => {
+                        console.log(message);
+                        DB.Order.find({}, (_err, _orders) => {
+                            expect(_err).to.be.equal(null);
+                            expect(_orders.length).to.be.equal(1);
+                            expect(String(_orders[0].table)).to.be.equal(String(t1._id));
+                            expect(String(_orders[0].owner)).to.be.equal(String(requser._id));
+                            expect(_orders[0].firstCourse.item).to.be.equal("spaghetti");
+                            expect(_orders[0].firstCourse.condiment).to.be.equal("pomodoro");
+                            resolve();
+                        });
+                    }
+                }
             });
             manager.orders.update(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
     });

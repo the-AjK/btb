@@ -237,6 +237,11 @@ const MenuSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: this.owner
   }
 }).index({
   day: 1

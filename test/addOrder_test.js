@@ -93,18 +93,23 @@ describe('addOrder()', function () {
         });
 
         return (new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         }));
 
@@ -143,18 +148,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
-                expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(500);
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -221,18 +231,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
 
@@ -866,18 +881,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -941,18 +961,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -1016,18 +1041,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -1091,18 +1121,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -1165,18 +1200,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -1326,18 +1366,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -1398,18 +1443,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -1473,18 +1523,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -1548,18 +1603,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -1622,18 +1682,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -1694,18 +1759,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -1946,18 +2016,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -2022,18 +2097,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -2098,18 +2178,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -2174,18 +2259,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -2325,18 +2415,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(0);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(0);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -2412,18 +2507,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
-                expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(1);
-                    resolve();
-                });
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(500);
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(1);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
@@ -2506,18 +2606,23 @@ describe('addOrder()', function () {
         });
 
         return new Promise((resolve, reject) => {
-            const sendStatus = sinon.stub();
-            sendStatus.callsFake((s) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
                 expect(s).to.be.equal(400);
-                getDailyMenu.restore();
-                DB.Order.countDocuments((err, count) => {
-                    expect(err).to.be.equal(null);
-                    expect(count).to.be.equal(1);
-                    resolve();
-                });
+                return {
+                    send: (message)=>{
+                        console.log(message)
+                        getDailyMenu.restore();
+                        DB.Order.countDocuments((err, count) => {
+                            expect(err).to.be.equal(null);
+                            expect(count).to.be.equal(1);
+                            resolve();
+                        });
+                    }
+                }                
             });
             manager.orders.add(req, {
-                sendStatus: sendStatus
+                status: status
             });
         });
     });
