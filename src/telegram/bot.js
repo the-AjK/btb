@@ -193,7 +193,7 @@ exports.getUserLink = getUserLink;
 
 // sequentialReplies wrapper with constant interval
 function replies(ctx, messages, opts, callback) {
-  const interval = 2500;
+  const interval = 1000;
   sequentialReplies(ctx, interval, messages, opts, callback);
 }
 
