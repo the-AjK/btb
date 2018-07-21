@@ -691,5 +691,278 @@ describe('delOrder()', function () {
         }));
     });
 
+    it('004a normal user shouldnt be able to delete old orders', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user //normal user
+        });
+        const user = testDB.add(DB.User, {
+            username: "user12",
+            password: "password",
+            salt: "salt",
+            email: "emai2l@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment().subtract(1, 'd'),
+            deadline: moment().subtract(1, 'd'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                }, {
+                    value: "Insalatona",
+                    condiments: []
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id]
+        });
+        const order = testDB.add(DB.Order, {
+            firstCourse: {
+                item: "spaghetti",
+                condiment: "pomodoro"
+            },
+            menu: dailyMenu._id,
+            table: t1._id,
+            owner: requser._id
+        });
+        const order2 = testDB.add(DB.Order, {
+            firstCourse: {
+                item: "spaghetti",
+                condiment: "pesto"
+            },
+            menu: dailyMenu._id,
+            table: t1._id,
+            owner: user._id
+        });
+        const req = {
+                user: requser,
+                params: {
+                    id: order._id
+                }
+            };
+
+        return (new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                DB.Order.findById(order._id, (_err, _order) => {
+                    expect(_err).to.be.equal(null);
+                    expect(_order.deleted).to.be.equal(false);
+                    DB.Order.findById(order2._id, (_err, _order) => {
+                        expect(_err).to.be.equal(null);
+                        expect(_order.deleted).to.be.equal(false);
+                        resolve();
+                    });
+                });
+            });
+            manager.orders.delete(req, {
+                sendStatus: sendStatus
+            });
+        }));
+    });
+
+    it('004b admin user shouldnt be able to delete old orders', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin //admin user
+        });
+        const user = testDB.add(DB.User, {
+            username: "user12",
+            password: "password",
+            salt: "salt",
+            email: "emai2l@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment().subtract(1, 'd'),
+            deadline: moment().subtract(1, 'd'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                }, {
+                    value: "Insalatona",
+                    condiments: []
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id]
+        });
+        const order = testDB.add(DB.Order, {
+            firstCourse: {
+                item: "spaghetti",
+                condiment: "pomodoro"
+            },
+            menu: dailyMenu._id,
+            table: t1._id,
+            owner: requser._id
+        });
+        const order2 = testDB.add(DB.Order, {
+            firstCourse: {
+                item: "spaghetti",
+                condiment: "pesto"
+            },
+            menu: dailyMenu._id,
+            table: t1._id,
+            owner: user._id
+        });
+        const req = {
+                user: requser,
+                params: {
+                    id: order._id
+                }
+            };
+
+        return (new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                DB.Order.findById(order._id, (_err, _order) => {
+                    expect(_err).to.be.equal(null);
+                    expect(_order.deleted).to.be.equal(false);
+                    DB.Order.findById(order2._id, (_err, _order) => {
+                        expect(_err).to.be.equal(null);
+                        expect(_order.deleted).to.be.equal(false);
+                        resolve();
+                    });
+                });
+            });
+            manager.orders.delete(req, {
+                sendStatus: sendStatus
+            });
+        }));
+    });
+
+    it('004c root user shouldnt be able to delete old orders', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.root //root user
+        });
+        const user = testDB.add(DB.User, {
+            username: "user12",
+            password: "password",
+            salt: "salt",
+            email: "emai2l@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment().subtract(1, 'd'),
+            deadline: moment().subtract(1, 'd'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                }, {
+                    value: "Insalatona",
+                    condiments: []
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id]
+        });
+        const order = testDB.add(DB.Order, {
+            firstCourse: {
+                item: "spaghetti",
+                condiment: "pomodoro"
+            },
+            menu: dailyMenu._id,
+            table: t1._id,
+            owner: requser._id
+        });
+        const order2 = testDB.add(DB.Order, {
+            firstCourse: {
+                item: "spaghetti",
+                condiment: "pesto"
+            },
+            menu: dailyMenu._id,
+            table: t1._id,
+            owner: user._id
+        });
+        const req = {
+                user: requser,
+                params: {
+                    id: order._id
+                }
+            };
+
+        return (new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(200);
+                DB.Order.findById(order._id, (_err, _order) => {
+                    expect(_err).to.be.equal(null);
+                    expect(_order).to.be.equal(null);
+                    DB.Order.findById(order2._id, (_err, _order) => {
+                        expect(_err).to.be.equal(null);
+                        expect(_order.deleted).to.be.equal(false);
+                        resolve();
+                    });
+                });
+            });
+            manager.orders.delete(req, {
+                sendStatus: sendStatus
+            });
+        }));
+    });
+
 
 });

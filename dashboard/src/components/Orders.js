@@ -62,7 +62,9 @@ const Orders = inject("ctx")(
 
                 const actions = (props) => {
                     const canEdit = moment(props.original.createdAt).isSame(moment(), 'date'),
-                        canDelete = roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) || (props.original.menu && moment(props.original.menu.deadline).isAfter(moment()));
+                        canDelete = roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) || 
+                                    (roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && props.original.menu && moment(props.original.menu.day).isSame(moment(), 'day')) || 
+                                    (props.original.menu && moment(props.original.menu.deadline).isAfter(moment()));
                     return (
                         <ActionsButtons
                             edit={canEdit ? () => { this.props.ctx.history.push('/orders/' + props.original._id) } : undefined}

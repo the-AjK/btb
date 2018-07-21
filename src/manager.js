@@ -1195,6 +1195,11 @@ function _deleteOrder(req, res) {
                         res.sendStatus(400);
                         return release();
                     }
+                    if(!checkUserAccessLevel(req.user.role, accessLevels.root) && !moment.utc(_order.menu.day).isSame(moment(), 'day')){
+                        //for non root users, avoid to delete old orders
+                        res.sendStatus(400);
+                        return release();
+                    }
 
                     DB.Order.findByIdAndUpdate(order._id, data, options, (err, deletedOrder) => {
                         if (err) {
