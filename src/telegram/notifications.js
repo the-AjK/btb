@@ -90,14 +90,16 @@ function sendDailyMenuUpdate(user, message) {
 
 //Send daily menu update notification for every user in the list
 exports.dailyMenuUpdated = function (users, cb) {
-    const query = {
-            "telegram.enabled": true,
-            "telegram.banned": false,
-            "deleted": false,
-            //"settings.dailyMenu": true
-        },
-        message = "⚠️ Daily menu has been changed and your order has been deleted!\nPlease place your order again.";
+    const message = "⚠️ Daily menu has been changed and your order has been deleted!\nPlease place your order again.";
+    async.parallel(users.map(u => sendDailyMenuUpdate(u, message)), (_err) => {
+        if (cb)
+            cb(_err);
+    });
+}
 
+//Send daily menu deleted notification for every user in the list
+exports.dailyMenuDeleted = function (users, cb) {
+    const message = "⚠️ Daily menu has been removed and your order has been deleted!\nSeems like you won't eat today 😬";
     async.parallel(users.map(u => sendDailyMenuUpdate(u, message)), (_err) => {
         if (cb)
             cb(_err);
@@ -105,14 +107,7 @@ exports.dailyMenuUpdated = function (users, cb) {
 }
 
 exports.dailyMenuUpdatedNotify = function (users, cb) {
-    const query = {
-            "telegram.enabled": true,
-            "telegram.banned": false,
-            "deleted": false,
-            "settings.dailyMenu": true
-        },
-        message = "ℹ️ Daily menu has been changed\nYour order hasn't been affected tho!";
-
+    const message = "ℹ️ Daily menu has been changed\nYour order hasn't been affected tho!";
     async.parallel(users.map(u => sendDailyMenuUpdate(u, message)), (_err) => {
         if (cb)
             cb(_err);

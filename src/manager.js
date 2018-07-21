@@ -772,7 +772,6 @@ function _deleteMenu(req, res) {
                     new: false
                 };
             DB.Menu.findOneAndUpdate(query, data, options, (err, menu) => {
-                release();
                 if (err) {
                     console.error(err);
                     return res.status(500).send("DB error");
@@ -784,14 +783,38 @@ function _deleteMenu(req, res) {
                     clearTimeout(dailyMenuNotificationTimeout);
                     reminder.initDailyReminders();
                     bot.broadcastMessage("Daily Menu deleted by *" + req.user.email + "*", accessLevels.root, null, true);
-                    //TODO send user notifications
+                    //delete daily orders
+                    DB.Order.find({
+                        deleted: false,
+                        menu: menu._id
+                    }).populate('owner').exec((er, orders) => {
+                        if (er) {
+                            console.error(er);
+                            return release();
+                        }
+                        DB.Order.deleteMany({
+                            menu: menu._id
+                        }, (_err) => {
+                            if (_err) {
+                                console.error(_err);
+                                release();
+                            } else {
+                                console.log("Orders deleted!");
+                                //and lets notify the related users
+                                botNotifications.dailyMenuDeleted(orders.map(o => o.owner), () => {
+                                    release();
+                                });
+                            }
+                        });
+                    });
+                } else {
+                    release();
                 }
                 res.status(200).send("menu deleted");
             });
         } else {
             //Root user full remove
             DB.Menu.findOneAndRemove(query, (err, menu) => {
-                release();
                 if (err) {
                     console.error(err);
                     return res.status(500).send("DB error");
@@ -803,7 +826,32 @@ function _deleteMenu(req, res) {
                     clearTimeout(dailyMenuNotificationTimeout);
                     reminder.initDailyReminders();
                     bot.broadcastMessage("Daily Menu deleted by *" + req.user.email + "*", accessLevels.root, null, true);
-                    //TODO send user notifications
+                    //delete daily orders
+                    DB.Order.find({
+                        deleted: false,
+                        menu: menu._id
+                    }).populate('owner').exec((er, orders) => {
+                        if (er) {
+                            console.error(er);
+                            return release();
+                        }
+                        DB.Order.deleteMany({
+                            menu: menu._id
+                        }, (_err) => {
+                            if (_err) {
+                                console.error(_err);
+                                release();
+                            } else {
+                                console.log("Orders deleted!");
+                                //and lets notify the related users
+                                botNotifications.dailyMenuDeleted(orders.map(o => o.owner), () => {
+                                    release();
+                                });
+                            }
+                        });
+                    });
+                } else {
+                    release();
                 }
                 res.status(200).send("menu deleted");
             });
