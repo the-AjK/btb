@@ -12,6 +12,7 @@ const chai = require("chai"),
     sinonChai = require("sinon-chai"),
     manager = require('../src/manager'),
     DB = require('../src/db'),
+    telegramBot = require('../src/telegram/bot').bot,
     testDB = require('./db'),
     roles = require("../src/roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
@@ -1574,11 +1575,17 @@ describe('addOrder()', function () {
                     owner: requser._id
                 }
             },
-            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
+            sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
 
         getDailyMenu.callsFake((date, cb) => {
             cb(null, dailyMenu);
             getDailyMenu.restore();
+        });
+        sendMessage.callsFake(() => {
+            return new Promise((resolve, reject) => {
+                resolve();
+            });
         });
 
         return new Promise((resolve, reject) => {
@@ -1586,6 +1593,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
+                sendMessage.restore();
                 DB.Order.count((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
@@ -1654,11 +1662,17 @@ describe('addOrder()', function () {
                     owner: requser._id
                 }
             },
-            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
+            sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
 
         getDailyMenu.callsFake((date, cb) => {
             cb(null, dailyMenu);
             getDailyMenu.restore();
+        });
+        sendMessage.callsFake(() => {
+            return new Promise((resolve, reject) => {
+                resolve();
+            });
         });
 
         return new Promise((resolve, reject) => {
@@ -1666,6 +1680,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
+                sendMessage.restore();
                 DB.Order.count((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
@@ -1729,11 +1744,17 @@ describe('addOrder()', function () {
                     owner: requser._id
                 }
             },
-            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
+            sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
 
         getDailyMenu.callsFake((date, cb) => {
             cb(null, dailyMenu);
             getDailyMenu.restore();
+        });
+        sendMessage.callsFake(() => {
+            return new Promise((resolve, reject) => {
+                resolve();
+            });
         });
 
         return new Promise((resolve, reject) => {
@@ -1741,6 +1762,7 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
+                sendMessage.restore();
                 DB.Order.count((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(0);
@@ -1800,7 +1822,7 @@ describe('addOrder()', function () {
         const order = testDB.add(DB.Order, {
             secondCourse: {
                 item: "Carne",
-                sideDishes: ["Pomodoro"]
+                sideDishes: ["Cavolfiore"]
             },
             menu: dailyMenu._id,
             table: t1._id,
@@ -1812,17 +1834,23 @@ describe('addOrder()', function () {
                 body: {
                     table: t1._id,
                     secondCourse: {
-                        item: "Carne",
-                        sideDishes: ["Pomodoro"]
+                        item: "Melanzane",
+                        sideDishes: ["Cavolfiore"]
                     },
                     owner: requser._id
                 }
             },
-            getDailyMenu = sinon.stub(DB, 'getDailyMenu');
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
+            sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
 
         getDailyMenu.callsFake((date, cb) => {
             cb(null, dailyMenu);
             getDailyMenu.restore();
+        });
+        sendMessage.callsFake(() => {
+            return new Promise((resolve, reject) => {
+                resolve();
+            });
         });
 
         return new Promise((resolve, reject) => {
@@ -1830,6 +1858,112 @@ describe('addOrder()', function () {
             sendStatus.callsFake((s) => {
                 expect(s).to.be.equal(400);
                 getDailyMenu.restore();
+                sendMessage.restore();
+                DB.Order.count((err, count) => {
+                    expect(err).to.be.equal(null);
+                    expect(count).to.be.equal(1);
+                    resolve();
+                });
+            });
+            manager.orders.add(req, {
+                sendStatus: sendStatus
+            });
+        });
+    });
+
+    it('should fail if the table is full', function () {
+
+        testDB.reset(DB.Order);
+        testDB.reset(DB.Table);
+        testDB.reset(DB.Menu);
+        testDB.reset(DB.User);
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            seats: 1,
+            enabled: true
+        });
+        const t2 = testDB.add(DB.Table, {
+            name: "table2",
+            seats: 1,
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const user = testDB.add(DB.User, {
+            username: "user2",
+            password: "password",
+            salt: "salt",
+            email: "email2@a.com",
+            enabled: true,
+            role: userRoles.user
+        });
+        const dailyMenu = testDB.add(DB.Menu, {
+            enabled: true,
+            label: "testmenu",
+            day: moment(),
+            deadline: moment().subtract(1, 'h'),
+            owner: requser,
+            firstCourse: {
+                items: [{
+                    value: "Spaghetti",
+                    condiments: ["Pomodoro", "Carbonara"]
+                }]
+            },
+            secondCourse: {
+                items: [
+                    "Carne",
+                    "Melanzane"
+                ],
+                sideDishes: ["Patate al forno", "Cavolfiore"]
+            },
+            tables: [t1._id, t2._id]
+        });
+        const order = testDB.add(DB.Order, {
+            secondCourse: {
+                item: "Melanzane",
+                sideDishes: ["Cavolfiore"]
+            },
+            menu: dailyMenu._id,
+            table: t1._id,
+            owner: user._id
+        });
+
+        const req = {
+                user: requser,
+                body: {
+                    table: t1._id,
+                    secondCourse: {
+                        item: "Carne",
+                        sideDishes: ["Cavolfiore"]
+                    },
+                    owner: requser._id
+                }
+            },
+            getDailyMenu = sinon.stub(DB, 'getDailyMenu'),
+            sendMessage = sinon.stub(telegramBot.telegram, 'sendMessage');
+
+        getDailyMenu.callsFake((date, cb) => {
+            cb(null, dailyMenu);
+            getDailyMenu.restore();
+        });
+        sendMessage.callsFake(() => {
+            return new Promise((resolve, reject) => {
+                resolve();
+            });
+        });
+
+        return new Promise((resolve, reject) => {
+            const sendStatus = sinon.stub();
+            sendStatus.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                getDailyMenu.restore();
+                sendMessage.restore();
                 DB.Order.count((err, count) => {
                     expect(err).to.be.equal(null);
                     expect(count).to.be.equal(1);

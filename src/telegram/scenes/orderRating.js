@@ -101,7 +101,8 @@ function setOrderRating(ctx) {
         } else {
             DB.Order.findByIdAndUpdate(order._id, {
                 rating: ctx.session.rating,
-                updatedAt: moment().format()
+                updatedAt: moment().format(),
+                updatedBy: ctx.session.user._id
             }, (err, order) => {
                 if (err) {
                     console.error(err);

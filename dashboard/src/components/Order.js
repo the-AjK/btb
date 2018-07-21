@@ -83,6 +83,11 @@ const Order = inject("ctx")(
                         console.error(err);
                         alert(err)
                     } else if (this.props.ctx.stats.dailyMenu && this.props.ctx.stats.dailyMenu.enabled) {
+                        if(moment().isAfter(moment(this.props.ctx.stats.dailyMenu.deadline))){
+                            this.showAlert("Error", "The deadline was at " + moment(this.props.ctx.stats.dailyMenu.deadline).format('HH:mm') + ". No more orders will be accepted.", () => {
+                                this.props.ctx.history.push('/orders')
+                            });
+                        }
                         if (this.id && this.id !== "new") {
                             this.loadingMessage = "loading daily order..."
                             props.ctx.orders.get(this.id, action((err, order) => {

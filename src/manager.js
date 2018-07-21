@@ -8,6 +8,7 @@
 const moment = require('moment'),
     async = require('async'),
     validator = require('validator'),
+    levels = require('./levels'),
     roles = require("./roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     checkUser = roles.checkUser,
@@ -916,7 +917,7 @@ function orderIsValid(order, menu) {
                 console.error("order firstCourse condiment missing");
                 return false;
             }
-            if (menuCondiments.indexOf(order.firstCourse.condiment.toLowerCase()) < 0) {
+            if (order.firstCourse.condiment && menuCondiments.indexOf(order.firstCourse.condiment.toLowerCase()) < 0) {
                 console.error("order firstCourse condiment not found");
                 return false;
             }
@@ -973,36 +974,69 @@ function _addOrder(req, res) {
     if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
         //normal user can save only its own order
         data.owner = req.user._id;
+    } else {
+        //admin and root
+        data.createdBy = req.user._id;
+        data.updatedBy = req.user._id;
     }
 
-    DB.getDailyMenu(null, (err, menu) => {
-        if (err || !menu) {
-            console.error(err || "daily menu not found");
-            return res.sendStatus(400);
-        } else {
-            //force adding orders only for the dailyMenu
-            data.menu = menu._id;
+    const ordersLock = require('./telegram/scenes/order').getOrdersLock();
+    ordersLock.writeLock('order', function (release) {
 
-            //check deadline
-            if (moment().isAfter(moment(menu.deadline))) {
-                console.error("cannot add order: deadline reached")
-                return res.sendStatus(400);
-            }
+        DB.getDailyMenu(null, (err, menu) => {
+            if (err || !menu) {
+                console.error(err || "daily menu not found");
+                res.sendStatus(400);
+                return release();
+            } else {
+                //force adding orders only for the dailyMenu
+                data.menu = menu._id;
 
-            //order validation against daily menu
-            if (!orderIsValid(data, menu)) {
-                return res.sendStatus(400);
-            }
-
-            const newOrder = new DB.Order(data);
-            newOrder.save((err, order) => {
-                if (err) {
-                    console.error(err);
-                    return res.sendStatus(400);
+                //check deadline
+                if (moment().isAfter(moment(menu.deadline))) {
+                    console.error("cannot add order: deadline reached")
+                    res.sendStatus(400);
+                    return release();
                 }
-                res.status(201).send(order);
-            });
-        }
+
+                //order validation against daily menu
+                if (!orderIsValid(data, menu)) {
+                    res.sendStatus(400);
+                    return release();
+                }
+
+                DB.getTablesStatus(null, (err, tables) => {
+                    if (err) {
+                        res.sendStatus(400);
+                        return release();
+                    } else if (tables[data.table].used >= tables[data.table].total) {
+                        console.error("cannot add order: table is full")
+                        res.sendStatus(400);
+                        return release();
+                    } else {
+                        const newOrder = new DB.Order(data);
+                        newOrder.save((err, order) => {
+                            if (err) {
+                                console.error(err);
+                                res.sendStatus(400);
+                                return release();
+                            }
+                            res.status(201).send(order);
+                            release();
+                            order.populate('owner').populate('createdBy').execPopulate().then((_order) => {
+                                console.log("New web order: " + _order.owner.email + " [" + _order.createdBy.email + "]");
+                                let message = "Your *order* has been successfully added" + (_order.createdBy.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(_order.createdBy) + "!"));
+                                telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
+                                    parse_mode: "markdown"
+                                });
+                            });
+
+                        });
+                    }
+                });
+            }
+        });
+
     });
 }
 
@@ -1028,38 +1062,76 @@ function _updateOrder(req, res) {
     if (!checkUserAccessLevel(req.user.role, accessLevels.admin)) {
         //normal user can update only its own order
         data.owner = req.user._id;
+    } else {
+        //admin and root
+        data.updatedBy = req.user._id;
     }
     data.updatedAt = moment().format();
 
-    DB.getDailyMenu(null, (err, menu) => {
-        if (err || !menu) {
-            console.error(err || "daily menu not found");
-            return res.sendStatus(400);
-        } else {
-            //force updating orders only for the dailyMenu
-            query.menu = menu._id;
+    const ordersLock = require('./telegram/scenes/order').getOrdersLock();
+    ordersLock.writeLock('order', function (release) {
 
-            //check deadline
-            if (moment().isAfter(moment(menu.deadline))) {
-                console.error("cannot update order: deadline reached")
-                return res.sendStatus(400);
-            }
+        DB.getDailyMenu(null, (err, menu) => {
+            if (err || !menu) {
+                console.error(err || "daily menu not found");
+                res.sendStatus(400);
+                return release();
+            } else {
+                //force updating orders only for the dailyMenu
+                query.menu = menu._id;
 
-            //order validation against daily menu
-            if (!orderIsValid(data, menu)) {
-                return res.sendStatus(400);
-            }
-
-            DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
-                if (err) {
-                    console.error(err);
-                    return res.sendStatus(500);
-                } else if (!order) {
-                    return res.sendStatus(404);
+                //check deadline
+                if (moment().isAfter(moment(menu.deadline))) {
+                    console.error("cannot update order: deadline reached")
+                    res.sendStatus(400);
+                    return release();
                 }
-                res.sendStatus(200);
-            });
-        }
+
+                //order validation against daily menu
+                if (!orderIsValid(data, menu)) {
+                    res.sendStatus(400);
+                    return release();
+                }
+
+                DB.getTablesStatus(null, (err, tables) => {
+                    if (err) {
+                        res.sendStatus(400);
+                        return release();
+                        //TODO check if the user already selected this table, in case skip table status checking 
+                    } else if (tables[data.table].used >= tables[data.table].total) {
+                        console.error("cannot update order: table is full")
+                        res.sendStatus(400);
+                        return release();
+                    } else {
+
+                        DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
+                            if (err) {
+                                console.error(err);
+                                res.sendStatus(500);
+                                return release();
+                            } else if (!order) {
+                                res.sendStatus(404);
+                                return release();
+                            }
+                            res.sendStatus(200);
+                            release();
+
+                            //TODO check and remove one point if the user previously got one point as first daily order winner
+
+                            //User notification
+                            order.populate('owner').populate('updatedBy').execPopulate().then((_order) => {
+                                console.log("Web order updated: " + _order.owner.email + " [" + _order.updatedBy.email + "]");
+                                let message = "Your *order* has been updated" + (_order.updatedBy.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(_order.updatedBy) + "!"));
+                                telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
+                                    parse_mode: "markdown"
+                                });
+                            });
+
+                        });
+                    }
+                });
+            }
+        });
     });
 
 
@@ -1073,36 +1145,73 @@ function _deleteOrder(req, res) {
         //normal user can delete only its own order
         query.owner = req.user._id;
     }
-    if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
-        //non root users SHALL update ONLY the deleted flag
-        const data = {
-                deleted: true,
-                updatedAt: moment().format()
-            },
-            options = {
-                new: false
-            };
-        DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
-            if (err) {
-                console.error(err);
-                return res.sendStatus(500);
-            } else if (!order) {
-                return res.sendStatus(404);
-            }
-            res.sendStatus(200);
-        });
-    } else {
-        //Root user full remove
-        DB.Order.findOneAndRemove(query, (err, order) => {
-            if (err) {
-                console.error(err);
-                return res.sendStatus(500);
-            } else if (!order) {
-                return res.sendStatus(404);
-            }
-            res.sendStatus(200);
-        });
-    }
+
+    const ordersLock = require('./telegram/scenes/order').getOrdersLock();
+    ordersLock.writeLock('order', function (release) {
+
+        if (!checkUserAccessLevel(req.user.role, accessLevels.root)) {
+            //non root users SHALL update ONLY the deleted flag
+            const data = {
+                    deleted: true,
+                    updatedAt: moment().format(),
+                    updatedBy: req.user._id
+                },
+                options = {
+                    new: false
+                };
+            DB.Order.findOneAndUpdate(query, data, options, (err, order) => {
+                if (err) {
+                    console.error(err);
+                    res.sendStatus(500);
+                    return release();
+                } else if (!order) {
+                    res.sendStatus(404);
+                    return release();
+                }
+                res.sendStatus(200);
+                release();
+
+                order.populate('owner').populate('updatedBy').execPopulate().then((_order) => {
+                    console.log("Web order deleted: " + _order.owner.email + " [" + _order.updatedBy.email + "]");
+
+                    //remove one point if the user is deleting its own order
+                    if (_order.updatedBy.email == _order.owner.email) {
+                        levels.removePoints(_order.owner._id, 1, false, (err) => {
+                            if (err) {
+                                console.error(err);
+                            }
+                        });
+                    }
+
+                    let message = "Your *order* has been deleted" + (_order.updatedBy.email == _order.owner.email ? "!" : (" by " + bot.getUserLink(_order.updatedBy) + "!"));
+                    telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
+                        parse_mode: "markdown"
+                    });
+                });
+            });
+        } else {
+            //Root user full remove
+            DB.Order.findOneAndRemove(query, (err, order) => {
+                if (err) {
+                    console.error(err);
+                    res.sendStatus(500);
+                    return release();
+                } else if (!order) {
+                    res.sendStatus(404);
+                    return release();
+                }
+                res.sendStatus(200);
+                release();
+                order.populate('owner').execPopulate().then((_order) => {
+                    console.log("Web order deleted: " + _order.owner.email + " [" + req.user.email + "]");
+                    let message = "Your *order* has been deleted" + (req.user.email == _order.owner.email == 0 ? "!" : (" by " + bot.getUserLink(req.user) + "!"));
+                    telegramBot.telegram.sendMessage(_order.owner.telegram.id, message, {
+                        parse_mode: "markdown"
+                    });
+                });
+            });
+        }
+    });
 }
 
 //Tables stuff

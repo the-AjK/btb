@@ -293,6 +293,16 @@ const OrderSchema = new mongoose.Schema({
     min: 0,
     max: 10
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: this.owner
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: this.owner
+  },
   createdAt: {
     type: Date,
     default: Date.now
