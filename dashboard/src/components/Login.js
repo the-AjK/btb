@@ -51,14 +51,9 @@ const styles = theme => ({
     padding: "0 4em 1em 4em"
   },
   canvas: {
+    zIndex: -100,
     position: "absolute",
     width: "100%"
-  },
-  loginError: {
-    zIndex: 2000
-  },
-  progress: {
-    zIndex: 2000
   }
 });
 
@@ -354,7 +349,7 @@ const Login = inject("ctx")(
         });
       }
       componentDidMount() {
-        startBackgrounAnimation();
+        //startBackgrounAnimation();
       }
       _onMouseMove = action((e) => {
         //const w = e.target.getBoundingClientRect();
@@ -452,6 +447,7 @@ const LoginForm = inject("ctx")(
       };
 
       login = () => {
+        startBackgrounAnimation();
         this.props.ctx.auth.login(
           this.form.fields.email.value,
           this.form.fields.password.value,
@@ -608,8 +604,7 @@ const LoginForm = inject("ctx")(
             }
 
             {this.form.meta.error && (
-              <div style={{"z-index": 2000}}>
-              <Fade in={true} timeout={1000} >
+              <Fade in={true} timeout={1000}>
                 <LoginError
                   classes={classes}
                   message={this.form.meta.error.toString()}
@@ -619,7 +614,6 @@ const LoginForm = inject("ctx")(
                   }}
                 />
               </Fade>
-              </div>
             )}
           </div>
         );

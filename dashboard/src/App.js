@@ -126,7 +126,7 @@ const BTB = observer(
                 <PrivateRoute accessLevel={accessLevels.root} path="/messages" component={Messages} />
                 <PrivateRoute accessLevel={accessLevels.admin} path="/tables" component={Tables} />
                 <PrivateRoute accessLevel={accessLevels.admin} path="/menus/:id" component={Menu} />
-                <PrivateRoute accessLevel={accessLevels.admin} path="/menus" component={Menus} />
+                <PrivateRoute accessLevel={accessLevels.user} path="/menus" component={Menus} />
                 <PrivateRoute accessLevel={accessLevels.admin} path="/users/:id" component={User} />
                 <PrivateRoute accessLevel={accessLevels.admin} path="/users" component={Users} />
                 <PrivateRoute path="/orders/:id" component={Order} />

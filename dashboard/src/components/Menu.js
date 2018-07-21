@@ -494,7 +494,7 @@ const Menu = inject("ctx")(
                                                                             value={t.name}
                                                                         />
                                                                     }
-                                                                    label={t.name}
+                                                                    label={t.name + " (" + t.seats + " seats)"}
                                                                 />
                                                             )
                                                         })}

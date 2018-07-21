@@ -88,6 +88,10 @@ const styles = theme => ({
   profileMenuItem: {
     marginRight: theme.spacing.unit
   },
+  logo: {
+    height: "2em",
+    marginRight: "0.6em"
+  }
 });
 
 const Dashboard = inject("ctx")(
@@ -167,14 +171,14 @@ const Dashboard = inject("ctx")(
                   Home
                 </ListItem>
               </ListItem>
-              {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) && <ListItem button onClick={() => this.props.history.push('/menus')}>
+              <ListItem button onClick={() => this.props.history.push('/menus')}>
                 <ListItemIcon>
                   <AssignmentIcon />
                 </ListItemIcon>
                 <ListItem>
                   Menus
                 </ListItem>
-              </ListItem>}
+              </ListItem>
               <ListItem button onClick={() => this.props.history.push('/orders')}>
                 <ListItemIcon>
                   <StorageIcon />
@@ -233,6 +237,7 @@ const Dashboard = inject("ctx")(
                 >
                   <MenuIcon />
                 </IconButton>
+                <img alt="BTB logo" className={classes.logo} src="/static/images/btb.png" />
                 <Typography variant="title" color="inherit" noWrap className={classes.flex}>
                   BiteTheBot
                 </Typography>

@@ -83,7 +83,8 @@ const Order = inject("ctx")(
                         console.error(err);
                         alert(err)
                     } else if (this.props.ctx.stats.dailyMenu && this.props.ctx.stats.dailyMenu.enabled) {
-                        if (moment().isAfter(moment(this.props.ctx.stats.dailyMenu.deadline))) {
+                        if (!this.props.ctx.roles.checkUserAccessLevel(this.props.ctx.auth.user.role, this.props.ctx.roles.accessLevels.admin) && 
+                            moment().isAfter(moment(this.props.ctx.stats.dailyMenu.deadline))) {
                             this.showAlert("Error", "The deadline was at " + moment(this.props.ctx.stats.dailyMenu.deadline).format('HH:mm') + ". No more orders will be accepted.", () => {
                                 this.props.ctx.history.push('/orders')
                             });
@@ -320,11 +321,6 @@ const Order = inject("ctx")(
                                             alignItems={"stretch"}
                                             spacing={16}
                                         >
-                                            <Grid item xs={12}>
-                                                {this.now.format()}
-                                                {JSON.stringify(this.order)}
-                                            </Grid>
-
                                             {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) &&
                                                 <Grid item xs={12}>
                                                     <h2>Owner</h2>
@@ -353,7 +349,7 @@ const Order = inject("ctx")(
                                                     <h3>Deadline: {deadline.hours() + "h " + deadline.minutes() + "m " + deadline.seconds() + "s"}</h3>
                                                 }
                                                 {!deadlineReached &&
-                                                    <h3>The deadline was at {moment(this.props.ctx.stats.dailyMenu.deadline).format("HH:mm")}. No more orders will be accepted.</h3>
+                                                    <h3>The deadline was at {moment(this.props.ctx.stats.dailyMenu.deadline).format("HH:mm")}. {!roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin) ? "No more orders will be accepted." : ""}</h3>
                                                 }
                                             </Grid>
 
@@ -465,7 +461,7 @@ const Order = inject("ctx")(
                                                 <ExpansionPanel expanded={this.sections.tables} onChange={action((e, v) => this.sections.tables = v)}>
                                                     <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
                                                         {this.order.table ? <DoneIcon className={classes.panelIcon} /> : <WarningIcon className={classes.panelIcon} />}
-                                                        <Typography className={classes.heading}>Tables</Typography>
+                                                        <Typography className={classes.heading}>Tables {this.order.table ? ("(" + this.props.ctx.stats.dailyMenu.tables.filter(t => t._id === this.order.table)[0].name + ")") : ""}</Typography>
                                                     </ExpansionPanelSummary>
                                                     <ExpansionPanelDetails>
                                                         <Grid container>
@@ -493,6 +489,10 @@ const Order = inject("ctx")(
 
                                             {false && <Grid item xs={12}>
                                                 {JSON.stringify(this.props.ctx.stats)}
+                                            </Grid>}
+
+                                            {roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && <Grid item xs={12}>
+                                                {JSON.stringify(this.order)}
                                             </Grid>}
 
                                         </Grid>

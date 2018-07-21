@@ -227,8 +227,13 @@ const Users = inject("ctx")(
                     }, {
                         Header: 'Dashboard Enabled',
                         accessor: 'enabled',
-                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
-                        Cell: props => <Button className={props.value ? classes.enabled : classes.disabled} onClick={this.handleDashboard(props)}>{props.value ? "Enabled" : "Disabled"}</Button>
+                        show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.admin),
+                        Cell: props => {
+                            const userCannotBeEdit = (!roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root) && roles.checkUser(props.original.role, roles.userRoles.root)) ||
+                                (this.props.ctx.auth.user.email === props.original.email) || (roles.checkUser(this.props.ctx.auth.user.role, roles.userRoles.admin) && roles.checkUser(props.original.role, roles.userRoles.admin));
+
+                            return (<Button disabled={userCannotBeEdit} className={props.value ? classes.enabled : classes.disabled} onClick={this.handleDashboard(props)}>{props.value ? "Enabled" : "Disabled"}</Button>)
+                        }
                     }, {
                         Header: 'Password reset',
                         show: roles.checkUserAccessLevel(this.props.ctx.auth.user.role, roles.accessLevels.root),
