@@ -840,7 +840,7 @@ function formatOrder(order, user) {
       text = text + "*" + order.secondCourse.sideDishes[i] + "*";
     }
   }
-  text = text + "\n\n__List of people at__ *" + order.table.name + "*:";
+  text = text + "\n\n__List of people at__ *" + order.table.name + "*";
   let tableUsers = false;
   DB.getTableParticipants(null, order.table._id, (err, orders) => {
     if (err) {
@@ -854,6 +854,7 @@ function formatOrder(order, user) {
     return tableUsers === false;
   });
   if (tableUsers && tableUsers.length) {
+    text += " (" + tableUsers.length + "/" + order.table.seats + "):";
     for (let i = 0; i < tableUsers.length; i++) {
       let tableUser = tableUsers[i];
       text = text + "\n - " + getUserLink(tableUser);
@@ -862,7 +863,7 @@ function formatOrder(order, user) {
       }
     }
   } else {
-    text = text + "\n* - No participants";
+    text += ":\n* - No participants";
   }
   if (moment().isBefore(moment("13:00", "HH:mm")))
     text = text + "\n\nare you hungry? 🤤";
