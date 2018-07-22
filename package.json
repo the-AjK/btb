@@ -44,7 +44,7 @@
     "showdown": "1.8.6",
     "strip-markdown": "3.0.1",
     "systeminformation": "3.42.2",
-    "telegraf": "3.21.2",
+    "telegraf": "https://github.com/the-AjK/telegraf#3.21.3-JK",
     "telegraf-ratelimit": "2.0.0",
     "uuid": "3.3.2",
     "validator": "10.4.0"
