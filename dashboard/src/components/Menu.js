@@ -118,6 +118,7 @@ const Menu = inject("ctx")(
                                 if (err) {
                                     console.error(err);
                                 } else if (tables) {
+                                    tables = tables.filter(t=>t.deleted !== undefined ? !t.deleted : true);
                                     this.availableTables = tables.map(t => {
                                         t.enabled = this.menu.tables.map(mt => mt._id).indexOf(t._id) >= 0;
                                         return t;
@@ -131,6 +132,7 @@ const Menu = inject("ctx")(
                         if (err) {
                             console.error(err);
                         } else if (tables) {
+                            tables = tables.filter(t=>t.deleted !== undefined ? !t.deleted : true);
                             this.availableTables = tables;
                         }
                     }));

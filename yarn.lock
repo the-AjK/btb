@@ -2023,9 +2023,9 @@ telegraf-ratelimit@2.0.0:
   dependencies:
     debug "^3.1.0"
 
-telegraf@3.21.2:
-  version "3.21.2"
-  resolved "https://registry.yarnpkg.com/telegraf/-/telegraf-3.21.2.tgz#192a79e8990297377bf2bf03085cb4d00a20d9a8"
+"telegraf@https://github.com/the-AjK/telegraf#3.21.3-JK":
+  version "3.21.3"
+  resolved "https://github.com/the-AjK/telegraf#24eb9887e0ff46ee3e017e5a7e099926673d6443"
   dependencies:
     "@types/node" "^10.1.2"
     debug "^3.0.0"

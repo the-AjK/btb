@@ -794,8 +794,7 @@ exports.getNotOrderUsers = (day, cb) => {
         if (err) {
           cb(err);
         } else if (!menu) {
-          //"Daily menu not available yet"
-          cb(null, []);
+          cb(null, users);
         } else {
           Order.find({
             deleted: false,
