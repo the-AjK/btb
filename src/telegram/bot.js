@@ -1073,10 +1073,14 @@ exports.init = function (expressApp) {
   if (process.env.NODE_ENV === "production" && process.env.BOT_WEBHOOK) {
     console.log("Bot webhook mode: ON");
     const webHookPath = "/" + uuidv1(),
-      webHookURL = process.env.BOT_WEBHOOK + webHookPath;
+      webHookURL = process.env.BOT_WEBHOOK + webHookPath,
+      maxConnections = process.env.BOT_WEBHOOK_MAX_CONN || 40;
     expressApp.use(bot.webhookCallback(webHookPath));
-    bot.telegram.setWebhook(webHookURL);
-    console.log("Bot webhook set to: " + webHookURL);
+    if (bot.telegram.setWebhook(webHookURL, null, maxConnections)) {
+      console.log("Bot webhook set to: " + webHookURL);
+    }else{
+      console.error("Bot webhook not set!")
+    }
   } else {
     //DEV polling mode
     console.log("Bot polling mode: ON");
