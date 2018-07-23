@@ -1,5 +1,6 @@
 node_modules
 dashboard/build
+db_backup/backups
 .env
 *.log
 *.testenv
