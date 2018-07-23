@@ -80,11 +80,11 @@ const Menu = inject("ctx")(
                         firstCourse: {
                             items: [{
                                 key: 0,
-                                value: "Insalatona Venezia",
+                                value: "insalatona venezia",
                                 condiments: []
                             }, {
                                 key: 1,
-                                value: "Insalatona Bologna",
+                                value: "insalatona bologna",
                                 condiments: []
                             }]
                         },
