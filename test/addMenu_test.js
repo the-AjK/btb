@@ -343,6 +343,64 @@ describe('addMenu()', function () {
         }));
     });
 
+    it('003b should fail if deadline is in the past', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+
+        const req = {
+            user: requser,
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().subtract(1, 'h').format("HH:mm"),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Melanzane"
+                    ],
+                    sideDishes: ["Patate al forno", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
+            });
+            manager.menus.add(req, {
+                status: status
+            });
+        }));
+    });
+
     it('005 should fail if tables list is empty', function () {
 
         const requser = testDB.add(DB.User, {
