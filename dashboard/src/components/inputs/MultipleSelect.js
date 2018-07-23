@@ -97,6 +97,7 @@ const DownshiftMultiple = observer(
         };
 
         handleChange = action(item => {
+            item = item.toLowerCase();
             if (!this.props.multiple && this.props.selectedItem.length === 1)
                 return;
             if (this.props.selectedItem.indexOf(item) === -1) {
