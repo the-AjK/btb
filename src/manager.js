@@ -354,8 +354,8 @@ function validateMenu(menu) {
     if (!menu.tables || !Array.isArray(menu.tables) || menu.tables.length == 0) {
         return "menu tables list is required";
     }
-    const firstCourses = [],
-        condiments = [];
+    const firstCourses = [];
+    let condiments = [];
     if (menu.firstCourse && menu.firstCourse.items) {
         for (let i = 0; i < menu.firstCourse.items.length; i++) {
             let fc = menu.firstCourse.items[i];
@@ -364,6 +364,7 @@ function validateMenu(menu) {
             } else if (firstCourses.indexOf(fc.value.toLowerCase()) >= 0) {
                 return "duplicated firstCourse item";
             }
+            condiments = [];
             firstCourses.push(fc.value.toLowerCase())
             for (let j = 0; j < fc.condiments.length; j++) {
                 let condiment = fc.condiments[j];
