@@ -285,6 +285,64 @@ describe('addMenu()', function () {
         }));
     });
 
+    it('003b should fail if deadline is in the past', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+
+        const req = {
+            user: requser,
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().subtract(1, 'h').format("HH:mm"),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Melanzane"
+                    ],
+                    sideDishes: ["Patate al forno", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(400);
+                return {
+                    send: (message) => {
+                        resolve();
+                    }
+                }
+            });
+            manager.menus.add(req, {
+                status: status
+            });
+        }));
+    });
+
     it('005 should fail if tables list is empty', function () {
 
         const requser = testDB.add(DB.User, {
@@ -926,6 +984,90 @@ describe('addMenu()', function () {
                 firstCourse: {
                     items: [{
                         value: "Spaghetti",
+                        condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                    }, {
+                        value: "Insalatona",
+                        condiments: []
+                    }]
+                },
+                secondCourse: {
+                    items: [
+                        "Carne",
+                        "Melanzane"
+                    ],
+                    sideDishes: ["Patate al forno", "Cavolfiore"]
+                },
+                tables: [t1._id]
+            }
+        };
+
+        return (new Promise((resolve, reject) => {
+            const status = sinon.stub();
+            status.callsFake((s) => {
+                expect(s).to.be.equal(201);
+                return {
+                    send: (m) => {
+                        expect(m.enabled).to.be.equal(true);
+                        expect(m.owner).to.be.equal(undefined);
+                        DB.Menu.find({}, (err, menus) => {
+                            expect(err).to.be.equal(null);
+                            expect(menus.length).to.be.equal(1);
+                            let m = menus[0];
+                            expect(m.deleted).to.be.equal(false);
+                            expect(m.enabled).to.be.equal(true);
+                            expect(String(m.owner)).to.be.equal(String(requser._id));
+                            expect(m.firstCourse.items.length).to.be.equal(2);
+                            expect(m.firstCourse.items[0].value).to.be.equal("spaghetti");
+                            expect(m.firstCourse.items[0].condiments.length).to.be.equal(3);
+                            expect(m.firstCourse.items[0].condiments[0]).to.be.equal("pomodoro");
+                            expect(m.firstCourse.items[0].condiments[1]).to.be.equal("carbonara");
+                            expect(m.firstCourse.items[0].condiments[2]).to.be.equal("pesto");
+                            expect(m.firstCourse.items[1].value).to.be.equal("insalatona");
+                            expect(m.firstCourse.items[1].condiments.length).to.be.equal(0);
+                            expect(m.secondCourse.items.length).to.be.equal(2);
+                            expect(m.secondCourse.items[0]).to.be.equal("carne");
+                            expect(m.secondCourse.items[1]).to.be.equal("melanzane");
+                            expect(m.secondCourse.sideDishes.length).to.be.equal(2);
+                            expect(m.secondCourse.sideDishes[0]).to.be.equal("patate al forno");
+                            expect(m.secondCourse.sideDishes[1]).to.be.equal("cavolfiore");
+                            resolve();
+                        });
+                    }
+                }
+            });
+            manager.menus.add(req, {
+                status: status
+            });
+        }));
+    });
+
+    it('016b admin user should be able to add a dailyMenu with multiple fc same condiments', function () {
+
+        const t1 = testDB.add(DB.Table, {
+            name: "table1",
+            enabled: true
+        });
+        const requser = testDB.add(DB.User, {
+            username: "user1",
+            password: "password",
+            salt: "salt",
+            email: "email@a.com",
+            enabled: true,
+            role: userRoles.admin
+        });
+        const req = {
+            user: requser,
+            body: {
+                enabled: true,
+                label: "testmenu",
+                day: moment(),
+                deadline: moment().add(1, 'h'),
+                firstCourse: {
+                    items: [{
+                        value: "Spaghetti",
+                        condiments: ["Pomodoro", "Carbonara", "Pesto"]
+                    }, {
+                        value: "Mezzepenne",
                         condiments: ["Pomodoro", "Carbonara", "Pesto"]
                     }, {
                         value: "Insalatona",
