@@ -383,23 +383,29 @@ function validateMenu(menu) {
         sideDishes = [];
     if (menu.secondCourse && menu.secondCourse.items) {
         for (let i = 0; i < menu.secondCourse.items.length; i++) {
+            //force lowercase
+            menu.secondCourse.items[i] = menu.secondCourse.items[i].toLowerCase();
             let sc = menu.secondCourse.items[i];
             if (sc == undefined || sc.trim() == "") {
                 return "invalid menu secondCourse item";
-            } else if (secondCourses.indexOf(sc.toLowerCase()) >= 0) {
+            } else if (secondCourses.indexOf(sc) >= 0) {
                 return "duplicated secondCourse item";
             }
-            secondCourses.push(sc.toLowerCase());
+            secondCourses.push(sc);
         }
-
-        for (let j = 0; j < menu.secondCourse.sideDishes.length; j++) {
-            let sd = menu.secondCourse.sideDishes[j];
-            if (sd.trim() == "") {
-                return "invalid menu secondCourse sideDish";
-            } else if (sideDishes.indexOf(sd.toLowerCase()) >= 0) {
-                return "duplicated secondCourse sideDish";
+    
+        if (menu.secondCourse.sideDishes) {
+            for (let j = 0; j < menu.secondCourse.sideDishes.length; j++) {
+                //force lowercase
+                menu.secondCourse.sideDishes[j] = menu.secondCourse.sideDishes[j].toLowerCase();
+                let sd = menu.secondCourse.sideDishes[j];
+                if (sd.trim() == "") {
+                    return "invalid menu secondCourse sideDish";
+                } else if (sideDishes.indexOf(sd) >= 0) {
+                    return "duplicated secondCourse sideDish";
+                }
+                sideDishes.push(sd);
             }
-            sideDishes.push(sd.toLowerCase());
         }
 
     } else {
@@ -454,7 +460,12 @@ function _addMenu(req, res) {
     //force the deadline to be in the same day as menu day
     if (data.deadline && data.day) {
         let deadline = moment(data.deadline, "HH:mm");
-        data.deadline = moment(data.day, "YYYY-MM-DD").set('hour', deadline.hours()).set('minutes', deadline.minutes()).toISOString(true);
+        data.deadline = moment(data.day, "YYYY-MM-DD").set('hour', deadline.hours()).set('minutes', deadline.minutes()).format();
+    }
+
+    //force the deadline to be in the future
+    if (moment(data.deadline).isBefore(moment())) {
+        return res.status(400).send("Deadline shall be >= now");
     }
 
     let menuError = validateMenu(data);

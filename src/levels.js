@@ -85,7 +85,7 @@ exports.removePoints = function (userID, points, silent, cb) {
                             require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
                                 parse_mode: "markdown"
                             }).then(() => {
-                                console.log("User: *" + user.email + "* lost " + points + " beercoins (" + user.points + ")");
+                                console.log("User: " + user.email + " lost " + points + " beercoins (" + user.points + ")");
                             });
                         }
                         cb(null, user.points);
