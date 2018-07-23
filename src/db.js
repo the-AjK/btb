@@ -742,6 +742,10 @@ function removeDuplicates(arr) {
   return unique_array
 }
 
+function lowercaseArray(arr) {
+  return arr.map(el => el.toLowerCase());
+}
+
 exports.getMenuSuggestions = (cb) => {
   Menu.find({
     deleted: false
@@ -764,10 +768,10 @@ exports.getMenuSuggestions = (cb) => {
         sideDishes = sideDishes.concat(m.secondCourse.sideDishes);
       }
       cb(null, {
-        fc: removeDuplicates(fcs),
-        condiments: removeDuplicates(condiments),
-        sc: removeDuplicates(scs),
-        sideDishes: removeDuplicates(sideDishes),
+        fc: removeDuplicates(lowercaseArray(fcs)),
+        condiments: removeDuplicates(lowercaseArray(condiments)),
+        sc: removeDuplicates(lowercaseArray(scs)),
+        sideDishes: removeDuplicates(lowercaseArray(sideDishes)),
       });
     }
   });
