@@ -392,7 +392,7 @@ module.exports = {
         let done = false,
             userHasOrdered = false,
             dailyDeadlineReached = false;
-        /*db.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
+        db.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
             if (!err && order) {
                 userHasOrdered = true;
                 dailyDeadlineReached = moment().isAfter(moment(order.menu.deadline));
@@ -401,7 +401,7 @@ module.exports = {
         });
         require('deasync').loopWhile(function () {
             return !done;
-        });*/
+        });
 
         if (userHasOrdered && !dailyDeadlineReached) {
             keyboard.push([{
