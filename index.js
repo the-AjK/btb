@@ -5,6 +5,8 @@
  */
 "use strict";
 
+process.binding('http_parser').HTTPParser = require('http-parser-js').HTTPParser;
+
 if (process.env.NODE_ENV !== "production") {
 	console.log("Loading DEV enviroment...");
 	require("dotenv").load();
