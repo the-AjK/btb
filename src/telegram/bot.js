@@ -457,7 +457,10 @@ function decodeWit(ctx, witResponse) {
                       msg[msg.length - 1] += "\n" + (i + 1) + " - " + userLink;
                   }
                 }
-                replies(ctx, msg, keyboards.btb(ctx).opts);
+                replies(ctx, msg, keyboards.btb(ctx).opts, () => {
+                  //release the handler, so the user can request the topten again (see extra.js)
+                  ctx.session.handleMsg = false;
+                });
               });
             }
           });
@@ -1078,7 +1081,7 @@ exports.init = function (expressApp) {
     expressApp.use(bot.webhookCallback(webHookPath));
     if (bot.telegram.setWebhook(webHookURL, null, maxConnections)) {
       console.log("Bot webhook set to: " + webHookURL);
-    }else{
+    } else {
       console.error("Bot webhook not set!")
     }
   } else {

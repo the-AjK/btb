@@ -27,6 +27,11 @@ function deleteLastMessage(ctx) {
 }
 
 function textManager(ctx) {
+    if (ctx.session.handleMsg === true) {
+        //if the manager is handling a previous message, discarn new messages
+        return;
+    }
+    ctx.session.handleMsg = true;
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     deleteLastMessage(ctx);
 
@@ -41,10 +46,12 @@ function textManager(ctx) {
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
         //back from slot
         ctx.reply(keyboards.extra(ctx).text, keyboards.extra(ctx).opts);
+        ctx.session.handleMsg = false;
     } else if (ctx.message.text == keyboards.extra(ctx).cmd.back) {
         //back button
         ctx.scene.leave();
         ctx.reply('ACK', keyboards.btb(ctx).opts);
+        ctx.session.handleMsg = false;
     } else {
         ctx.scene.leave();
         //fallback to main bot scene
