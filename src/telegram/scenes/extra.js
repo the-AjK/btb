@@ -27,12 +27,6 @@ function deleteLastMessage(ctx) {
 }
 
 function textManager(ctx) {
-    if (ctx.session.handleMsg === true) {
-        //if the manager is handling a previous message, discarn new messages
-        console.log("extra skip")
-        return;
-    }
-    ctx.session.handleMsg = true;
 
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     deleteLastMessage(ctx);
