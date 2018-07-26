@@ -730,7 +730,8 @@ exports.getDailyOrdersCount = (day, cb) => {
 
 exports.getUserBeers = (userID, type, callback) => {
   let query = {
-    owner: userID
+    owner: userID,
+    locked: false //real beers only, not locked
   };
   if (type)
     query.type = type;
