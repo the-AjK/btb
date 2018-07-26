@@ -27,7 +27,7 @@ function deleteLastMessage(ctx) {
 }
 
 function textManager(ctx) {
-    if (ctx.session.handleMsg) {
+    if (ctx.session.handleMsg === true) {
         //if the manager is handling a previous message, discarn new messages
         return;
     }
