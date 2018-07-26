@@ -188,9 +188,9 @@ function formatNews(news, topUsers, dailyOrders, premium) {
 
     for (let i = 0; i < limit; i++) {
         let n = news[i];
-        if ((!premium && n.type != undefined && !n.drunk) ||    //normal beers are show on premium only newspaper
-            (n.type != undefined && n.locked) ||                //locked beers are not show on newspaper
-            !n.owner) {                                         //skipping events without the owner, should never happen tho, but who knows!
+        if ((!premium && n.type != undefined && !n.drunk) || //normal beers are show on premium only newspaper
+            (n.type != undefined && n.locked) || //locked beers are not show on newspaper
+            !n.owner) { //skipping events without the owner, should never happen tho, but who knows!
             if (news.length > limit)
                 limit++;
             continue;
@@ -295,7 +295,11 @@ function sendNews(ctx, premium) {
     //Res0
     funList.push(function () {
         return (cb) => {
-            DB.GenericEvent.find(null, null, {
+            DB.GenericEvent.find({
+                    locked: {
+                        '$ne': true //avoid locked beers events
+                    }
+                }, null, {
                     sort: {
                         createdAt: -1
                     },
