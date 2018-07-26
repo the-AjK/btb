@@ -24,11 +24,12 @@ scene.enter((ctx) => {
     if (levels.getLevel(ctx.session.user.points) > 0 || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
         //authorized user
         ctx.reply(keyboards.shop(ctx).text, keyboards.shop(ctx).opts).then(() => {
-
+            ctx.session.handleMsg = false;
         });
     } else {
         //unauthorized user -> back to extra
         ctx.scene.enter('extra');
+        ctx.session.handleMsg = false;
     }
 });
 

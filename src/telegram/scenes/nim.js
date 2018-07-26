@@ -93,6 +93,7 @@ scene.enter((ctx) => {
                     })
                 }).then((m) => {
                     ctx.session.lastMessage = m;
+                    ctx.session.handleMsg = false;
                 });
             }
         });

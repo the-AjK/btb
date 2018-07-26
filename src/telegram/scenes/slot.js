@@ -281,6 +281,7 @@ scene.enter((ctx) => {
                 })
             }).then((m) => {
                 ctx.session.slot_message = m;
+                ctx.session.handleMsg = false;
             });
         });
     });

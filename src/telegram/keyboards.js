@@ -581,6 +581,7 @@ module.exports = {
             }).then((msg) => {
                 //lets save the message to delete it afterward
                 ctx.session.lastMessage = msg;
+                ctx.session.handleMsg = false;
             });
         }
 
@@ -610,6 +611,7 @@ module.exports = {
             }).then((msg) => {
                 //lets save the message to delete it afterward
                 ctx.session.lastMessage = msg;
+                ctx.session.handleMsg = false;
             });
         }
 
