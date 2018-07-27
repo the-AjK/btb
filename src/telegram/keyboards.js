@@ -155,10 +155,6 @@ const settings = new Keyboard({
 });
 settings.optionsFunc = (self, ctx, cb) => {
     db.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
-        if (err) {
-            console.error(err);
-            return cb({});
-        }
 
         let keyboard = [];
 
