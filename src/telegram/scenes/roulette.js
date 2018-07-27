@@ -91,8 +91,10 @@ class Roulette {
     //run the roulette
     run() {
         lock.writeLock('roulette', release => {
-            this._isRunning = true;
             this._lastRunningTime = moment();
+            if (this._bets.length == 0)
+                return release();
+            this._isRunning = true;
             const runningTimeSec = utils.getRandomInt(10, 30);
             console.log("Roulette is running!");
             setTimeout(() => {
@@ -180,7 +182,7 @@ function initRoulette(ctx) {
     ctx.session.roulette.updateMessageInterval = setInterval(() => {
         console.log(ctx.session.roulette.message.chat.id)
         console.log(ctx.session.roulette.message.message_id)
-        
+
     }, 10000);
 
 }
@@ -202,7 +204,7 @@ scene.enter((ctx) => {
                 }
                 initRoulette(ctx);
             });
-        });   
+        });
     } else {
         ctx.reply(text + "\nThis item is available only for level 1 users");
         return ctx.scene.enter('extra');
