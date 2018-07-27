@@ -91,6 +91,9 @@ scene.on("callback_query", ctx => {
         setRootReminders(ctx, true);
     } else if (ctx.update.callback_query.data == 'unsubscribe') {
         unsubscribe(ctx);
+    } else if (ctx.update.callback_query.data == 'canceldeleteorder') {
+        //nothing
+        ctx.reply("Okey. Order not deleted.")
     } else {
         ctx.scene.leave();
         //fallback to main bot scen

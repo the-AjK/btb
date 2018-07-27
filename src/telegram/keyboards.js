@@ -159,10 +159,10 @@ settings.optionsFunc = (self, ctx, cb) => {
             console.error(err);
             return cb({});
         }
-        const dailyDeadlineReached = moment().isAfter(moment(order.menu.deadline));
+
         let keyboard = [];
 
-        if (order && !dailyDeadlineReached) {
+        if (order && !moment().isAfter(moment(order.menu.deadline))) {
             keyboard.push([{
                 text: self._cmd.orderDelete
             }]);
@@ -193,7 +193,7 @@ settings.setCmd(settings.cmd.orderDelete, (ctx) => {
                 callback_data: 'deletedailyorder'
             }, {
                 text: 'Cancel',
-                callback_data: 'cancel'
+                callback_data: 'canceldeleteorder'
             }]
         ],
         text = "Are you sure to delete your daily order?";
