@@ -598,37 +598,38 @@ function isUserLoser(userID, cb) {
     });
 }
 
-function runSlot(ctx) {
+async function runSlot(ctx) {
     ctx.session.slot.bombSent = false;
     ctx.session.slot.isRunning = true;
     ctx.session.slot.setProgress(0);
     ctx.session.slot.initSlot();
     let funList = [],
         slotRun = generateRandomRun(ctx.session.slot),
-        runResult = isWinningRun(ctx, slotRun),
-        loserCheck = false;
+        runResult = isWinningRun(ctx, slotRun);
 
-    isUserLoser(ctx.session.user._id, (err, isLoser) => {
-        if (err) {
-            console.error(err);
-        } else if (isLoser) {
-            console.log("Loser user -> try forceWin slot")
-            let i = 0;
-            while (runResult != 2 && i < 1000) {
-                slotRun = generateRandomRun(ctx.session.slot);
-                runResult = isWinningRun(ctx, slotRun);
-                i += 1;
-            }
-            if (i == 1000) {
-                console.warn("Cannot generate winning slot")
-            }
-        }
-        loserCheck = true;
-    });
+    function checkLoser() {
+        return new Promise(resolve => {
+            isUserLoser(ctx.session.user._id, (err, isLoser) => {
+                if (err) {
+                    console.error(err);
+                } else if (isLoser) {
+                    console.log("Loser user -> try forceWin slot")
+                    let i = 0;
+                    while (runResult != 2 && i < 1000) {
+                        slotRun = generateRandomRun(ctx.session.slot);
+                        runResult = isWinningRun(ctx, slotRun);
+                        i += 1;
+                    }
+                    if (i == 1000) {
+                        console.warn("Cannot generate winning slot")
+                    }
+                }
+                resolve();
+            });
+        });
+    }
 
-    require('deasync').loopWhile(function () {
-        return !loserCheck;
-    });
+    await checkLoser();
 
     for (let i = 0; i < slotRun.fullSteps; i++) {
         funList.push(function () {

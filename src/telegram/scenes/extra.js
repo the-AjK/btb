@@ -35,19 +35,17 @@ function textManager(ctx) {
         keyboards.extra(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.extra(ctx).cmd.slot) {
         ctx.scene.enter('slot');
-    } else if (ctx.message.text == keyboards.extra(ctx).cmd.nim) {
-        ctx.scene.enter('nim');
+    } else if (ctx.message.text == keyboards.extra(ctx).cmd.roulette) {
+        ctx.scene.enter('roulette');
     } else if (ctx.message.text == keyboards.extra(ctx).cmd.shop) {
         ctx.scene.enter('shop');
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
         //back from slot
         ctx.reply(keyboards.extra(ctx).text, keyboards.extra(ctx).opts);
-        ctx.session.handleMsg = false;
     } else if (ctx.message.text == keyboards.extra(ctx).cmd.back) {
         //back button
         ctx.scene.leave();
         ctx.reply('ACK', keyboards.btb(ctx).opts);
-        ctx.session.handleMsg = false;
     } else {
         ctx.scene.leave();
         //fallback to main bot scene
@@ -95,8 +93,14 @@ scene.on("callback_query", ctx => {
                     console.error(err);
                     ctx.reply("DB error");
                 } else {
-                    ctx.reply(bot.formatTables(tables, ctx.session.user), {
-                        parse_mode: "markdown"
+                    bot.formatTables(tables, ctx.session.user).then(text => {
+                        ctx.reply(text, {
+                            parse_mode: "markdown"
+                        });
+                    }, err => {
+                        ctx.reply("Something went wrong!", {
+                            parse_mode: "markdown"
+                        });
                     });
                 }
                 ctx.session.getTableStatus = false;

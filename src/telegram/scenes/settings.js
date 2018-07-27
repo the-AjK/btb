@@ -19,7 +19,11 @@ const moment = require('moment'),
     ACTIONS = bot.ACTIONS;
 
 const scene = new Scene('settings')
-scene.enter((ctx) => ctx.reply(keyboards.settings(ctx).text, keyboards.settings(ctx).opts))
+scene.enter(ctx => {
+    keyboards.settings.getOptions(ctx, opts => {
+        ctx.reply(keyboards.settings.text, opts);
+    });
+})
 
 function textManager(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
@@ -29,24 +33,28 @@ function textManager(ctx) {
         delete ctx.session.lastMessage;
     }
 
-    if (keyboards.settings(ctx)[ctx.message.text]) {
-        keyboards.settings(ctx)[ctx.message.text]();
-    } else if (ctx.message.text == keyboards.settings(ctx).cmd.reminders) {
+    if (keyboards.settings[ctx.message.text]) {
+        keyboards.settings[ctx.message.text](ctx);
+    } else if (ctx.message.text == keyboards.settings.cmd.reminders) {
         ctx.reply(keyboards.reminders(ctx).text, keyboards.reminders(ctx).opts);
     } else if (keyboards.reminders(ctx)[ctx.message.text]) {
         keyboards.reminders(ctx)[ctx.message.text]();
-    } else if (ctx.message.text == keyboards.settings(ctx).cmd.about) {
+    } else if (ctx.message.text == keyboards.settings.cmd.about) {
         ctx.reply(generateAbout(ctx), {
             parse_mode: "markdown",
             disable_web_page_preview: true
         });
     } else if (ctx.message.text == keyboards.reminders(ctx).cmd.back) {
         //back from reminders
-        ctx.reply(keyboards.settings(ctx).text, keyboards.settings(ctx).opts);
+        keyboards.settings.getOptions(ctx, opts => {
+            ctx.reply(keyboards.settings.text, opts);
+        });
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
         //back from slot
-        ctx.reply(keyboards.settings(ctx).text, keyboards.settings(ctx).opts);
-    } else if (ctx.message.text == keyboards.settings(ctx).cmd.back) {
+        keyboards.settings.getOptions(ctx, opts => {
+            ctx.reply(keyboards.settings.text, opts);
+        });
+    } else if (ctx.message.text == keyboards.settings.cmd.back) {
         //back button
         ctx.scene.leave();
         ctx.reply('ACK', keyboards.btb(ctx).opts);
@@ -83,6 +91,9 @@ scene.on("callback_query", ctx => {
         setRootReminders(ctx, true);
     } else if (ctx.update.callback_query.data == 'unsubscribe') {
         unsubscribe(ctx);
+    } else if (ctx.update.callback_query.data == 'canceldeleteorder') {
+        //nothing
+        ctx.reply("Okey. Order not deleted.")
     } else {
         ctx.scene.leave();
         //fallback to main bot scen
@@ -110,7 +121,9 @@ function deleteDailyOrder(ctx) {
             } else {
                 DB.Order.findByIdAndRemove(order._id, (err, deletedOrder) => {
                     if (!err && deletedOrder) {
-                        ctx.reply("Your daily order has been deleted!", keyboards.settings(ctx).opts);
+                        keyboards.settings.getOptions(ctx, opts => {
+                            ctx.reply("Your daily order has been deleted!", opts);
+                        });
                         /*levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
                             if (err) {
                                 console.error(err);
