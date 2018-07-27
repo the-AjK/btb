@@ -185,37 +185,41 @@ function initRoulette(ctx) {
 
 }
 
-const scene = new Scene('roulette')
+const scene = new Scene('roulette');
 scene.enter((ctx) => {
-    if (!btbRoulette.enabled) {
-        ctx.reply("BTB roulette is not available now");
-        ctx.scene.leave();
-        return ctx.scene.enter('extra');
-    } else if (btbRoulette.isRunning) {
-        ctx.reply("BTB roulette is running... please wait");
-        ctx.scene.leave();
+    if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 0) || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+        if (true) {
+            ctx.reply("BTB roulette is not available yet.\nCome back later.");
+            return ctx.scene.enter('extra');
+        } else if (btbRoulette.isRunning) {
+            ctx.reply("BTB roulette is running... please wait");
+            return ctx.scene.enter('extra');
+        }
+        keyboards.roulette.getOptions(ctx, opts => {
+            ctx.reply(formatRoulette(ctx), opts).then(m => {
+                ctx.session.roulette = {
+                    message: m
+                }
+                initRoulette(ctx);
+            });
+        });   
+    } else {
+        ctx.reply(text + "\nThis item is available only for level 1 users");
         return ctx.scene.enter('extra');
     }
-
-    keyboards.roulette.getOptions(ctx, opts => {
-        ctx.reply(formatRoulette(ctx), opts).then(m => {
-            ctx.session.roulette = {
-                message: m
-            }
-            initRoulette(ctx);
-        });
-    });
 });
 
 function textManager(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     deleteLastMessage(ctx);
 
+    console.log("text")
+
     if (keyboards.roulette[ctx.message.text]) {
         keyboards.roulette[ctx.message.text](ctx);
     } else if (ctx.message.text == keyboards.roulette.cmd.back) {
         //back button
-        ctx.scene.leave();
+        //ctx.scene.leave();
         ctx.scene.enter('extra');
     } else {
         ctx.scene.leave();
