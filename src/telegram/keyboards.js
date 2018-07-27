@@ -50,6 +50,60 @@ class Keyboard {
     }
 }
 
+const roulette = new Keyboard({
+    text: "*Roulette*",
+    cmd: {
+        betmore: "+",
+        betless: "-",
+        number: "Number",
+        manque: "Manque (1-18)",
+        passe: "Passe (19-36)",
+        red: "Red",
+        black: "Black",
+        even: "Even",
+        odd: "Odd",
+        clear: "clear",
+        back: "◀️ Back to extra"
+    }
+});
+roulette.optionsFunc = (self, ctx, cb) => {
+    let keyboard = [];
+    keyboard.push([{
+        text: self._cmd.betmore
+    }, {
+        text: self._cmd.betless
+    }]);
+    keyboard.push([{
+        text: self._cmd.red
+    }, {
+        text: self._cmd.black
+    }, {
+        text: self._cmd.even
+    }, {
+        text: self._cmd.odd
+    }]);
+    keyboard.push([{
+        text: self._cmd.manque
+    }, {
+        text: self._cmd.passe
+    }]);
+    keyboard.push([{
+        text: self._cmd.clear
+    }]);
+    keyboard.push([{
+        text: self._cmd.back
+    }]);
+    cb({
+        parse_mode: "markdown",
+        force_reply: true,
+        reply_markup: JSON.stringify({
+            one_time_keyboard: false,
+            resize_keyboard: true,
+            keyboard: keyboard
+        })
+    });
+}
+
 const order = new Keyboard({
     text: "Choose one course:",
     cmd: {
@@ -522,7 +576,7 @@ module.exports = {
                 slot: "🎰 Slot",
                 shop: "🛍 Shop",
                 top: "🔝 Top ten",
-                nim: "🎱 NIM"
+                roulette: "🎱 Roulette"
             };
 
         keyboard.push([{
@@ -531,10 +585,10 @@ module.exports = {
             text: cmd.slot
         }]);
 
-        if (ctx && ctx.session.user && (checkUserAccessLevel(ctx.session.user.role, accessLevels.root) || levels.getLevel(ctx.session.user.points) > 3)) {
-            //Level 4 or root 
+        if (ctx && ctx.session.user && (checkUserAccessLevel(ctx.session.user.role, accessLevels.root) || levels.getLevel(ctx.session.user.points) > 0)) {
+            //Level 1 or root 
             keyboard[keyboard.length - 1].push({
-                text: cmd.nim
+                text: cmd.roulette
             });
         }
 
@@ -552,8 +606,8 @@ module.exports = {
                     text: cmd.top
                 });
             }
-        } else if (levels.getLevel(ctx.session.user.points) > 0) {
-            //level 1 user
+        } else if (ctx && ctx.session.user && (checkUserAccessLevel(ctx.session.user.role, accessLevels.root) || levels.getLevel(ctx.session.user.points) > 0)) {
+            //level 1 user or root
             keyboard.push([{
                 text: cmd.shop
             }, {
@@ -804,31 +858,5 @@ module.exports = {
 
         return obj;
     },
-    nim: function (ctx) {
-        let keyboard = [],
-            cmd = {
-                back: "◀️ Back to extra"
-            };
-
-        keyboard.push([{
-            text: cmd.back
-        }]);
-
-        let obj = {
-            availableCmd: Object.keys(cmd).map(c => cmd[c]),
-            opts: {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    one_time_keyboard: false,
-                    resize_keyboard: true,
-                    keyboard: keyboard
-                })
-            },
-            text: "*NIM Game*",
-            cmd: cmd
-        };
-
-        return obj;
-    }
+    roulette: roulette
 };

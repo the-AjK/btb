@@ -39,8 +39,8 @@ function textManager(ctx) {
         keyboards.extra(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.extra(ctx).cmd.slot) {
         ctx.scene.enter('slot');
-    } else if (ctx.message.text == keyboards.extra(ctx).cmd.nim) {
-        ctx.scene.enter('nim');
+    } else if (ctx.message.text == keyboards.extra(ctx).cmd.roulette) {
+        ctx.scene.enter('roulette');
     } else if (ctx.message.text == keyboards.extra(ctx).cmd.shop) {
         ctx.scene.enter('shop');
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {

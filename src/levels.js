@@ -28,10 +28,10 @@ exports.pointsLevels = pointsLevels;
 
 function getLevelFeatures(level) {
     const features = {
-        1: "- Rate your lunch\n- Top ten users\n- Joke bot\n- Audio bot\n- Shop",
+        1: "- Rate your lunch\n- Top ten users\n- Joke bot\n- Audio bot\n- Shop\n- Roulette",
         2: "- Check orders status\n- Check tables status\n- Check users without orders",
         3: "- Shield + Gun shop items",
-        4: "- Nim game",
+        4: "- Secret stuff",
         5: "- Secret stuff",
         6: "- Secret stuff",
         7: "- Secret stuff",

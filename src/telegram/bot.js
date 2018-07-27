@@ -100,7 +100,7 @@ stage.register(require('./scenes/orderRating').scene)
 stage.register(require('./scenes/slot').scene)
 stage.register(require('./scenes/shop').scene)
 stage.register(require('./scenes/hp').scene)
-stage.register(require('./scenes/nim').scene)
+stage.register(require('./scenes/roulette').scene)
 
 const session = new Session({
   ttl: 24 * 60 * 60000 //24h
