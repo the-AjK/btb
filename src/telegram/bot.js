@@ -262,9 +262,9 @@ function textManager(ctx) {
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.order) {
     ctx.session.mainCounter = 0;
     enterScene(ctx, 'order');
-  } else if (ctx.message.text == keyboards.settings(ctx).cmd.unsubscribe) {
+  } else if (ctx.message.text == keyboards.settings.cmd.unsubscribe) {
     ctx.session.mainCounter = 0;
-    keyboards.settings(ctx)[ctx.message.text]();
+    keyboards.settings[ctx.message.text](ctx);
   } else if (keyboards.btb(ctx)[ctx.message.text]) {
     keyboards.btb(ctx)[ctx.message.text]();
   } else if (ctx.message.text == keyboards.btb(ctx).cmd.settings) {
@@ -487,20 +487,15 @@ function decodeWit(ctx, witResponse) {
       case "beerscount":
         msg = ["401 - Unauthorized", "This feature is reserved for level >= 1 users"];
         if (levels.getLevel(ctx.session.user.points) > 0 || roles.checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
-          let done = false,
-            userBeers = -1;
-          DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
+          return DB.getUserBeers(ctx.session.user._id, null, (err, beers) => {
             if (err) {
               console.error(err);
+              ctx.reply("Something went wrong!");
             } else {
-              userBeers = beers.length;
+              msg = ["Let's see if I remember...", "Oh yes", "You gave me " + beers.length + " beers in total."];
+              replies(ctx, msg, keyboards.btb(ctx).opts);
             }
-            done = true;
           });
-          require('deasync').loopWhile(function () {
-            return !done;
-          });
-          msg = ["Let's see if I remember...", "Oh yes", "You gave me " + userBeers + " beers in total."];
         }
         break;
       case "sendnudes":
@@ -824,7 +819,20 @@ function formatUsersWithoutOrder(users, user) {
 }
 exports.formatUsersWithoutOrder = formatUsersWithoutOrder;
 
-function formatOrder(order, user) {
+function getTableOrders(tableID) {
+  return new Promise((resolve, reject) => {
+    DB.getTableParticipants(null, tableID, (err, orders) => {
+      if (err) {
+        console.error(err);
+        reject();
+      } else {
+        resolve(orders);
+      }
+    });
+  });
+}
+
+async function formatOrder(order, user) {
   let text =
     "\n__Your daily order__:\n*" + moment(order.menu.day).format("MMMM Do YYYY") + "* at *" +
     moment(order.createdAt).format("HH:mm") + "*";
@@ -844,18 +852,7 @@ function formatOrder(order, user) {
     }
   }
   text = text + "\n\n__List of people at__ *" + order.table.name + "*";
-  let tableUsers = false;
-  DB.getTableParticipants(null, order.table._id, (err, orders) => {
-    if (err) {
-      console.error(err);
-      tableUsers = null;
-    } else {
-      tableUsers = orders.map(o => o.owner);
-    }
-  });
-  require('deasync').loopWhile(function () {
-    return tableUsers === false;
-  });
+  let tableUsers = (await getTableOrders(order.table._id)).map(o => o.owner);
   if (tableUsers && tableUsers.length) {
     text += " (" + tableUsers.length + "/" + order.table.seats + "):";
     for (let i = 0; i < tableUsers.length; i++) {
@@ -881,7 +878,7 @@ function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-function formatTables(tables, user) {
+async function formatTables(tables, user) {
   let text = "*Tables status:*";
 
   for (let t = 0; t < tables.length; t++) {
@@ -889,21 +886,7 @@ function formatTables(tables, user) {
     if (!table.enabled) {
       continue;
     }
-    let tableOrders = false,
-      error = "";
-    DB.getTableParticipants(null, table._id, (err, orders) => {
-      if (err) {
-        error = err;
-        tableOrders = null;
-      } else {
-        tableOrders = orders;
-      }
-    });
-    require('deasync').loopWhile(function () {
-      return tableOrders === false;
-    });
-    if (tableOrders === null)
-      return error;
+    let tableOrders = await getTableOrders(table._id);
     text = text + "\n\n*" + capitalizeFirstLetter(table.name) + "*";
     if (tableOrders && tableOrders.length) {
       text = text + " (" + tableOrders.length + "/" + table.seats + "):";

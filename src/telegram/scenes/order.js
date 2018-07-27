@@ -56,11 +56,11 @@ function leave(ctx, force_exit) {
 
 function checkReEnter(ctx) {
     if (ctx.message) {
-        if (keyboards.order(ctx).cmd.first == ctx.message.text) {
+        if (keyboards.order.cmd.first == ctx.message.text) {
             deleteLastMessage(ctx);
             ctx.scene.enter('firstCourseWizard');
             return true;
-        } else if (keyboards.order(ctx).cmd.second == ctx.message.text) {
+        } else if (keyboards.order.cmd.second == ctx.message.text) {
             deleteLastMessage(ctx);
             ctx.scene.enter('secondCourseWizard');
             return true;
@@ -614,29 +614,35 @@ scene.enter((ctx) => {
             ctx.reply(err);
             return ctx.scene.leave();
         } else if (dailyOrder) {
-            ctx.reply(require('../bot').formatOrder(dailyOrder, ctx.session.user), {
-                parse_mode: "markdown"
-            }).then(() => {
-                if (moment().isAfter(moment(ratingDeadline, "HH:mm")) && ctx.session.user && levels.getLevel(ctx.session.user.points) > 0 && dailyOrder.rating == undefined) {
-                    //users with level > 0 can rate their orders after 13:00
-                    ctx.reply("Did you enjoy your lunch?", {
-                        parse_mode: "markdown",
-                        force_reply: true,
-                        reply_markup: JSON.stringify({
-                            inline_keyboard: [
-                                [{
-                                    text: 'Rate it!',
-                                    callback_data: 'rateit'
-                                }]
-                            ]
-                        })
-                    }).then((msg) => {
-                        //lets save the message to delete it afterward
-                        ctx.session.lastMessage = msg;
-                    });
-                } else {
-                    ctx.scene.leave();
-                }
+            require('../bot').formatOrder(dailyOrder, ctx.session.user).then(text => {
+                ctx.reply(text, {
+                    parse_mode: "markdown"
+                }).then(() => {
+                    if (moment().isAfter(moment(ratingDeadline, "HH:mm")) && ctx.session.user && levels.getLevel(ctx.session.user.points) > 0 && dailyOrder.rating == undefined) {
+                        //users with level > 0 can rate their orders after 13:00
+                        ctx.reply("Did you enjoy your lunch?", {
+                            parse_mode: "markdown",
+                            force_reply: true,
+                            reply_markup: JSON.stringify({
+                                inline_keyboard: [
+                                    [{
+                                        text: 'Rate it!',
+                                        callback_data: 'rateit'
+                                    }]
+                                ]
+                            })
+                        }).then((msg) => {
+                            //lets save the message to delete it afterward
+                            ctx.session.lastMessage = msg;
+                        });
+                    } else {
+                        ctx.scene.leave();
+                    }
+                });
+            }, error => {
+                ctx.reply("Something went wrong!", {
+                    parse_mode: "markdown"
+                });
             });
         } else {
             DB.getDailyMenu(null, (err, dailyMenu) => {
@@ -679,7 +685,9 @@ scene.enter((ctx) => {
                             ctx.session.dailyMenu.availableCondiments.push(item.condiments[j])
                     }
                 }
-                ctx.reply(keyboards.order(ctx).text, keyboards.order(ctx).opts);
+                keyboards.order.getOptions(ctx, opts => {
+                    ctx.reply(keyboards.order.text, opts);
+                });
             });
         }
     })
@@ -688,11 +696,11 @@ scene.enter((ctx) => {
 function textManager(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     deleteLastMessage(ctx);
-    if (keyboards.order(ctx).cmd.first == ctx.message.text) {
+    if (keyboards.order.cmd.first == ctx.message.text) {
         ctx.scene.enter('firstCourseWizard');
-    } else if (keyboards.order(ctx).cmd.second == ctx.message.text) {
+    } else if (keyboards.order.cmd.second == ctx.message.text) {
         ctx.scene.enter('secondCourseWizard');
-    } else if (ctx.message.text == keyboards.order(ctx).cmd.back) {
+    } else if (ctx.message.text == keyboards.order.cmd.back) {
         //back button
         ctx.scene.leave();
         ctx.reply('️✖️ ️️️️️️Order not placed', keyboards.btb(ctx).opts);

@@ -99,8 +99,14 @@ scene.on("callback_query", ctx => {
                     console.error(err);
                     ctx.reply("DB error");
                 } else {
-                    ctx.reply(bot.formatTables(tables, ctx.session.user), {
-                        parse_mode: "markdown"
+                    bot.formatTables(tables, ctx.session.user).then(text => {
+                        ctx.reply(text, {
+                            parse_mode: "markdown"
+                        });
+                    }, err => {
+                        ctx.reply("Something went wrong!", {
+                            parse_mode: "markdown"
+                        });
                     });
                 }
                 ctx.session.getTableStatus = false;

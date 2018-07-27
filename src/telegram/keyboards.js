@@ -12,6 +12,186 @@ const roles = require("../roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     accessLevels = roles.accessLevels;
 
+
+class Keyboard {
+
+    constructor(config) {
+        this._text = config.text || "*Keyboard text placeholder*";
+        this._cmd = config.cmd || {};
+        this._opts = (self, ctx, cb) => {
+            cb({
+                parse_mode: "markdown"
+            });
+        }
+    }
+
+    get text() {
+        return this._text;
+    }
+
+    get cmd() {
+        return this._cmd;
+    }
+
+    setCmd(cmd, fun) {
+        this[cmd] = fun;
+    }
+
+    get availableCmd() {
+        return Object.keys(this._cmd).map(c => this._cmd[c]);
+    }
+
+    set optionsFunc(fun) {
+        this._opts = fun;
+    }
+
+    getOptions(ctx, cb) {
+        this._opts(this, ctx, cb);
+    }
+}
+
+const order = new Keyboard({
+    text: "Choose one course:",
+    cmd: {
+        first: "First course",
+        second: "Second course",
+        back: "◀️ Back",
+    }
+});
+order.optionsFunc = (self, ctx, cb) => {
+    db.getDailyMenu(null, (err, dailyMenu) => {
+        if (err) {
+            console.error(err);
+            return cb({});
+        }
+        let keyboard = [];
+        if (dailyMenu && dailyMenu.firstCourse && dailyMenu.firstCourse.items && dailyMenu.firstCourse.items.length) {
+            keyboard.push([{
+                text: self._cmd.first
+            }]);
+        }
+        if (dailyMenu && dailyMenu.secondCourse && dailyMenu.secondCourse.items && dailyMenu.secondCourse.items.length) {
+            keyboard.push([{
+                text: self._cmd.second
+            }]);
+        }
+        keyboard.push([{
+            text: self._cmd.back
+        }]);
+        cb({
+            parse_mode: "markdown",
+            force_reply: true,
+            reply_markup: JSON.stringify({
+                one_time_keyboard: false,
+                keyboard: keyboard
+            })
+        });
+    });
+}
+
+const settings = new Keyboard({
+    text: "*Settings*",
+    cmd: {
+        back: "◀️ Back",
+        orderDelete: "✖️ Delete Order",
+        unsubscribe: "/unsubscribe",
+        reminders: "⏰ Reminders",
+        about: "ℹ️ About BTB"
+    }
+});
+settings.optionsFunc = (self, ctx, cb) => {
+    db.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
+        if (err) {
+            console.error(err);
+            return cb({});
+        }
+        const dailyDeadlineReached = moment().isAfter(moment(order.menu.deadline));
+        let keyboard = [];
+
+        if (order && !dailyDeadlineReached) {
+            keyboard.push([{
+                text: self._cmd.orderDelete
+            }]);
+        }
+        keyboard.push([{
+            text: self._cmd.about
+        }]);
+        keyboard.push([{
+            text: self._cmd.reminders
+        }]);
+        keyboard.push([{
+            text: self._cmd.back
+        }]);
+        cb({
+            parse_mode: "markdown",
+            force_reply: true,
+            reply_markup: JSON.stringify({
+                one_time_keyboard: false,
+                keyboard: keyboard
+            })
+        });
+    });
+}
+settings.setCmd(settings.cmd.orderDelete, (ctx) => {
+    let inline_keyboard = [
+            [{
+                text: 'Delete',
+                callback_data: 'deletedailyorder'
+            }, {
+                text: 'Cancel',
+                callback_data: 'cancel'
+            }]
+        ],
+        text = "Are you sure to delete your daily order?";
+
+    ctx.reply(text, {
+        parse_mode: "markdown",
+        force_reply: true,
+        reply_markup: JSON.stringify({
+            inline_keyboard: inline_keyboard
+        })
+    }).then((msg) => {
+        //lets save the message to delete it afterward
+        ctx.session.lastMessage = msg;
+    });
+});
+settings.setCmd(settings.cmd.unsubscribe, (ctx) => {
+    let inline_keyboard = [
+            [{
+                text: 'Cancel',
+                callback_data: 'cancel'
+            }],
+            [{
+                text: 'Cancel',
+                callback_data: 'cancel'
+            }, {
+                text: 'Unsubscribe',
+                callback_data: 'unsubscribe'
+            }, {
+                text: 'Cancel',
+                callback_data: 'cancel'
+            }],
+            [{
+                text: 'Cancel',
+                callback_data: 'cancel'
+            }]
+        ],
+        text = "*WHAT!?*\nDo you really wanna unsubscribe?\nYour account will be deleted and you will no longer be able to give me a beer!\nYou should think about it!",
+        value = true;
+
+    ctx.reply(text, {
+        parse_mode: "markdown",
+        force_reply: true,
+        reply_markup: JSON.stringify({
+            inline_keyboard: inline_keyboard
+        })
+    }).then((msg) => {
+        //lets save the message to delete it afterward
+        ctx.session.lastMessage = msg;
+    });
+});
+
+//OLD stuff, to update with the new keyboard class
 module.exports = {
     register: function (ctx) {
         let keyboard = [],
@@ -68,54 +248,7 @@ module.exports = {
 
         return obj;
     },
-    order: function (ctx) {
-        let keyboard = [],
-            cmd = {
-                first: "First course",
-                second: "Second course",
-                back: "◀️ Back",
-            };
-
-        let done = false,
-            dailyMenu;
-        db.getDailyMenu(null, (err, m) => {
-            if (!err && m) {
-                dailyMenu = m;
-            }
-            done = true;
-        });
-        require('deasync').loopWhile(function () {
-            return !done;
-        });
-        if (dailyMenu.firstCourse && dailyMenu.firstCourse.items && dailyMenu.firstCourse.items.length) {
-            keyboard.push([{
-                text: cmd.first
-            }]);
-        }
-        if (dailyMenu.secondCourse && dailyMenu.secondCourse.items && dailyMenu.secondCourse.items.length) {
-            keyboard.push([{
-                text: cmd.second
-            }]);
-        }
-        keyboard.push([{
-            text: cmd.back
-        }]);
-
-        let obj = {
-            opts: {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    one_time_keyboard: false,
-                    keyboard: keyboard
-                })
-            },
-            text: "Choose one course:",
-            cmd: cmd
-        };
-
-        return obj;
-    },
+    order: order,
     orderRating: function (ctx) {
         let inline_keyboard = [
                 [{
@@ -379,121 +512,7 @@ module.exports = {
 
         return obj;
     },
-    settings: function (ctx) {
-        let keyboard = [],
-            cmd = {
-                back: "◀️ Back",
-                orderDelete: "✖️ Delete Order",
-                unsubscribe: "/unsubscribe",
-                reminders: "⏰ Reminders",
-                about: "ℹ️ About BTB"
-            };
-
-        let done = false,
-            userHasOrdered = false,
-            dailyDeadlineReached = false;
-        db.getDailyUserOrder(null, ctx.session.user._id, (err, order) => {
-            if (!err && order) {
-                userHasOrdered = true;
-                dailyDeadlineReached = moment().isAfter(moment(order.menu.deadline));
-            }
-            done = true;
-        });
-        require('deasync').loopWhile(function () {
-            return !done;
-        });
-
-        if (userHasOrdered && !dailyDeadlineReached) {
-            keyboard.push([{
-                text: cmd.orderDelete
-            }]);
-        }
-        keyboard.push([{
-            text: cmd.about
-        }]);
-        keyboard.push([{
-            text: cmd.reminders
-        }]);
-        keyboard.push([{
-            text: cmd.back
-        }]);
-
-        let obj = {
-            availableCmd: Object.keys(cmd).map(c => cmd[c]),
-            opts: {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    one_time_keyboard: false,
-                    keyboard: keyboard
-                })
-            },
-            text: "*Settings*",
-            cmd: cmd
-        };
-
-        obj[cmd.orderDelete] = () => {
-            let inline_keyboard = [
-                    [{
-                        text: 'Delete',
-                        callback_data: 'deletedailyorder'
-                    }, {
-                        text: 'Cancel',
-                        callback_data: 'cancel'
-                    }]
-                ],
-                text = "Are you sure to delete your daily order?";
-
-            ctx.reply(text, {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: inline_keyboard
-                })
-            }).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
-        }
-
-        obj[cmd.unsubscribe] = () => {
-            let inline_keyboard = [
-                    [{
-                        text: 'Cancel',
-                        callback_data: 'cancel'
-                    }],
-                    [{
-                        text: 'Cancel',
-                        callback_data: 'cancel'
-                    }, {
-                        text: 'Unsubscribe',
-                        callback_data: 'unsubscribe'
-                    }, {
-                        text: 'Cancel',
-                        callback_data: 'cancel'
-                    }],
-                    [{
-                        text: 'Cancel',
-                        callback_data: 'cancel'
-                    }]
-                ],
-                text = "*WHAT!?*\nDo you really wanna unsubscribe?\nYour account will be deleted and you will no longer be able to give me a beer!\nYou should think about it!",
-                value = true;
-
-            ctx.reply(text, {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: inline_keyboard
-                })
-            }).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
-        }
-
-        return obj;
-    },
+    settings: settings,
     extra: function (ctx) {
         let keyboard = [],
             cmd = {
