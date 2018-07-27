@@ -794,16 +794,20 @@ module.exports = {
                     }]
                 ],
                 text = "Never play with fire!";
-            ctx.reply(text, {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: inline_keyboard
-                })
-            }).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
+            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 2) || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+                ctx.reply(text, {
+                    parse_mode: "markdown",
+                    force_reply: true,
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: inline_keyboard
+                    })
+                }).then((msg) => {
+                    //lets save the message to delete it afterward
+                    ctx.session.lastMessage = msg;
+                });
+            } else {
+                ctx.reply(text + "\nThis item is available only for level 3 users");
+            }
         }
 
         obj[cmd.shield] = () => {
