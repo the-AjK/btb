@@ -482,7 +482,7 @@ function decodeWit(ctx, witResponse) {
         });
         return;
       case "points":
-        msg = ["Well, you got " + ctx.session.user.points + " points in total.", "This means that you are a level " + levels.getLevel(ctx.session.user.points) + " user!"];
+        msg = ["Well, you got *" + ctx.session.user.points + " beercoins* in total.", "This means that you are a *level " + levels.getLevel(ctx.session.user.points) + "* user!"];
         break;
       case "beerscount":
         msg = ["401 - Unauthorized", "This feature is reserved for level >= 1 users"];
@@ -492,7 +492,7 @@ function decodeWit(ctx, witResponse) {
               console.error(err);
               ctx.reply("Something went wrong!");
             } else {
-              msg = ["Let's see if I remember...", "Oh yes", "You gave me " + beers.length + " beers in total."];
+              msg = ["Let's see if I remember...", "Oh yes", "You gave me *" + beers.length + " beers* in total."];
               replies(ctx, msg, keyboards.btb(ctx).opts);
             }
           });
