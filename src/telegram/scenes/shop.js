@@ -304,7 +304,7 @@ function sendNews(ctx, premium) {
                     sort: {
                         createdAt: -1
                     },
-                    limit: 70
+                    limit: 50
                 })
                 .populate('history.owner')
                 .populate('owner')
