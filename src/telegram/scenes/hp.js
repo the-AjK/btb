@@ -316,7 +316,7 @@ function textManager(ctx) {
 scene.on("text", textManager);
 
 function updateUsersKeyboard(ctx) {
-    ctx.telegram.editMessageReplyMarkup(HotPotato.keyboard.chat.id, HotPotato.keyboard.message_id, null, {
+    ctx.telegram.editMessageReplyMarkup(HotPotato.keyboardMessage.chat.id, HotPotato.keyboardMessage.message_id, null, {
         inline_keyboard: HotPotato.users_inline_keyboard.render()
     });
 }
