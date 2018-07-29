@@ -278,7 +278,7 @@ class HP {
 }
 
 const HotPotato = new HP(),
-    hpPrice = 3; //3beercoins
+    hpPrice = 5; //5beercoins
 
 const scene = new Scene('hp')
 scene.enter((ctx) => {
