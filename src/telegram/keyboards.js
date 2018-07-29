@@ -51,10 +51,14 @@ class Keyboard {
 }
 
 const roulette = new Keyboard({
-    text: "*Roulette*",
+    text: "*BiteTheBot Roulette*",
     cmd: {
-        betmore: "+",
-        betless: "-",
+        betmore1: "+1",
+        betless1: "-1",
+        betmore5: "+5",
+        betless5: "-5",
+        betmore10: "+10",
+        betless10: "-10",
         number: "Number",
         manque: "Manque (1-18)",
         passe: "Passe (19-36)",
@@ -69,37 +73,70 @@ const roulette = new Keyboard({
 roulette.optionsFunc = (self, ctx, cb) => {
     let keyboard = [];
     keyboard.push([{
-        text: self._cmd.betmore
+        text: self._cmd.betless10,
+        callback_data: "betless10"
     }, {
-        text: self._cmd.betless
+        text: self._cmd.betless5,
+        callback_data: "betless5"
+    }, {
+        text: self._cmd.betless1,
+        callback_data: "betless1"
+    }, {
+        text: self._cmd.betmore1,
+        callback_data: "betmore1"
+    }, {
+        text: self._cmd.betmore5,
+        callback_data: "betmore5"
+    }, {
+        text: self._cmd.betmore10,
+        callback_data: "betmore10"
     }]);
     keyboard.push([{
-        text: self._cmd.red
+        text: "0",
+        callback_data: "0"
+    }]);
+    const cols = 6;
+    const rows = 6;
+    for (let j = 0; j < rows; j++) {
+        keyboard.push([]);
+        let start = (1 + cols * j);
+        for (let i = start; i < start + cols; i++) {
+            keyboard[keyboard.length - 1].push({
+                text: "" + i,
+                callback_data: "" + i
+            });
+        }
+    }
+
+    keyboard.push([{
+        text: self._cmd.red,
+        callback_data: "red"
     }, {
-        text: self._cmd.black
+        text: self._cmd.black,
+        callback_data: "black"
     }, {
-        text: self._cmd.even
+        text: self._cmd.even,
+        callback_data: "even"
     }, {
-        text: self._cmd.odd
+        text: self._cmd.odd,
+        callback_data: "odd"
     }]);
     keyboard.push([{
-        text: self._cmd.manque
+        text: self._cmd.manque,
+        callback_data: "manque"
     }, {
-        text: self._cmd.passe
+        text: self._cmd.passe,
+        callback_data: "passe"
     }]);
     keyboard.push([{
-        text: self._cmd.clear
-    }]);
-    keyboard.push([{
-        text: self._cmd.back
+        text: self._cmd.clear,
+        callback_data: "clear"
     }]);
     cb({
         parse_mode: "markdown",
         force_reply: true,
         reply_markup: JSON.stringify({
-            one_time_keyboard: false,
-            resize_keyboard: true,
-            keyboard: keyboard
+            inline_keyboard: keyboard
         })
     });
 }
@@ -785,12 +822,12 @@ module.exports = {
         obj[cmd.hp] = () => {
             let inline_keyboard = [
                     [{
-                        text: 'Buy a Hot Potato (3 credits)',
+                        text: 'Buy a Hot Potato (5 credits)',
                         callback_data: 'hp'
                     }]
                 ],
                 text = "Never play with fire!";
-            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 2) || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
                 ctx.reply(text, {
                     parse_mode: "markdown",
                     force_reply: true,
@@ -802,7 +839,7 @@ module.exports = {
                     ctx.session.lastMessage = msg;
                 });
             } else {
-                ctx.reply(text + "\nThis item is available only for level 3 users");
+                ctx.reply(text + "\nThis item is available only for level 2 users");
             }
         }
 
