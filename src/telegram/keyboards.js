@@ -78,13 +78,13 @@ roulette.optionsFunc = (self, ctx, cb) => {
     }, {
         text: self._cmd.betless5,
         callback_data: "betless5"
-    },{
+    }, {
         text: self._cmd.betless1,
         callback_data: "betless1"
     }, {
         text: self._cmd.betmore1,
         callback_data: "betmore1"
-    },{
+    }, {
         text: self._cmd.betmore5,
         callback_data: "betmore5"
     }, {
@@ -827,7 +827,7 @@ module.exports = {
                     }]
                 ],
                 text = "Never play with fire!";
-            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 2) || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
+            if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
                 ctx.reply(text, {
                     parse_mode: "markdown",
                     force_reply: true,
@@ -839,7 +839,7 @@ module.exports = {
                     ctx.session.lastMessage = msg;
                 });
             } else {
-                ctx.reply(text + "\nThis item is available only for level 3 users");
+                ctx.reply(text + "\nThis item is available only for level 2 users");
             }
         }
 
