@@ -220,7 +220,7 @@ function formatNews(news, topUsers, dailyOrders, premium) {
             if (n.points < 0) {
                 text += " lost " + (n.points * -1) + " slot points 🎰";
             } else if (n.points == 0) {
-                text += " had no luck with the slot 🙃";
+                text += " had no luck with the slot!";
             } else {
                 if (n.robbedUser != undefined) {
                     user = bot.getUserLink(n.robbedUser);
@@ -239,6 +239,22 @@ function formatNews(news, topUsers, dailyOrders, premium) {
                 } else {
                     text += " won " + n.points + " slot points 🎰";
                 }
+            }
+        } else if (n.number != undefined) {
+            //roulette stuff
+            const totalBets = n.bets.reduce((sum, bet) => {
+                    return sum + bet.value;
+                }, 0),
+                totalWin = n.bets.reduce((sum, bet) => {
+                    return sum + bet.win;
+                }, 0),
+                bcoins = totalWin - totalBets;
+            if (bcoins > 0) {
+                text += " won " + bcoins + " beercoin" + (bcoins > 1 ? "s" : "") + " at the roulette!";
+            } else if (bcoins < 0) {
+                text += " lost " + Math.abs(bcoins) + " beercoin" + (Math.abs(bcoins) > 1 ? "s" : "") + " at the roulette!";
+            } else {
+                text += " had no luck with the roulette!";
             }
         } else if (n.type != undefined) {
             //beer stuff
