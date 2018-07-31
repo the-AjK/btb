@@ -315,7 +315,7 @@ function formatRoulette(ctx, cb) {
     } else {
         text += "*Come on, place your bet!*\nNext run in *" + btbRoulette.nextRunDiff + "*";
     }
-    text += "\n[View Roulette Table](https://bitethebot.herokuapp.org/static/images/roulette-table.jpg)";
+    text += "\n[View Roulette Table](https://bitethebot.herokuapp.com/static/images/roulette-table.jpg)";
 
     if (!btbRoulette.isRunning) {
         if (btbRoulette.lastNumber != undefined)
