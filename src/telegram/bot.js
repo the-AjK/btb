@@ -181,6 +181,7 @@ bot.use((ctx, next) => {
 });
 
 //After auth middleware, enter the main scene
+bot.on("callback_query", callbackQueryManager);
 bot.use((ctx, next) => {
   ctx.scene.enter('main');
 });

@@ -822,7 +822,7 @@ module.exports = {
         obj[cmd.hp] = () => {
             let inline_keyboard = [
                     [{
-                        text: 'Buy a Hot Potato (5 credits)',
+                        text: 'Buy a Hot Potato (3 credits)',
                         callback_data: 'hp'
                     }]
                 ],
