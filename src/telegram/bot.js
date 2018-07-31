@@ -460,7 +460,6 @@ function decodeWit(ctx, witResponse) {
                 }
                 replies(ctx, msg, keyboards.btb(ctx).opts, () => {
                   //release the handler, so the user can request the topten again (see extra.js)
-                  ctx.session.handleMsg = false;
                 });
               });
             }
