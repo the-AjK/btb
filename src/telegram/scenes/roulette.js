@@ -238,19 +238,19 @@ class Roulette {
                     });
                     //send notifications to winner users that are not playing with the roulette
                     //if (activeUsers.map(u => u.email).indexOf(winning.owner.email) < 0) {
-                        let msg = "*BTB Roulette results:*\n\nlucky number: *" + number + "* \n\nyour bets:";
-                        for (let j = 0; j < winning.bets.length; j++) {
-                            const isWinning = winning.bets[j].getResult(number) > 0;
-                            msg += "\n" + (isWinning ? "✅" : "✖️") + " " + formatSingleBet(winning.bets[j]);
-                        }
-                        if (totalWinning - totalBetValue > 0) {
-                            msg += "\n\nCongratulations!\nYou won *" + (totalWinning - totalBetValue) + " beercoins* 💰 !";
-                        } else {
-                            msg += "\n\nYou had no luck! Try again!";
-                        }
-                        require('../bot').bot.telegram.sendMessage(winning.owner.telegram.id, msg, {
-                            parse_mode: "markdown"
-                        });
+                    let msg = "*BTB Roulette results:*\n\nlucky number: *" + number + "* \n\nyour bets:";
+                    for (let j = 0; j < winning.bets.length; j++) {
+                        const isWinning = winning.bets[j].getResult(number) > 0;
+                        msg += "\n" + (isWinning ? "✅" : "✖️") + " " + formatSingleBet(winning.bets[j]);
+                    }
+                    if (totalWinning - totalBetValue > 0) {
+                        msg += "\n\nCongratulations!\nYou won *" + (totalWinning - totalBetValue) + " beercoins* 💰 !";
+                    } else {
+                        msg += "\n\nYou had no luck! Try again!";
+                    }
+                    require('../bot').bot.telegram.sendMessage(winning.owner.telegram.id, msg, {
+                        parse_mode: "markdown"
+                    });
                     //}
                 }
                 this._bets = [];
@@ -315,13 +315,14 @@ function formatRoulette(ctx, cb) {
     } else {
         text += "*Come on, place your bet!*\nNext run in *" + btbRoulette.nextRunDiff + "*";
     }
+    text += "\n[View Roulette Table](https://bitethebot.herokuapp.org/static/images/roulette-table.jpg)";
 
     if (!btbRoulette.isRunning) {
         if (btbRoulette.lastNumber != undefined)
             text += "\n\nlast winning number: *" + btbRoulette.lastNumber + "*";
 
         if (btbRoulette.lastWinnings != undefined && btbRoulette.lastNumber != undefined && btbRoulette.lastWinnings.length > 0) {
-            text += "\nlast games:";
+            text += "\nlast bets:";
             for (let i = 0; i < btbRoulette.lastWinnings.length; i++) {
                 const totalBet = btbRoulette.lastWinnings[i].bets.reduce((sum, bet) => {
                         return sum + bet.value;
@@ -380,10 +381,12 @@ const scene = new Scene('roulette');
 scene.enter((ctx) => {
     if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 0) || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
         if (!btbRoulette.enabled) {
-            ctx.reply("BTB roulette is not available yet.\nCome back later.");
+            ctx.reply("BiteTheBot Roulette is not available yet.\nCome back later.");
             return ctx.scene.enter('extra');
         } else if (btbRoulette.isRunning) {
-            ctx.reply("BTB roulette is running... please wait");
+            ctx.reply("*BiteTheBot Roulette* is running... please wait", {
+                parse_mode: "markdown"
+            });
             return ctx.scene.enter('extra');
         }
         activeUsers.push(ctx.session.user);
