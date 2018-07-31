@@ -42,12 +42,10 @@ function textManager(ctx) {
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
         //back from slot
         ctx.reply(keyboards.extra(ctx).text, keyboards.extra(ctx).opts);
-        ctx.session.handleMsg = false;
     } else if (ctx.message.text == keyboards.extra(ctx).cmd.back) {
         //back button
         ctx.scene.leave();
         ctx.reply('ACK', keyboards.btb(ctx).opts);
-        ctx.session.handleMsg = false;
     } else {
         ctx.scene.leave();
         //fallback to main bot scene
