@@ -749,13 +749,23 @@ function formatWiki() {
     "\nOnce a daily menu is available you can place a order. Follow the instructions to choose your favourite dish until a green check mark will confirm that the operation was successfull.\nAfter that a daily order summary will be available in the order section.\nLevel 1 users can rate their order after 2pm." +
     "\n\n*Beercoins*" +
     "\nBeercoin is the currency used in BiteTheBot.\nmore beers == more beercoins\nmore beercoins == more BTB features\nSend beers to get more beercoins.\nYou can also try to be the first one to place a daily order to get a beercoin as a gift. Keep in mind that you will loose one beercoin if you will be the last who place a daily order." +
+    "\n\n*Roulette*" +
+    "\nBTB Roulette is a minigame. Place your bet and wait for the next run. If you will be lucky you will win more beercoins." +
     "\n\n*Slot*" +
-    "\nBTB Slot let you win more beercoins or destroy/stole beercoins from your friends.\nEach day you will get a free run! Don't forget it." +
+    "\nBTB Slot is a minigame. You can win more beercoins or destroy/stole beercoins from your friends.\nEach day you will get a free run! Don't forget it." +
     "\nWinnings examples:" +
     "\n - beers: 5 beercoins" +
     "\n - other items: 2 beercoins" +
     "\n - water: -1 beercoin" +
     "\nCombining more items will increase the winnings." +
+    "\n\n*Shop*" +
+    "\nLevel 1 users can buy stuff in the shop. There are two kind of newspapers with the latest BiteTheBot news. The trading section allow you to send beercoins to a friend." +
+    "\n\n*Bomb shield*" +
+    "\nLevel 3 users can buy it in the shop. Buy a bomb shield to protect yourself from slot bombs." +
+    "\n\n*Watergun*" +
+    "\nLevel 3 users can buy it in the shop. Buy a watergun to protect yourself from slot thieves." +
+    "\n\n*Hot Potato*" +
+    "\nHot potato is a minigame. Level 2 user can buy it in the shop, once you get the hot potato you shall throw it to another user. Each step makes the potato hotter. If the timer ends when you are holding the potato you will get burn." +
     "\n\n*Levels*" +
     "\nGaining beercoins will make you level-up.\nHigher levels means more BTB features.\nAvailable levels:";
   let i = 1;
