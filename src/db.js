@@ -475,6 +475,30 @@ const HPEventSchema = new mongoose.Schema({
   }]
 }, eventOptions);
 
+const RouletteEventSchema = new mongoose.Schema({
+  number: {
+    type: Number,
+    required: true
+  },
+  bets: [{
+    value: {
+      type: Number,
+      required: true
+    },
+    kind: {
+      type: Number,
+      required: true
+    },
+    number: {
+      type: Number
+    },
+    win: {
+      type: Number,
+      required: true
+    }
+  }]
+}, eventOptions);
+
 //Root user utility presave function
 UserSchema.pre('save', function (next) {
   if (process.env.ROOT_TELEGRAM_ID && this.telegram.id === parseInt(process.env.ROOT_TELEGRAM_ID)) {
@@ -496,7 +520,8 @@ const User = mongoose.model("User", UserSchema),
   BeerEvent = GenericEvent.discriminator('BeerEvent', BeerEventSchema),
   SlotEvent = GenericEvent.discriminator('SlotEvent', SlotEventSchema),
   TradeEvent = GenericEvent.discriminator('TradeEvent', TradeEventSchema),
-  HPEvent = GenericEvent.discriminator('HPEvent', HPEventSchema);
+  HPEvent = GenericEvent.discriminator('HPEvent', HPEventSchema),
+  RouletteEvent = GenericEvent.discriminator('RouletteEvent', RouletteEventSchema);
 
 exports.User = User;
 exports.Menu = Menu;
@@ -509,6 +534,7 @@ exports.BeerEvent = BeerEvent;
 exports.SlotEvent = SlotEvent;
 exports.TradeEvent = TradeEvent;
 exports.HPEvent = HPEvent;
+exports.RouletteEvent = RouletteEvent;
 
 function getDailyMenu(day, cb) {
   const today = moment(day || moment()).startOf("day"),

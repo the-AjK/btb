@@ -24,30 +24,32 @@ class HP {
     constructor() {
         this.isRunning = false;
         this.config = {
-            counter: 60 //global starting counter
+            counter: 100 //global starting counter
         };
         this.startCounter = 0 //step starting counter
         this.counter = 0 //actual counter,
         this.damage = 1 //hp damage level
         this.maxDamage = 5
+        this.enableCountdownUpdate = true;
     }
 
     startTimer(c) {
         this.counter = c;
         if (this.interval)
             clearInterval(this.interval);
+        this.enableCountdownUpdate = true;
         this.interval = setInterval(() => {
             if (this.counter == 0)
                 return this.stopGame();
             if (this.counter > 0)
                 this.counter -= 1;
-            if (this.countdownMessage) {
+            if (this.countdownMessage && this.enableCountdownUpdate) {
                 this.ctx.telegram.editMessageText(this.countdownMessage.chat.id, this.countdownMessage.message_id, null, this.getCountdownText(), {
                     parse_mode: "markdown"
                 }).then(m => {
                     //all ok
                 }, (err) => {
-                    console.error(err);
+                    //console.error(err);
                 });
             }
         }, 1000);
@@ -68,8 +70,8 @@ class HP {
                 "telegram.banned": false,
                 deleted: false
             };
-            //add potato owner to the user list only if we are under 10seconds countdown
-            if (this.startCounter >= 10) {
+            //add potato owner to the user list only if we are under 40seconds countdown
+            if (this.startCounter >= 40) {
                 query._id = {
                     "$ne": this.owner._id
                 }
@@ -173,8 +175,9 @@ class HP {
     }
 
     stopGame() {
-        clearInterval(this.interval);
-        this.clearMessages();
+        this.enableCountdownUpdate = false; //stop updating countdown message
+        clearInterval(this.interval); //clear interval
+        this.clearMessages(); //delete messages
         let fromUserText = "";
         if (this.history.length && this.history[this.history.length - 1].owner.email != this.owner.email) {
             fromUserText += " from " + bot.getUserLink(this.history[this.history.length - 1].owner);
@@ -221,8 +224,9 @@ class HP {
     }
 
     nextPlayer(user) {
+        this.enableCountdownUpdate = false; //stop updating countdown message
         if (this.interval)
-            clearInterval(this.interval);
+            clearInterval(this.interval); //stop interval
         this.history.push({
             createdAt: moment().format(),
             owner: this.owner,
@@ -244,10 +248,10 @@ class HP {
         //New user
         this.owner = user;
         //setup counters
-        if (this.startCounter > 10) {
+        if (this.startCounter >= 40) {
             this.startCounter -= 10;
-        } else if (this.startCounter > 5) {
-            this.startCounter = 5;
+        } else {
+            this.startCounter = 30;
         }
         this.counter = this.startCounter;
         this.sendCountdown();
@@ -278,7 +282,7 @@ class HP {
 }
 
 const HotPotato = new HP(),
-    hpPrice = 5; //5beercoins
+    hpPrice = 3; //3beercoins
 
 const scene = new Scene('hp')
 scene.enter((ctx) => {
@@ -310,7 +314,9 @@ scene.enter((ctx) => {
 
 
 function textManager(ctx) {
-    //nothing to do
+    ctx.scene.leave();
+    //fallback to main bot scene
+    bot.textManager(ctx);
 }
 
 scene.on("text", textManager);
@@ -324,12 +330,12 @@ function updateUsersKeyboard(ctx) {
 exports.handleHP = (ctx) => {
     if (!HotPotato.isRunning)
         return;
-    if (!ctx.scene || ctx.scene.current.id != 'hp')
-        bot.enterScene(ctx, 'hp', true);
+    //if (!ctx.scene || (ctx.scene.current && ctx.scene.current.id != 'hp'))
+    bot.enterScene(ctx, 'hp', true);
     HotPotato.handleHP(ctx);
 }
 
-scene.on("callback_query", ctx => {
+function handleCallbackQuery(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     if (HotPotato.users_inline_keyboard && ctx.update.callback_query.data == HotPotato.users_inline_keyboard.previousCallbackData()) {
         HotPotato.users_inline_keyboard.previous();
@@ -359,6 +365,10 @@ scene.on("callback_query", ctx => {
     } else {
         ctx.answerCbQuery("Okey! I have nothing to do.");
     }
+}
+
+scene.on("callback_query", ctx => {
+    handleCallbackQuery(ctx);
 });
 
 exports.scene = scene;
