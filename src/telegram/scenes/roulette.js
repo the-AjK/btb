@@ -78,7 +78,7 @@ class Roulette {
     constructor(config) {
         this._bets = [];
         this._isRunning = false;
-        this.enabled = true;
+        this.enabled = false;
         this._interval = 60000 * 30; //running interval (default 30mins)
         this._lastRunningTime = moment();
         this.runningInterval = setInterval(() => {
