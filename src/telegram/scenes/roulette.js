@@ -397,6 +397,7 @@ function initRoulette(ctx) {
             updateRoulette(ctx, true);
         }
     }, 10000);
+    updateRoulette(ctx);
 }
 
 const activeUsers = [];
