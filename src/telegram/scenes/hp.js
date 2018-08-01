@@ -345,9 +345,9 @@ function handleCallbackQuery(ctx) {
     } else if (HotPotato.users_inline_keyboard && ctx.update.callback_query.data == HotPotato.users_inline_keyboard.nextCallbackData()) {
         HotPotato.users_inline_keyboard.next();
         updateUsersKeyboard(ctx);
-    } else if (ctx.update.callback_query.data === "throwhp" && ctx.session.user._id == HotPotato.owner._id) {
+    } else if (ctx.update.callback_query.data === "throwhp") {
         HotPotato.handleHP(ctx);
-    } else if (ctx.update.callback_query.data.indexOf("user_") == 0 && ctx.session.user._id == HotPotato.owner._id) {
+    } else if (ctx.update.callback_query.data.indexOf("user_") == 0) {
         const userTelegramID = parseInt(ctx.update.callback_query.data.substring(5));
         if (isNaN(userTelegramID)) {
             console.error("Wrong callback data");
