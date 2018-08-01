@@ -361,10 +361,10 @@ function formatRoulette(ctx, cb) {
 
     if (!btbRoulette.isRunning) {
         if (btbRoulette.lastNumber != undefined)
-            text += "\n\nlast winning number: *" + btbRoulette.lastNumber + "* " + (redNumbers.indexOf(btbRoulette.lastNumber) >= 0 ? "🔴" : "⚫️");
+            text += "\n\nLast winning number: *" + btbRoulette.lastNumber + "* " + (redNumbers.indexOf(btbRoulette.lastNumber) >= 0 ? "🔴" : "⚫️");
 
         if (btbRoulette.lastWinnings != undefined && btbRoulette.lastNumber != undefined && btbRoulette.lastWinnings.length > 0) {
-            text += "\nlast bets:";
+            text += "\nLast bets:";
             for (let i = 0; i < btbRoulette.lastWinnings.length; i++) {
                 const totalBet = btbRoulette.lastWinnings[i].bets.reduce((sum, bet) => {
                         return sum + bet.value;
