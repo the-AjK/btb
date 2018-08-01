@@ -66,6 +66,12 @@ const roulette = new Keyboard({
         black: "Black",
         even: "Even",
         odd: "Odd",
+        firstDozen: "1st 12",
+        secondDozen: "2nd 12",
+        thirdDozen: "3rd 12",
+        firstColumn: "1st Col",
+        secondColumn: "2nd Col",
+        thirdColumn: "3rd Col",
         clear: "clear",
         back: "◀️ Back to extra"
     }
@@ -120,6 +126,26 @@ roulette.optionsFunc = (self, ctx, cb) => {
     }, {
         text: self._cmd.odd,
         callback_data: "odd"
+    }]);
+    keyboard.push([{
+        text: self._cmd.firstDozen,
+        callback_data: "firstDozen"
+    }, {
+        text: self._cmd.secondDozen,
+        callback_data: "secondDozen"
+    }, {
+        text: self._cmd.thirdDozen,
+        callback_data: "thirdDozen"
+    }]);
+    keyboard.push([{
+        text: self._cmd.firstColumn,
+        callback_data: "firstColumn"
+    }, {
+        text: self._cmd.secondColumn,
+        callback_data: "secondColumn"
+    }, {
+        text: self._cmd.thirdColumn,
+        callback_data: "thirdColumn"
     }]);
     keyboard.push([{
         text: self._cmd.manque,

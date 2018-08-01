@@ -30,10 +30,17 @@ const BETKIND = {
         red: 3,
         black: 4,
         even: 5,
-        odd: 6
+        odd: 6,
+        firstDozen: 7,
+        secondDozen: 8,
+        thirdDozen: 9,
+        firstColumn: 10,
+        secondColumn: 11,
+        thirdColumn: 12
     },
     MAXBET = 50,
-    MINBET = 1;
+    MINBET = 1,
+    redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
 
 class Bet {
 
@@ -53,7 +60,6 @@ class Bet {
     }
 
     getResult(number) {
-        const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
         if (this.kind == BETKIND.number && number == this.number) {
             return this.value * 35;
         } else if (this.kind == BETKIND.even && (number % 2) == 0) {
@@ -68,6 +74,18 @@ class Bet {
             return this.value * 2;
         } else if (this.kind == BETKIND.black && number != 0 && redNumbers.indexOf(number) < 0) {
             return this.value * 2;
+        } else if (this.kind == BETKIND.firstDozen && number > 0 && number < 13) {
+            return this.value * 3;
+        } else if (this.kind == BETKIND.secondDozen && number > 12 && number < 25) {
+            return this.value * 3;
+        } else if (this.kind == BETKIND.thirdDozen && number > 24) {
+            return this.value * 3;
+        } else if (this.kind == BETKIND.firstColumn && [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34].indexOf(number) >= 0) {
+            return this.value * 3;
+        } else if (this.kind == BETKIND.secondColumn && [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35].indexOf(number) >= 0) {
+            return this.value * 3;
+        } else if (this.kind == BETKIND.thirdColumn && [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36].indexOf(number) >= 0) {
+            return this.value * 3;
         }
         return 0;
     }
@@ -79,7 +97,7 @@ class Roulette {
         this._bets = [];
         this._isRunning = false;
         this.enabled = process.env.ROULETTE_ENABLED || false;
-        this._interval = 60000 * 33; //running interval (33mins)
+        this._interval = process.env.NODE_ENV == "production" ? (60000 * 33) : (20000); //production running interval (33mins)
         this._lastRunningTime = moment();
         this.runningInterval = setInterval(() => {
             this.run();
@@ -107,7 +125,8 @@ class Roulette {
             const totalValue = this.userBets(owner).reduce((sum, bet) => {
                 return sum + bet.value
             }, 0);
-            console.log("clearbets for " + owner.email + ": " + totalValue);
+            if (totalValue > 0)
+                console.log("clearbets for " + owner.email + ": " + totalValue);
             levels.addPoints(owner._id, totalValue, true, (err, points) => {
                 if (err) {
                     console.error(err);
@@ -147,7 +166,7 @@ class Roulette {
                             cb("Something went wrong");
                         } else {
                             uBets[i].value += bet.value
-                            console.log(bet.owner.email + " roulette bet: " + bet.value);
+                            console.log(bet.owner.email + " roulette bet update: " + bet.value);
                             cb("Bet updated!");
                         }
                         release();
@@ -209,7 +228,7 @@ class Roulette {
             }
             setTimeout(() => {
                 const number = utils.getRandomInt(0, 37);
-                console.log("Roulette lucky number is: " + number);
+                console.log("Roulette lucky number is: " + number + "-" + (redNumbers.indexOf(number) >= 0 ? "red" : "black"));
                 this.lastWinnings = this.getWinningUsers();
                 for (let i = 0; i < this.lastWinnings.length; i++) {
                     const winning = this.lastWinnings[i];
@@ -228,7 +247,7 @@ class Roulette {
                         totalWinning += bwin;
                         totalBetValue += b.value;
                     }
-                    console.log(winning.owner.email + " roulette won: " + totalWinning);
+                    console.log("Roulette " + winning.owner.email + " got: " + (totalWinning - totalBetValue));
                     levels.addPoints(winning.owner._id, totalWinning, true, (err, points) => {
                         if (err) {
                             console.error(err);
@@ -249,15 +268,20 @@ class Roulette {
                         updateRoulette(activeUsers[j]);
                     }
                     //send notifications to winner users
-                    let msg = "*BTB Roulette results:*\n\nlucky number: *" + number + "* \n\nyour bets:";
+                    let msg = "*BTB Roulette results:*\n\nLucky number: *" + number + "* " + (redNumbers.indexOf(number) >= 0 ? "🔴" : "⚫️") + "\n\nYour bets:";
                     for (let j = 0; j < winning.bets.length; j++) {
                         const isWinning = winning.bets[j].getResult(number) > 0;
                         msg += "\n" + (isWinning ? "✅" : "✖️") + " " + formatSingleBet(winning.bets[j]);
                     }
-                    if (totalWinning - totalBetValue > 0) {
-                        msg += "\n\nCongratulations!\nYou won *" + (totalWinning - totalBetValue) + " beercoins* 💰 !";
+                    msg += "\n\nTotal bets: " + totalBetValue + " beercoin" + (totalBetValue > 1 ? "s" : "");
+                    msg += "\nTotal winning: " + totalWinning + " beercoin" + (totalWinning > 1 ? "s" : "");
+                    const bcoins = totalWinning - totalBetValue;
+                    if (bcoins > 0) {
+                        msg += "\n\nCongratulations!\nYou won *" + bcoins + " beercoin" + (bcoins > 1 ? "s" : "") + "* 💰 !";
+                    } else if (bcoins < 0) {
+                        msg += "\n\nYou lost *" + Math.abs(bcoins) + " beercoin" + (Math.abs(bcoins) > 1 ? "s" : "") + "* 💩";
                     } else {
-                        msg += "\n\nYou had no luck! Try again!";
+                        msg += "\n\nYou had no luck! 😐";
                     }
                     require('../bot').bot.telegram.sendMessage(winning.owner.telegram.id, msg, {
                         parse_mode: "markdown"
@@ -304,6 +328,18 @@ function formatSingleBet(bet) {
         text += "black numbers";
     } else if (bet.kind == BETKIND.number) {
         text += "number " + bet.number;
+    } else if (bet.kind == BETKIND.firstDozen) {
+        text += "first dozen";
+    } else if (bet.kind == BETKIND.secondDozen) {
+        text += "second dozen";
+    } else if (bet.kind == BETKIND.thirdDozen) {
+        text += "third dozen";
+    } else if (bet.kind == BETKIND.firstColumn) {
+        text += "first column";
+    } else if (bet.kind == BETKIND.secondColumn) {
+        text += "second column";
+    } else if (bet.kind == BETKIND.thirdColumn) {
+        text += "third column";
     }
     text += " (*" + bet.value + "* beercoin" + (bet.value > 1 ? "s" : "") + ")";
     return text;
@@ -322,14 +358,13 @@ function formatRoulette(ctx, cb) {
         text += "*Come on, place your bet!*\nNext run in *" + btbRoulette.nextRunDiff + "* " + (ctx.session.rouletteRunningIcon ? "⏳" : "⌛️");
     }
     ctx.session.rouletteRunningIcon = !ctx.session.rouletteRunningIcon;
-    text += "\n[View Roulette Table](https://bitethebot.herokuapp.com/static/images/roulette-table.jpg)";
 
     if (!btbRoulette.isRunning) {
         if (btbRoulette.lastNumber != undefined)
-            text += "\n\nlast winning number: *" + btbRoulette.lastNumber + "*";
+            text += "\n\nLast winning number: *" + btbRoulette.lastNumber + "* " + (redNumbers.indexOf(btbRoulette.lastNumber) >= 0 ? "🔴" : "⚫️");
 
         if (btbRoulette.lastWinnings != undefined && btbRoulette.lastNumber != undefined && btbRoulette.lastWinnings.length > 0) {
-            text += "\nlast bets:";
+            text += "\nLast bets:";
             for (let i = 0; i < btbRoulette.lastWinnings.length; i++) {
                 const totalBet = btbRoulette.lastWinnings[i].bets.reduce((sum, bet) => {
                         return sum + bet.value;
@@ -362,6 +397,8 @@ function formatRoulette(ctx, cb) {
     if (ctx.session.bet && !btbRoulette.isRunning)
         text += "\n\nActual bet: *" + ctx.session.bet.value + " beercoin" + (ctx.session.bet.value > 1 ? "s" : "") + "* 💰";
 
+    text += "\n\n[Roulette Table](https://bitethebot.herokuapp.com/static/images/roulette-table.jpg):";
+
     cb(text);
 
 }
@@ -369,14 +406,16 @@ function formatRoulette(ctx, cb) {
 function updateRoulette(ctx, doNotResetUpdateCounter) {
     if (!doNotResetUpdateCounter)
         ctx.session.updateMessageCounter = 0;
-    formatRoulette(ctx, text => {
-        ctx.telegram.editMessageText(ctx.session.rouletteMessage.chat.id, ctx.session.rouletteMessage.message_id, null, text, ctx.session.rouletteOptions).then(() => {
+    if (ctx.session.rouletteMessage) {
+        formatRoulette(ctx, text => {
+            ctx.telegram.editMessageText(ctx.session.rouletteMessage.chat.id, ctx.session.rouletteMessage.message_id, null, text, ctx.session.rouletteOptions).then(() => {
 
-        }, err => {
-            //console.error(err);
-            //console.error("cannot update message")
+            }, err => {
+                //console.error(err);
+                //console.error("cannot update message")
+            });
         });
-    });
+    }
 }
 
 function initRoulette(ctx) {
@@ -389,7 +428,7 @@ function initRoulette(ctx) {
         ctx.session.updateMessageCounter += 1;
         if (ctx.session.updateMessageCounter > 30) { //30 * 10sec = 5mins timeout
             deleteLastMessage(ctx);
-            ctx.reply("*BiteTheBot Roulette* was closed due to user inactivity", {
+            ctx.reply("*BiteTheBot Roulette* has been closed due to user inactivity", {
                 parse_mode: "markdown",
                 disable_notification: true
             });

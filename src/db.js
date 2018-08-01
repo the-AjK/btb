@@ -710,10 +710,10 @@ exports.getTablesStatus = (day, cb) => {
 exports.getTableParticipants = (day, tableID, cb) => {
   getDailyMenu(null, (err, menu) => {
     if (err) {
-      console.error(err);
       cb(err);
     } else if (!menu) {
-      cb("Daily menu not available yet")
+      //menu not available
+      cb(null, []);
     } else {
       Order.find({
         deleted: false,
