@@ -107,7 +107,8 @@ class Roulette {
             const totalValue = this.userBets(owner).reduce((sum, bet) => {
                 return sum + bet.value
             }, 0);
-            console.log("clearbets for " + owner.email + ": " + totalValue);
+            if (totalValue > 0)
+                console.log("clearbets for " + owner.email + ": " + totalValue);
             levels.addPoints(owner._id, totalValue, true, (err, points) => {
                 if (err) {
                     console.error(err);
@@ -147,7 +148,7 @@ class Roulette {
                             cb("Something went wrong");
                         } else {
                             uBets[i].value += bet.value
-                            console.log(bet.owner.email + " roulette bet: " + bet.value);
+                            console.log(bet.owner.email + " roulette bet update: " + bet.value);
                             cb("Bet updated!");
                         }
                         release();
@@ -228,7 +229,7 @@ class Roulette {
                         totalWinning += bwin;
                         totalBetValue += b.value;
                     }
-                    console.log(winning.owner.email + " roulette won: " + totalWinning);
+                    console.log("Roulette " + winning.owner.email + " got: " + (totalWinning - totalBetValue));
                     levels.addPoints(winning.owner._id, totalWinning, true, (err, points) => {
                         if (err) {
                             console.error(err);
@@ -254,10 +255,15 @@ class Roulette {
                         const isWinning = winning.bets[j].getResult(number) > 0;
                         msg += "\n" + (isWinning ? "✅" : "✖️") + " " + formatSingleBet(winning.bets[j]);
                     }
-                    if (totalWinning - totalBetValue > 0) {
-                        msg += "\n\nCongratulations!\nYou won *" + (totalWinning - totalBetValue) + " beercoins* 💰 !";
+                    msg += "\n\nTotal bets: " + totalBetValue + " beercoin" + (totalBetValue > 1 ? "s" : "");
+                    msg += "\nTotal winning: " + totalWinning + " beercoin" + (totalWinning > 1 ? "s" : "");
+                    const bcoins = totalWinning - totalBetValue;
+                    if (bcoins > 0) {
+                        msg += "\n\nCongratulations!\nYou won *" + bcoins + " beercoin" + (bcoins > 1 ? "s" : "") + "* 💰 !";
+                    } else if (bcoins < 0) {
+                        msg += "\n\nYou lost *" + Math.abs(bcoins) + " beercoin" + (Math.abs(bcoins) > 1 ? "s" : "") + "* 💩";
                     } else {
-                        msg += "\n\nYou had no luck! Try again!";
+                        msg += "\n\nYou had no luck! 😐";
                     }
                     require('../bot').bot.telegram.sendMessage(winning.owner.telegram.id, msg, {
                         parse_mode: "markdown"
@@ -369,14 +375,16 @@ function formatRoulette(ctx, cb) {
 function updateRoulette(ctx, doNotResetUpdateCounter) {
     if (!doNotResetUpdateCounter)
         ctx.session.updateMessageCounter = 0;
-    formatRoulette(ctx, text => {
-        ctx.telegram.editMessageText(ctx.session.rouletteMessage.chat.id, ctx.session.rouletteMessage.message_id, null, text, ctx.session.rouletteOptions).then(() => {
+    if (ctx.session.rouletteMessage) {
+        formatRoulette(ctx, text => {
+            ctx.telegram.editMessageText(ctx.session.rouletteMessage.chat.id, ctx.session.rouletteMessage.message_id, null, text, ctx.session.rouletteOptions).then(() => {
 
-        }, err => {
-            //console.error(err);
-            //console.error("cannot update message")
+            }, err => {
+                //console.error(err);
+                //console.error("cannot update message")
+            });
         });
-    });
+    }
 }
 
 function initRoulette(ctx) {
