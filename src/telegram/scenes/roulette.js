@@ -30,7 +30,13 @@ const BETKIND = {
         red: 3,
         black: 4,
         even: 5,
-        odd: 6
+        odd: 6,
+        firstDozen: 7,
+        secondDozen: 8,
+        thirdDozen: 9,
+        firstColumn: 10,
+        secondColumn: 11,
+        thirdColumn: 12
     },
     MAXBET = 50,
     MINBET = 1;
@@ -68,6 +74,18 @@ class Bet {
             return this.value * 2;
         } else if (this.kind == BETKIND.black && number != 0 && redNumbers.indexOf(number) < 0) {
             return this.value * 2;
+        } else if (this.kind == BETKIND.firstDozen && number > 0 && number < 13) {
+            return this.value * 3;
+        } else if (this.kind == BETKIND.secondDozen && number > 12 && number < 25) {
+            return this.value * 3;
+        } else if (this.kind == BETKIND.thirdDozen && number > 24) {
+            return this.value * 3;
+        } else if (this.kind == BETKIND.firstColumn && [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34].indexOf(number) >= 0) {
+            return this.value * 3;
+        } else if (this.kind == BETKIND.secondColumn && [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35].indexOf(number) >= 0) {
+            return this.value * 3;
+        } else if (this.kind == BETKIND.thirdColumn && [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36].indexOf(number) >= 0) {
+            return this.value * 3;
         }
         return 0;
     }
@@ -310,6 +328,18 @@ function formatSingleBet(bet) {
         text += "black numbers";
     } else if (bet.kind == BETKIND.number) {
         text += "number " + bet.number;
+    } else if (bet.kind == BETKIND.firstDozen) {
+        text += "first dozen";
+    } else if (bet.kind == BETKIND.secondDozen) {
+        text += "second dozen";
+    } else if (bet.kind == BETKIND.thirdDozen) {
+        text += "third dozen";
+    } else if (bet.kind == BETKIND.firstColumn) {
+        text += "first column";
+    } else if (bet.kind == BETKIND.secondColumn) {
+        text += "second column";
+    } else if (bet.kind == BETKIND.thirdColumn) {
+        text += "third column";
     }
     text += " (*" + bet.value + "* beercoin" + (bet.value > 1 ? "s" : "") + ")";
     return text;
