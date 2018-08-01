@@ -39,7 +39,8 @@ const BETKIND = {
         thirdColumn: 12
     },
     MAXBET = 50,
-    MINBET = 1;
+    MINBET = 1,
+    redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
 
 class Bet {
 
@@ -59,7 +60,6 @@ class Bet {
     }
 
     getResult(number) {
-        const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
         if (this.kind == BETKIND.number && number == this.number) {
             return this.value * 35;
         } else if (this.kind == BETKIND.even && (number % 2) == 0) {
@@ -97,7 +97,7 @@ class Roulette {
         this._bets = [];
         this._isRunning = false;
         this.enabled = process.env.ROULETTE_ENABLED || false;
-        this._interval = 60000 * 33; //running interval (33mins)
+        this._interval = process.env.NODE_ENV == "production" ? (60000 * 33) : (20000); //production running interval (33mins)
         this._lastRunningTime = moment();
         this.runningInterval = setInterval(() => {
             this.run();
@@ -228,7 +228,7 @@ class Roulette {
             }
             setTimeout(() => {
                 const number = utils.getRandomInt(0, 37);
-                console.log("Roulette lucky number is: " + number);
+                console.log("Roulette lucky number is: " + number + "-" + (redNumbers.indexOf(number) >= 0 ? "red" : "black"));
                 this.lastWinnings = this.getWinningUsers();
                 for (let i = 0; i < this.lastWinnings.length; i++) {
                     const winning = this.lastWinnings[i];
@@ -268,7 +268,7 @@ class Roulette {
                         updateRoulette(activeUsers[j]);
                     }
                     //send notifications to winner users
-                    let msg = "*BTB Roulette results:*\n\nlucky number: *" + number + "* \n\nyour bets:";
+                    let msg = "*BTB Roulette results:*\n\nLucky number: *" + number + "* " + (redNumbers.indexOf(number) >= 0 ? "🔴" : "⚫️") + "\n\nYour bets:";
                     for (let j = 0; j < winning.bets.length; j++) {
                         const isWinning = winning.bets[j].getResult(number) > 0;
                         msg += "\n" + (isWinning ? "✅" : "✖️") + " " + formatSingleBet(winning.bets[j]);
@@ -358,11 +358,10 @@ function formatRoulette(ctx, cb) {
         text += "*Come on, place your bet!*\nNext run in *" + btbRoulette.nextRunDiff + "* " + (ctx.session.rouletteRunningIcon ? "⏳" : "⌛️");
     }
     ctx.session.rouletteRunningIcon = !ctx.session.rouletteRunningIcon;
-    text += "\n[View Roulette Table](https://bitethebot.herokuapp.com/static/images/roulette-table.jpg)";
 
     if (!btbRoulette.isRunning) {
         if (btbRoulette.lastNumber != undefined)
-            text += "\n\nlast winning number: *" + btbRoulette.lastNumber + "*";
+            text += "\n\nlast winning number: *" + btbRoulette.lastNumber + "* " + (redNumbers.indexOf(btbRoulette.lastNumber) >= 0 ? "🔴" : "⚫️");
 
         if (btbRoulette.lastWinnings != undefined && btbRoulette.lastNumber != undefined && btbRoulette.lastWinnings.length > 0) {
             text += "\nlast bets:";
@@ -398,6 +397,8 @@ function formatRoulette(ctx, cb) {
     if (ctx.session.bet && !btbRoulette.isRunning)
         text += "\n\nActual bet: *" + ctx.session.bet.value + " beercoin" + (ctx.session.bet.value > 1 ? "s" : "") + "* 💰";
 
+    text += "\n\n[Roulette Table](https://bitethebot.herokuapp.com/static/images/roulette-table.jpg):";
+
     cb(text);
 
 }
@@ -427,7 +428,7 @@ function initRoulette(ctx) {
         ctx.session.updateMessageCounter += 1;
         if (ctx.session.updateMessageCounter > 30) { //30 * 10sec = 5mins timeout
             deleteLastMessage(ctx);
-            ctx.reply("*BiteTheBot Roulette* was closed due to user inactivity", {
+            ctx.reply("*BiteTheBot Roulette* has been closed due to user inactivity", {
                 parse_mode: "markdown",
                 disable_notification: true
             });
