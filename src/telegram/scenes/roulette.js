@@ -387,10 +387,11 @@ function initRoulette(ctx) {
     ctx.session.updateMessageCounter = 0;
     ctx.session.updateMessageInterval = setInterval(() => {
         ctx.session.updateMessageCounter += 1;
-        if (ctx.session.updateMessageCounter > 18) { //18 * 10sec = 3mins timeout
+        if (ctx.session.updateMessageCounter > 30) { //30 * 10sec = 5mins timeout
             deleteLastMessage(ctx);
             ctx.reply("*BiteTheBot Roulette* was closed due to user inactivity", {
-                parse_mode: "markdown"
+                parse_mode: "markdown",
+                disable_notification: true
             });
             ctx.scene.enter('extra');
         } else {
