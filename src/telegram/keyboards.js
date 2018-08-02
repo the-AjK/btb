@@ -72,7 +72,7 @@ const roulette = new Keyboard({
         firstColumn: "1st Col",
         secondColumn: "2nd Col",
         thirdColumn: "3rd Col",
-        clear: "clear",
+        clear: "Clear",
         back: "◀️ Back to extra"
     }
 });
@@ -156,7 +156,7 @@ roulette.optionsFunc = (self, ctx, cb) => {
     }]);
     keyboard.push([{
         text: self._cmd.clear,
-        callback_data: "clear"
+        callback_data: "Clear"
     }]);
     cb({
         parse_mode: "markdown",

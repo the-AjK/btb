@@ -100,6 +100,7 @@ class Roulette {
         this._interval = process.env.NODE_ENV == "production" ? (60000 * 33) : (20000); //production running interval (33mins)
         this._lastRunningTime = moment();
         this.runningInterval = setInterval(() => {
+            this._lastRunningTime = moment();
             this.run();
         }, this._interval);
     }
@@ -211,23 +212,31 @@ class Roulette {
         return users;
     }
 
+    //simulate the roulette wheel running 
+    wheelRun() {
+        //37 positions wheel with numbers from 0 to 36 included
+        const wheel = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26],
+            startPoint = utils.getRandomInt(0, 37),
+            steps = utils.getRandomInt(100, 500);
+        return wheel[(startPoint + steps) % 37];
+    }
+
     //run the roulette
     run() {
         lock.writeLock('roulette', release => {
-            this._isRunning = true;
-            this._lastRunningTime = moment();
             if (this._bets.length == 0) {
-                this._isRunning = false;
                 return release();
             }
-            const runningTimeSec = utils.getRandomInt(40, 60);
-            console.log("Roulette is running!");
+            this._isRunning = true;
             //force update roulette
             for (let j = 0; j < activeUsers.length; j++) {
                 updateRoulette(activeUsers[j]);
             }
+            this.lastRun = moment();
+            const runningTimeSec = utils.getRandomInt(40, 60);
+            console.log("Roulette is running!");
             setTimeout(() => {
-                const number = utils.getRandomInt(0, 37);
+                const number = this.wheelRun();
                 console.log("Roulette lucky number is: " + number + "-" + (redNumbers.indexOf(number) >= 0 ? "red" : "black"));
                 this.lastWinnings = this.getWinningUsers();
                 for (let i = 0; i < this.lastWinnings.length; i++) {
@@ -361,8 +370,7 @@ function formatRoulette(ctx, cb) {
 
     if (!btbRoulette.isRunning) {
         if (btbRoulette.lastNumber != undefined)
-            text += "\n\nLast winning number: *" + btbRoulette.lastNumber + "* " + (redNumbers.indexOf(btbRoulette.lastNumber) >= 0 ? "🔴" : "⚫️");
-
+            text += "\n\nLast run: *" + moment(btbRoulette.lastRun).format("Do MMMM YYYY HH:mm") + "*\nLast winning number: *" + btbRoulette.lastNumber + "* " + (redNumbers.indexOf(btbRoulette.lastNumber) >= 0 ? "🔴" : "⚫️");
         if (btbRoulette.lastWinnings != undefined && btbRoulette.lastNumber != undefined && btbRoulette.lastWinnings.length > 0) {
             text += "\nLast bets:";
             for (let i = 0; i < btbRoulette.lastWinnings.length; i++) {
@@ -388,14 +396,14 @@ function formatRoulette(ctx, cb) {
     const userBets = btbRoulette.getBets();
 
     if (userBets.length > 0) {
-        text += "\n\nBets:";
+        text += "\n\nActual bets:";
         for (let i = 0; i < userBets.length; i++) {
             text += "\n- " + formatBet(userBets[i]);
         }
     }
 
     if (ctx.session.bet && !btbRoulette.isRunning)
-        text += "\n\nActual bet: *" + ctx.session.bet.value + " beercoin" + (ctx.session.bet.value > 1 ? "s" : "") + "* 💰";
+        text += "\n\nDefault bet: *" + ctx.session.bet.value + " beercoin" + (ctx.session.bet.value > 1 ? "s" : "") + "* 💰\nCredits: *" + ctx.session.user.points + "*";
 
     text += "\n\n[Roulette Table](https://bitethebot.herokuapp.com/static/images/roulette-table.jpg):";
 
@@ -427,6 +435,7 @@ function initRoulette(ctx) {
     ctx.session.updateMessageInterval = setInterval(() => {
         ctx.session.updateMessageCounter += 1;
         if (ctx.session.updateMessageCounter > 30) { //30 * 10sec = 5mins timeout
+            ctx.session.updateMessageCounter = 0;
             deleteLastMessage(ctx);
             ctx.reply("*BiteTheBot Roulette* has been closed due to user inactivity", {
                 parse_mode: "markdown",
@@ -496,6 +505,8 @@ scene.leave(ctx => {
             break;
         }
     }
+    if (ctx.session.updateMessageInterval)
+        clearInterval(ctx.session.updateMessageInterval);
 });
 
 function textManager(ctx) {
@@ -521,14 +532,7 @@ function clearBet(ctx, cb) {
 }
 
 function checkCreditAvailability(ctx) {
-    const previousBetsValue = btbRoulette.userBets(ctx.session.user).reduce((sum, bet) => {
-        return sum + bet.value;
-    }, 0);
-    if ((previousBetsValue + ctx.session.bet.value) > ctx.session.user.points) {
-        ctx.answerCbQuery("You don't have enought credits!");
-        return false;
-    }
-    return true;
+    return ctx.session.bet.value <= ctx.session.user.points;
 }
 
 scene.on("callback_query", ctx => {
@@ -567,8 +571,10 @@ scene.on("callback_query", ctx => {
             updateRoulette(ctx);
             ctx.answerCbQuery(msg);
         });
-    } else {
+    } else if (checkCreditAvailability(ctx)) {
         ctx.answerCbQuery("Okey! I have nothing to do.");
+    } else {
+        ctx.answerCbQuery("You don't have enought credits!");
     }
 });
 
