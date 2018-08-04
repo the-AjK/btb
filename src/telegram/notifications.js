@@ -107,7 +107,7 @@ exports.dailyMenuDeleted = function (users, cb) {
 }
 
 exports.dailyMenuUpdatedNotify = function (users, cb) {
-    const message = "ℹ️ Daily menu has been changed\nYour order hasn't been affected tho!";
+    const message = "ℹ️ Daily menu has been changed.\nYour order hasn't been affected tho!";
     async.parallel(users.map(u => sendDailyMenuUpdate(u, message)), (_err) => {
         if (cb)
             cb(_err);

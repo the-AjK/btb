@@ -817,7 +817,11 @@ function formatMenu(menu) {
 exports.formatMenu = formatMenu;
 
 function formatUsersWithoutOrder(users, user) {
-  let text = "Users who didn't place an order:\n";
+  let text = "*Users who didn't place an order:*\n";
+  if (users && users.length == 0) {
+    text += "\n - No users left";
+    return text;
+  }
   for (let i = 0; i < users.length; i++) {
     let u = users[i];
     text = text + "\n - " + getUserLink(u);

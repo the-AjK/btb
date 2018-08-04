@@ -119,15 +119,17 @@ exports.addPoints = function (userID, points, silent, cb, levelUpDisabled) {
                         message = "You collected *" + _user.points + "* beercoins!" +
                             "\n\n⭐️ Level Up! 🔝\n\n*Unlocked features*:\n" + getLevelFeatures(level);
                         //Save event
-                        const event = new DB.LevelEvent({
-                            owner: userID,
-                            level: level
-                        });
-                        event.save((err, s) => {
-                            if (err) {
-                                console.error(err);
-                            }
-                        });
+                        if (!levelUpDisabled) {
+                            const event = new DB.LevelEvent({
+                                owner: userID,
+                                level: level
+                            });
+                            event.save((err, s) => {
+                                if (err) {
+                                    console.error(err);
+                                }
+                            });
+                        }
                     }
                     if (!silent) {
                         require("./telegram/bot").bot.telegram.sendMessage(user.telegram.id, message, {
