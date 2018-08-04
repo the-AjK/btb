@@ -446,9 +446,11 @@ function initRoulette(ctx) {
     });
     ctx.session.rouletteRunningIcon = false;
     ctx.session.updateMessageCounter = 0;
+    if(ctx.session.updateMessageInterval)
+        clearInterval(ctx.session.updateMessageInterval);
     ctx.session.updateMessageInterval = setInterval(() => {
         ctx.session.updateMessageCounter += 1;
-        if (ctx.session.updateMessageCounter > 5) { // 5mins timeout
+        if (ctx.session.updateMessageCounter > 10) { // 30sec * 10 = 5mins timeout
             ctx.session.updateMessageCounter = 0;
             deleteLastMessage(ctx);
             const opts = keyboards.extra(ctx).opts; //use the extra keyboard
@@ -462,7 +464,7 @@ function initRoulette(ctx) {
         } else {
             updateRoulette(ctx, true);
         }
-    }, 60000);
+    }, 30000);
     updateRoulette(ctx);
 }
 
