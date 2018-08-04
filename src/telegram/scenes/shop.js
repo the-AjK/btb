@@ -51,6 +51,8 @@ function textManager(ctx) {
         keyboards.shop(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.shop(ctx).cmd.trade) {
         ctx.scene.enter('tradeWizard');
+    } else if (ctx.message.text == keyboards.shop(ctx).cmd.bombs) {
+        ctx.scene.enter('bombsWizard');
     } else if (ctx.message.text == keyboards.shop(ctx).cmd.back) {
         //back button
         ctx.scene.enter('extra');
@@ -203,9 +205,17 @@ function formatNews(news, topUsers, dailyOrders, premium) {
             text += "\n\n_" + actualDate + "_:";
         }
         text += "\n_" + hour + "_ - " + user;
-        if (n.recipient != undefined) {
+        if (n.recipient != undefined && n.kind == "TradeEvent") {
             //trade stuff
             text += " sent 💰 " + n.quantity + " beercoin" + (n.quantity > 1 ? "s" : "") + " to " + bot.getUserLink(n.recipient);
+        } else if (n.recipient != undefined && n.kind == "BombEvent") {
+            //bombs stuff
+            const bombedUser = bot.getUserLink(n.recipient);
+            if (n.shield) {
+                text += " tried to drop " + n.quantity + " bomb" + (n.quantity > 1 ? "s" : "") + " to " + bombedUser + " but found a bombshield 🛡";
+            } else {
+                text += " dropped 💣 " + n.quantity + " bomb" + (n.quantity > 1 ? "s" : "") + " to " + bombedUser;
+            }
         } else if (n.rating != undefined) {
             //rating stuff
             text += " gave ⭐️ " + n.rating + " stars to the daily lunch";

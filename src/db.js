@@ -437,6 +437,22 @@ const TradeEventSchema = new mongoose.Schema({
   }
 }, eventOptions);
 
+const BombEventSchema = new mongoose.Schema({
+  recipient: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  shield: {
+    type: Boolean,
+    default: false
+  },
+  quantity: {
+    type: Number,
+    required: true
+  }
+}, eventOptions);
+
 const RatingEventSchema = new mongoose.Schema({
   rating: {
     type: Number,
@@ -520,6 +536,7 @@ const User = mongoose.model("User", UserSchema),
   BeerEvent = GenericEvent.discriminator('BeerEvent', BeerEventSchema),
   SlotEvent = GenericEvent.discriminator('SlotEvent', SlotEventSchema),
   TradeEvent = GenericEvent.discriminator('TradeEvent', TradeEventSchema),
+  BombEvent = GenericEvent.discriminator('BombEvent', BombEventSchema),
   HPEvent = GenericEvent.discriminator('HPEvent', HPEventSchema),
   RouletteEvent = GenericEvent.discriminator('RouletteEvent', RouletteEventSchema);
 
@@ -533,6 +550,7 @@ exports.RatingEvent = RatingEvent;
 exports.BeerEvent = BeerEvent;
 exports.SlotEvent = SlotEvent;
 exports.TradeEvent = TradeEvent;
+exports.BombEvent = BombEvent;
 exports.HPEvent = HPEvent;
 exports.RouletteEvent = RouletteEvent;
 

@@ -781,6 +781,7 @@ module.exports = {
                 shield: "🛡 Bomb Shield",
                 gun: "🔫 Anti-Thief WaterGun",
                 trade: "💰 Trading",
+                bombs: "💣 B-52",
                 hp: "🥔 Hot Potato",
                 back: "◀️ Back to extra"
             };
@@ -796,9 +797,13 @@ module.exports = {
         }]);
 
         keyboard.push([{
-            text: cmd.trade
+            text: cmd.bombs
         }, {
             text: cmd.hp
+        }]);
+
+        keyboard.push([{
+            text: cmd.trade
         }]);
 
         keyboard.push([{
