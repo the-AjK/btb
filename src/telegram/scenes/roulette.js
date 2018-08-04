@@ -446,7 +446,7 @@ function initRoulette(ctx) {
     });
     ctx.session.rouletteRunningIcon = false;
     ctx.session.updateMessageCounter = 0;
-    if(ctx.session.updateMessageInterval)
+    if (ctx.session.updateMessageInterval)
         clearInterval(ctx.session.updateMessageInterval);
     ctx.session.updateMessageInterval = setInterval(() => {
         ctx.session.updateMessageCounter += 1;
@@ -499,6 +499,7 @@ scene.enter((ctx) => {
             });
             return ctx.scene.enter('extra', {}, true);
         }
+        ctx.session.rouletteInitComplete = false;
         activeUsers.push(ctx);
         keyboards.roulette.getOptions(ctx, opts => {
             ctx.session.rouletteOptions = opts;
@@ -522,6 +523,7 @@ scene.enter((ctx) => {
                         ctx.telegram.sendMessage(ctx.session.user.telegram.id, text, ctx.session.rouletteOptions).then(message => {
                             ctx.session.rouletteMessage = message;
                             initRoulette(ctx);
+                            ctx.session.rouletteInitComplete = true;
                         });
                     });
                 }, err => {
@@ -554,14 +556,16 @@ scene.leave(ctx => {
 
 function textManager(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
-    deleteLastMessage(ctx);
-    if (ctx.message.text == keyboards.roulette.cmd.back) {
-        //back button
-        ctx.scene.enter('extra');
-    } else {
-        ctx.scene.leave();
-        //fallback to main bot scene
-        bot.textManager(ctx);
+    if (ctx.session.rouletteInitComplete) {
+        deleteLastMessage(ctx);
+        if (ctx.message.text == keyboards.roulette.cmd.back) {
+            //back button
+            ctx.scene.enter('extra');
+        } else {
+            ctx.scene.leave();
+            //fallback to main bot scene
+            bot.textManager(ctx);
+        }
     }
 }
 
