@@ -424,7 +424,7 @@ function updateRoulette(ctx, doNotResetUpdateCounter) {
 
             }, err => {
                 //console.error(err);
-                console.error("cannot update message")
+                console.error("cannot update roulette message");
             });
         });
     }
@@ -438,7 +438,7 @@ function initRoulette(ctx) {
     ctx.session.updateMessageCounter = 0;
     ctx.session.updateMessageInterval = setInterval(() => {
         ctx.session.updateMessageCounter += 1;
-        if (ctx.session.updateMessageCounter > 30) { //30 * 10sec = 5mins timeout
+        if (ctx.session.updateMessageCounter > 5) { // 5mins timeout
             ctx.session.updateMessageCounter = 0;
             deleteLastMessage(ctx);
             const opts = keyboards.extra(ctx).opts; //use the extra keyboard
@@ -448,7 +448,7 @@ function initRoulette(ctx) {
         } else {
             updateRoulette(ctx, true);
         }
-    }, 10000);
+    }, 60000);
     updateRoulette(ctx);
 }
 
