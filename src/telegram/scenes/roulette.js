@@ -42,6 +42,8 @@ const BETKIND = {
     MINBET = 1,
     redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
 
+exports.BETKIND = BETKIND;
+
 class Bet {
 
     constructor(bet) {
@@ -97,7 +99,7 @@ class Roulette {
         this._bets = [];
         this._isRunning = false;
         this.enabled = process.env.ROULETTE_ENABLED || false;
-        this._interval = process.env.NODE_ENV == "production" ? (60000 * 33) : (20000); //production running interval (33mins)
+        this._interval = process.env.NODE_ENV == "production" ? (60000 * 33) : (200000); //production running interval (33mins)
         this._lastRunningTime = moment();
         this.runningInterval = setInterval(() => {
             this._lastRunningTime = moment();
@@ -312,6 +314,8 @@ class Roulette {
 
 const btbRoulette = new Roulette();
 
+exports.btbRoulette = btbRoulette;
+
 function deleteLastMessage(ctx) {
     if (ctx.session.updateMessageInterval)
         clearInterval(ctx.session.updateMessageInterval);
@@ -426,15 +430,17 @@ function updateRoulette(ctx, doNotResetUpdateCounter) {
     if (!doNotResetUpdateCounter)
         ctx.session.updateMessageCounter = 0;
     if (ctx.session.rouletteMessage) {
-        const opts = (btbRoulette.isRunning ? {
-            parse_mode: "markdown",
-            reply_markup: undefined
-        } : ctx.session.rouletteOptions);
-        formatRoulette(ctx, text => {
-            ctx.telegram.editMessageText(ctx.session.rouletteMessage.chat.id, ctx.session.rouletteMessage.message_id, null, text, opts).then(() => {
+        keyboards.roulette.getOptions(ctx, _opts => {
+            const opts = (btbRoulette.isRunning ? {
+                parse_mode: "markdown",
+                reply_markup: undefined
+            } : _opts);
+            formatRoulette(ctx, text => {
+                ctx.telegram.editMessageText(ctx.session.rouletteMessage.chat.id, ctx.session.rouletteMessage.message_id, null, text, opts).then(() => {
 
-            }, err => {
-                console.error("cannot update roulette message");
+                }, err => {
+                    console.error("cannot update roulette message");
+                });
             });
         });
     }
@@ -502,7 +508,6 @@ scene.enter((ctx) => {
         ctx.session.rouletteInitComplete = false;
         activeUsers.push(ctx);
         keyboards.roulette.getOptions(ctx, opts => {
-            ctx.session.rouletteOptions = opts;
             ctx.reply(keyboards.roulette.text, {
                 parse_mode: "markdown",
                 force_reply: true,
@@ -520,7 +525,7 @@ scene.enter((ctx) => {
                 }).then(pictureMessage => {
                     ctx.session.pictureMessage = pictureMessage;
                     formatRoulette(ctx, text => {
-                        ctx.telegram.sendMessage(ctx.session.user.telegram.id, text, ctx.session.rouletteOptions).then(message => {
+                        ctx.telegram.sendMessage(ctx.session.user.telegram.id, text, opts).then(message => {
                             ctx.session.rouletteMessage = message;
                             initRoulette(ctx);
                             ctx.session.rouletteInitComplete = true;
