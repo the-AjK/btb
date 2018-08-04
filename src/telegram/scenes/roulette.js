@@ -572,10 +572,6 @@ function clearBet(ctx, cb) {
     btbRoulette.clearUserBets(ctx.session.user, cb);
 }
 
-function checkCreditAvailability(ctx) {
-    return ctx.session.bet.value <= ctx.session.user.points;
-}
-
 scene.on("callback_query", ctx => {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     if (btbRoulette.isRunning)
@@ -596,7 +592,14 @@ scene.on("callback_query", ctx => {
         }, err => {
             console.error(err);
         });
-    } else if (!isNaN(parseInt(ctx.update.callback_query.data)) && checkCreditAvailability(ctx)) {
+    } else if (!isNaN(parseInt(ctx.update.callback_query.data))) {
+        if (ctx.session.bet.value > ctx.session.user.points) {
+            return ctx.answerCbQuery("You don't have enought credits!").then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
+            });
+        }
         ctx.session.bet.kind = BETKIND.number;
         ctx.session.bet.number = parseInt(ctx.update.callback_query.data);
         btbRoulette.addBet(ctx.session.bet, (msg) => {
@@ -620,7 +623,14 @@ scene.on("callback_query", ctx => {
                 console.error(err);
             });
         });
-    } else if (keyboards.roulette.availableCmd.indexOf(ctx.update.callback_query.data) && checkCreditAvailability(ctx)) {
+    } else if (keyboards.roulette.availableCmd.indexOf(ctx.update.callback_query.data)) {
+        if (ctx.session.bet.value > ctx.session.user.points) {
+            return ctx.answerCbQuery("You don't have enought credits!").then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
+            });
+        }
         ctx.session.bet.kind = BETKIND[ctx.update.callback_query.data];
         if (ctx.session.bet.kind != undefined) {
             btbRoulette.addBet(ctx.session.bet, (msg) => {
@@ -643,18 +653,10 @@ scene.on("callback_query", ctx => {
                 console.error(err);
             });
         }
-    } else if (checkCreditAvailability(ctx)) {
-        ctx.answerCbQuery("Okey! I have nothing to do.").then(() => {
-            //all ok
-        }, err => {
-            console.error(err);
-        });
     } else {
-        ctx.answerCbQuery("You don't have enought credits!").then(() => {
-            //all ok
-        }, err => {
-            console.error(err);
-        });
+        ctx.scene.leave();
+        //fallback to main bot scen
+        bot.callbackQueryManager(ctx);
     }
 });
 
