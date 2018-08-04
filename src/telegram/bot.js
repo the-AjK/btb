@@ -30,11 +30,13 @@ const Telegraf = require("telegraf"),
 
 moment.locale("en");
 
-// Set limit to 5 message per seconds
+// Set limit to 2 message per seconds
 const limitConfig = {
   window: 1000,
-  limit: 5,
-  onLimitExceeded: (ctx, next) => ctx.reply("Hey bro, calm down...")
+  limit: 2,
+  onLimitExceeded: (ctx, next) => {
+    //ctx.reply("Hey bro, calm down...")
+  }
 };
 
 const botOptions = {
@@ -90,6 +92,7 @@ exports.leaveScene = leaveScene;
 const stage = new Stage()
 stage.register(mainScene);
 stage.register(require('./scenes/trade').trade)
+stage.register(require('./scenes/bombs').bombs)
 stage.register(require('./scenes/order').scene)
 stage.register(require('./scenes/order').firstCourse)
 stage.register(require('./scenes/order').secondCourse)
@@ -817,7 +820,11 @@ function formatMenu(menu) {
 exports.formatMenu = formatMenu;
 
 function formatUsersWithoutOrder(users, user) {
-  let text = "Users who didn't place an order:\n";
+  let text = "*Users who didn't place an order:*\n";
+  if (users && users.length == 0) {
+    text += "\n - No users left";
+    return text;
+  }
   for (let i = 0; i < users.length; i++) {
     let u = users[i];
     text = text + "\n - " + getUserLink(u);

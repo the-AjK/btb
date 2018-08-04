@@ -135,7 +135,7 @@ class Roulette {
                 this._bets = this._bets.filter(b => b.owner._id != owner._id);
                 release();
                 cb();
-            });
+            }, true); //disable levelUp notifications in case of
         });
     }
 
@@ -167,7 +167,7 @@ class Roulette {
                             cb("Something went wrong");
                         } else {
                             uBets[i].value += bet.value
-                            console.log(bet.owner.email + " roulette bet update: " + bet.value);
+                            console.log(bet.owner.email + " roulette bet update: " + bet.value + " kind: " + bet.kind + (bet.kind == BETKIND.number ? (" number: " + bet.number) : ""));
                             cb("Bet updated!");
                         }
                         release();
@@ -182,7 +182,7 @@ class Roulette {
                     cb("Something went wrong");
                 } else {
                     this._bets.push(new Bet(bet));
-                    console.log(bet.owner.email + " roulette bet: " + bet.value);
+                    console.log(bet.owner.email + " roulette bet: " + bet.value + " kind: " + bet.kind);
                     cb("Bet added!");
                 }
                 release();
@@ -237,7 +237,7 @@ class Roulette {
             console.log("Roulette is running!");
             setTimeout(() => {
                 const number = this.wheelRun();
-                console.log("Roulette lucky number is: " + number + "-" + (redNumbers.indexOf(number) >= 0 ? "red" : "black"));
+                console.log("Roulette lucky number is: " + number + "-" + (number == 0 ? "green" : (redNumbers.indexOf(number) >= 0 ? "red" : "black")));
                 this.lastWinnings = this.getWinningUsers();
                 for (let i = 0; i < this.lastWinnings.length; i++) {
                     const winning = this.lastWinnings[i];
@@ -272,12 +272,8 @@ class Roulette {
                             console.error(err);
                         }
                     });
-                    //force update roulette
-                    for (let j = 0; j < activeUsers.length; j++) {
-                        updateRoulette(activeUsers[j]);
-                    }
                     //send notifications to winner users
-                    let msg = "*BTB Roulette results:*\n\nLucky number: *" + number + "* " + (redNumbers.indexOf(number) >= 0 ? "🔴" : "⚫️") + "\n\nYour bets:";
+                    let msg = "*BTB Roulette results:*\n\nLucky number: *" + number + "* " + (number == 0 ? "" : (redNumbers.indexOf(number) >= 0 ? "🔴" : "⚫️")) + "\n\nYour bets:";
                     for (let j = 0; j < winning.bets.length; j++) {
                         const isWinning = winning.bets[j].getResult(number) > 0;
                         msg += "\n" + (isWinning ? "✅" : "✖️") + " " + formatSingleBet(winning.bets[j]);
@@ -294,11 +290,19 @@ class Roulette {
                     }
                     require('../bot').bot.telegram.sendMessage(winning.owner.telegram.id, msg, {
                         parse_mode: "markdown"
+                    }).then(() => {
+                        //all ok
+                    }, err => {
+                        console.error(err);
                     });
                 }
                 this._bets = [];
                 this.lastNumber = number;
                 this._isRunning = false;
+                //force update roulette
+                for (let j = 0; j < activeUsers.length; j++) {
+                    updateRoulette(activeUsers[j]);
+                }
                 release();
             }, 1000 * runningTimeSec);
         });
@@ -312,11 +316,19 @@ function deleteLastMessage(ctx) {
     if (ctx.session.updateMessageInterval)
         clearInterval(ctx.session.updateMessageInterval);
     if (ctx.session.rouletteMessage) {
-        ctx.deleteMessage(ctx.session.rouletteMessage.message_id);
+        ctx.deleteMessage(ctx.session.rouletteMessage.message_id).then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
         delete ctx.session.rouletteMessage;
     }
     if (ctx.session.pictureMessage) {
-        ctx.deleteMessage(ctx.session.pictureMessage.message_id);
+        ctx.deleteMessage(ctx.session.pictureMessage.message_id).then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
         delete ctx.session.pictureMessage;
     }
 }
@@ -370,7 +382,7 @@ function formatRoulette(ctx, cb) {
 
     if (!btbRoulette.isRunning) {
         if (btbRoulette.lastNumber != undefined)
-            text += "\n\nLast run: *" + moment(btbRoulette.lastRun).format("Do MMMM YYYY HH:mm") + "*\nLast winning number: *" + btbRoulette.lastNumber + "* " + (redNumbers.indexOf(btbRoulette.lastNumber) >= 0 ? "🔴" : "⚫️");
+            text += "\n\nLast run: *" + moment(btbRoulette.lastRun).format("Do MMMM YYYY HH:mm") + "*\nLast winning number: *" + btbRoulette.lastNumber + "* " + (btbRoulette.lastNumber == 0 ? "" : (redNumbers.indexOf(btbRoulette.lastNumber) >= 0 ? "🔴" : "⚫️"));
         if (btbRoulette.lastWinnings != undefined && btbRoulette.lastNumber != undefined && btbRoulette.lastWinnings.length > 0) {
             text += "\nLast bets:";
             for (let i = 0; i < btbRoulette.lastWinnings.length; i++) {
@@ -408,19 +420,21 @@ function formatRoulette(ctx, cb) {
     text += "\n\n[Roulette Table](https://bitethebot.herokuapp.com/static/images/roulette-table.jpg):";
 
     cb(text);
-
 }
 
 function updateRoulette(ctx, doNotResetUpdateCounter) {
     if (!doNotResetUpdateCounter)
         ctx.session.updateMessageCounter = 0;
     if (ctx.session.rouletteMessage) {
+        const opts = (btbRoulette.isRunning ? {
+            parse_mode: "markdown",
+            reply_markup: undefined
+        } : ctx.session.rouletteOptions);
         formatRoulette(ctx, text => {
-            ctx.telegram.editMessageText(ctx.session.rouletteMessage.chat.id, ctx.session.rouletteMessage.message_id, null, text, ctx.session.rouletteOptions).then(() => {
+            ctx.telegram.editMessageText(ctx.session.rouletteMessage.chat.id, ctx.session.rouletteMessage.message_id, null, text, opts).then(() => {
 
             }, err => {
-                //console.error(err);
-                //console.error("cannot update message")
+                console.error("cannot update roulette message");
             });
         });
     }
@@ -432,20 +446,25 @@ function initRoulette(ctx) {
     });
     ctx.session.rouletteRunningIcon = false;
     ctx.session.updateMessageCounter = 0;
+    if(ctx.session.updateMessageInterval)
+        clearInterval(ctx.session.updateMessageInterval);
     ctx.session.updateMessageInterval = setInterval(() => {
         ctx.session.updateMessageCounter += 1;
-        if (ctx.session.updateMessageCounter > 30) { //30 * 10sec = 5mins timeout
+        if (ctx.session.updateMessageCounter > 10) { // 30sec * 10 = 5mins timeout
             ctx.session.updateMessageCounter = 0;
             deleteLastMessage(ctx);
-            ctx.reply("*BiteTheBot Roulette* has been closed due to user inactivity", {
-                parse_mode: "markdown",
-                disable_notification: true
+            const opts = keyboards.extra(ctx).opts; //use the extra keyboard
+            opts.disable_notification = true; //disable notification for the next message
+            ctx.reply("*BiteTheBot Roulette* has been closed due to user inactivity", opts).then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
             });
-            ctx.scene.enter('extra');
+            ctx.scene.enter('extra', {}, true); //silently enter extra scene
         } else {
             updateRoulette(ctx, true);
         }
-    }, 10000);
+    }, 30000);
     updateRoulette(ctx);
 }
 
@@ -456,11 +475,27 @@ scene.enter((ctx) => {
         if (!btbRoulette.enabled) {
             ctx.reply("*BiteTheBot Roulette* is out of service.\nCome back later.", {
                 parse_mode: "markdown"
+            }).then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
             });
             return ctx.scene.enter('extra', {}, true);
         } else if (btbRoulette.isRunning) {
-            ctx.reply("*BiteTheBot Roulette* is running... please wait", {
+            let text = "*BiteTheBot Roulette* is running... please wait.";
+            const userBets = btbRoulette.getBets();
+            if (userBets.length > 0) {
+                text += "\n\nActual bets:";
+                for (let i = 0; i < userBets.length; i++) {
+                    text += "\n- " + formatBet(userBets[i]);
+                }
+            }
+            ctx.reply(text, {
                 parse_mode: "markdown"
+            }).then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
             });
             return ctx.scene.enter('extra', {}, true);
         }
@@ -489,11 +524,19 @@ scene.enter((ctx) => {
                             initRoulette(ctx);
                         });
                     });
+                }, err => {
+                    console.error(err);
                 });
+            }, err => {
+                console.error(err);
             });
         });
     } else {
-        ctx.reply(text + "\nThis item is available only for level 1 users");
+        ctx.reply(text + "\nThis item is available only for level 1 users").then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
         return ctx.scene.enter('extra', {}, true);
     }
 });
@@ -531,10 +574,6 @@ function clearBet(ctx, cb) {
     btbRoulette.clearUserBets(ctx.session.user, cb);
 }
 
-function checkCreditAvailability(ctx) {
-    return ctx.session.bet.value <= ctx.session.user.points;
-}
-
 scene.on("callback_query", ctx => {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     if (btbRoulette.isRunning)
@@ -542,39 +581,84 @@ scene.on("callback_query", ctx => {
     if (ctx.update.callback_query.data.indexOf("betmore") == 0) {
         ctx.session.bet.increment(parseInt(ctx.update.callback_query.data.replace("betmore", "")));
         updateRoulette(ctx);
-        ctx.answerCbQuery("Actual bet updated!");
+        ctx.answerCbQuery("Default bet set to " + ctx.session.bet.value).then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
     } else if (ctx.update.callback_query.data.indexOf("betless") == 0) {
         ctx.session.bet.decrement(parseInt(ctx.update.callback_query.data.replace("betless", "")));
         updateRoulette(ctx);
-        ctx.answerCbQuery("Actual bet updated!");
-    } else if (!isNaN(parseInt(ctx.update.callback_query.data)) && checkCreditAvailability(ctx)) {
+        ctx.answerCbQuery("Default bet set to " + ctx.session.bet.value).then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
+    } else if (!isNaN(parseInt(ctx.update.callback_query.data))) {
+        if (ctx.session.bet.value > ctx.session.user.points) {
+            return ctx.answerCbQuery("You don't have enought credits!").then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
+            });
+        }
         ctx.session.bet.kind = BETKIND.number;
         ctx.session.bet.number = parseInt(ctx.update.callback_query.data);
         btbRoulette.addBet(ctx.session.bet, (msg) => {
             ctx.session.bet = new Bet({
-                owner: ctx.session.user
+                owner: ctx.session.user,
+                value: ctx.session.bet.value //keep the selected default value
             });
             updateRoulette(ctx);
-            ctx.answerCbQuery(msg);
+            ctx.answerCbQuery(msg).then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
+            });
         });
     } else if (ctx.update.callback_query.data == keyboards.roulette.cmd.clear) {
         clearBet(ctx, () => {
             updateRoulette(ctx);
-            ctx.answerCbQuery("Bet cleared!");
-        });
-    } else if (keyboards.roulette.availableCmd.indexOf(ctx.update.callback_query.data) && checkCreditAvailability(ctx)) {
-        ctx.session.bet.kind = BETKIND[ctx.update.callback_query.data];
-        btbRoulette.addBet(ctx.session.bet, (msg) => {
-            ctx.session.bet = new Bet({
-                owner: ctx.session.user
+            ctx.answerCbQuery("Bet cleared!").then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
             });
-            updateRoulette(ctx);
-            ctx.answerCbQuery(msg);
         });
-    } else if (checkCreditAvailability(ctx)) {
-        ctx.answerCbQuery("Okey! I have nothing to do.");
+    } else if (keyboards.roulette.availableCmd.indexOf(ctx.update.callback_query.data)) {
+        if (ctx.session.bet.value > ctx.session.user.points) {
+            return ctx.answerCbQuery("You don't have enought credits!").then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
+            });
+        }
+        ctx.session.bet.kind = BETKIND[ctx.update.callback_query.data];
+        if (ctx.session.bet.kind != undefined) {
+            btbRoulette.addBet(ctx.session.bet, (msg) => {
+                ctx.session.bet = new Bet({
+                    owner: ctx.session.user,
+                    value: ctx.session.bet.value //keep the selected default value
+                });
+                updateRoulette(ctx);
+                ctx.answerCbQuery(msg).then(() => {
+                    //all ok
+                }, err => {
+                    console.error(err);
+                });
+            });
+        } else {
+            console.error("Invalid bet kind: " + ctx.update.callback_query.data)
+            ctx.answerCbQuery("Cannot add bet.").then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
+            });
+        }
     } else {
-        ctx.answerCbQuery("You don't have enought credits!");
+        ctx.scene.leave();
+        //fallback to main bot scen
+        bot.callbackQueryManager(ctx);
     }
 });
 
