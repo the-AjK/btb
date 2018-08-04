@@ -26,6 +26,9 @@ function deleteLastMessage(ctx) {
 
 function leave(ctx) {
     deleteLastMessage(ctx);
+    if (ctx.session.bombDropped == false) {
+        ctx.reply("✖️ Mission aborted!");
+    }
     ctx.scene.enter('shop');
 }
 
@@ -94,7 +97,7 @@ function selectUser(ctx) {
 
 function dropBombs(ctx) {
     const quantity = ctx.session.bombs.quantity,
-        message = "*Lucky you!*\n" + bot.getUserLink(ctx.session.user) + " just sent you *" + quantity + "* beercoin" + (quantity > 1 ? "s" : "") + " 💣 !",
+        message = "*Oh no!*\n" + bot.getUserLink(ctx.session.user) + " just sent you *" + quantity + "* bomb" + (quantity > 1 ? "s" : "") + " 💣 !",
         bombUser = ctx.session.bombs.user;
     ctx.reply("✈️ Dropping *" + quantity + "* bomb" + (quantity > 1 ? "s" : "") + " to " + bot.getUserLink(bombUser) + "...", keyboards.shop(ctx).opts);
     ctx.telegram.sendMessage(bombUser.telegram.id, message, {
@@ -113,7 +116,8 @@ function dropBombs(ctx) {
                     bombUser.save((err) => {
                         if (err) {
                             ctx.reply("Something went wrong!");
-                            return console.error(err);
+                            console.error(err);
+                            return leave(ctx);
                         }
                         ctx.reply(bot.getUserLink(bombUser) + " used a bomb shield 🛡 !", {
                             parse_mode: "markdown"
@@ -121,7 +125,8 @@ function dropBombs(ctx) {
                         levels.removePoints(ctx.session.user._id, quantity, false, (err, _points) => {
                             if (err) {
                                 ctx.reply("Something went wrong!");
-                                return console.error(err);
+                                console.error(err);
+                                return leave(ctx);
                             }
                             ctx.telegram.sendMessage(bombUser.telegram.id, "Your bomb shield neutralized " + bot.getUserLink(ctx.session.user) + "'s bombs.\n" + bot.getUserLink(ctx.session.user) + " lost " + quantity + " beercoins 😬 !", {
                                 parse_mode: "markdown"
@@ -140,6 +145,8 @@ function dropBombs(ctx) {
                                     console.error(err);
                                 }
                             });
+                            ctx.session.bombDropped = true;
+                            leave(ctx);
                         });
                     });
                 } else {
@@ -148,6 +155,7 @@ function dropBombs(ctx) {
                         if (err) {
                             ctx.reply("Something went wrong!");
                             console.error(err);
+                            leave(ctx);
                         } else {
                             ctx.reply(bot.getUserLink(ctx.session.bombs.user) + " got your bomb" + (quantity > 1 ? "s" : "") + " 💣 !", keyboards.shop(ctx).opts);
                             if (!checkUser(ctx.session.user.role, userRoles.root)) {
@@ -163,8 +171,9 @@ function dropBombs(ctx) {
                                     console.error(err);
                                 }
                             });
+                            ctx.session.bombDropped = true;
+                            leave(ctx);
                         }
-                        leave(ctx);
                     });
                 }
             }
@@ -198,6 +207,7 @@ const bombsWizard = new WizardScene('bombsWizard',
             });
             return leave(ctx);
         }
+        ctx.session.bombDropped = false;
         ctx.session.bombs = {
             owner: ctx.session.user,
             user: null,
@@ -283,7 +293,6 @@ const bombsWizard = new WizardScene('bombsWizard',
             if (ctx.update.callback_query && ctx.update.callback_query.data == "proceed") {
                 dropBombs(ctx);
             } else {
-                ctx.reply("✖️ Operation aborted!");
                 leave(ctx);
             }
         }

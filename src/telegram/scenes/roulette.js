@@ -182,7 +182,7 @@ class Roulette {
                     cb("Something went wrong");
                 } else {
                     this._bets.push(new Bet(bet));
-                    console.log(bet.owner.email + " roulette bet: " + bet.value + " kind: " + bet.kind);
+                    console.log(bet.owner.email + " roulette bet: " + bet.value + " kind: " + bet.kind + (bet.kind == BETKIND.number ? (" number: " + bet.number) : ""));
                     cb("Bet added!");
                 }
                 release();
