@@ -290,6 +290,10 @@ class Roulette {
                     }
                     require('../bot').bot.telegram.sendMessage(winning.owner.telegram.id, msg, {
                         parse_mode: "markdown"
+                    }).then(() => {
+                        //all ok
+                    }, err => {
+                        console.error(err);
                     });
                 }
                 this._bets = [];
@@ -312,11 +316,19 @@ function deleteLastMessage(ctx) {
     if (ctx.session.updateMessageInterval)
         clearInterval(ctx.session.updateMessageInterval);
     if (ctx.session.rouletteMessage) {
-        ctx.deleteMessage(ctx.session.rouletteMessage.message_id);
+        ctx.deleteMessage(ctx.session.rouletteMessage.message_id).then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
         delete ctx.session.rouletteMessage;
     }
     if (ctx.session.pictureMessage) {
-        ctx.deleteMessage(ctx.session.pictureMessage.message_id);
+        ctx.deleteMessage(ctx.session.pictureMessage.message_id).then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
         delete ctx.session.pictureMessage;
     }
 }
@@ -408,7 +420,6 @@ function formatRoulette(ctx, cb) {
     text += "\n\n[Roulette Table](https://bitethebot.herokuapp.com/static/images/roulette-table.jpg):";
 
     cb(text);
-
 }
 
 function updateRoulette(ctx, doNotResetUpdateCounter) {
@@ -423,7 +434,6 @@ function updateRoulette(ctx, doNotResetUpdateCounter) {
             ctx.telegram.editMessageText(ctx.session.rouletteMessage.chat.id, ctx.session.rouletteMessage.message_id, null, text, opts).then(() => {
 
             }, err => {
-                //console.error(err);
                 console.error("cannot update roulette message");
             });
         });
@@ -443,7 +453,11 @@ function initRoulette(ctx) {
             deleteLastMessage(ctx);
             const opts = keyboards.extra(ctx).opts; //use the extra keyboard
             opts.disable_notification = true; //disable notification for the next message
-            ctx.reply("*BiteTheBot Roulette* has been closed due to user inactivity", opts);
+            ctx.reply("*BiteTheBot Roulette* has been closed due to user inactivity", opts).then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
+            });
             ctx.scene.enter('extra', {}, true); //silently enter extra scene
         } else {
             updateRoulette(ctx, true);
@@ -459,6 +473,10 @@ scene.enter((ctx) => {
         if (!btbRoulette.enabled) {
             ctx.reply("*BiteTheBot Roulette* is out of service.\nCome back later.", {
                 parse_mode: "markdown"
+            }).then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
             });
             return ctx.scene.enter('extra', {}, true);
         } else if (btbRoulette.isRunning) {
@@ -472,6 +490,10 @@ scene.enter((ctx) => {
             }
             ctx.reply(text, {
                 parse_mode: "markdown"
+            }).then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
             });
             return ctx.scene.enter('extra', {}, true);
         }
@@ -500,11 +522,19 @@ scene.enter((ctx) => {
                             initRoulette(ctx);
                         });
                     });
+                }, err => {
+                    console.error(err);
                 });
+            }, err => {
+                console.error(err);
             });
         });
     } else {
-        ctx.reply(text + "\nThis item is available only for level 1 users");
+        ctx.reply(text + "\nThis item is available only for level 1 users").then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
         return ctx.scene.enter('extra', {}, true);
     }
 });
@@ -553,11 +583,19 @@ scene.on("callback_query", ctx => {
     if (ctx.update.callback_query.data.indexOf("betmore") == 0) {
         ctx.session.bet.increment(parseInt(ctx.update.callback_query.data.replace("betmore", "")));
         updateRoulette(ctx);
-        ctx.answerCbQuery("Default bet set to " + ctx.session.bet.value);
+        ctx.answerCbQuery("Default bet set to " + ctx.session.bet.value).then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
     } else if (ctx.update.callback_query.data.indexOf("betless") == 0) {
         ctx.session.bet.decrement(parseInt(ctx.update.callback_query.data.replace("betless", "")));
         updateRoulette(ctx);
-        ctx.answerCbQuery("Default bet set to " + ctx.session.bet.value);
+        ctx.answerCbQuery("Default bet set to " + ctx.session.bet.value).then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
     } else if (!isNaN(parseInt(ctx.update.callback_query.data)) && checkCreditAvailability(ctx)) {
         ctx.session.bet.kind = BETKIND.number;
         ctx.session.bet.number = parseInt(ctx.update.callback_query.data);
@@ -567,12 +605,20 @@ scene.on("callback_query", ctx => {
                 value: ctx.session.bet.value //keep the selected default value
             });
             updateRoulette(ctx);
-            ctx.answerCbQuery(msg);
+            ctx.answerCbQuery(msg).then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
+            });
         });
     } else if (ctx.update.callback_query.data == keyboards.roulette.cmd.clear) {
         clearBet(ctx, () => {
             updateRoulette(ctx);
-            ctx.answerCbQuery("Bet cleared!");
+            ctx.answerCbQuery("Bet cleared!").then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
+            });
         });
     } else if (keyboards.roulette.availableCmd.indexOf(ctx.update.callback_query.data) && checkCreditAvailability(ctx)) {
         ctx.session.bet.kind = BETKIND[ctx.update.callback_query.data];
@@ -583,16 +629,32 @@ scene.on("callback_query", ctx => {
                     value: ctx.session.bet.value //keep the selected default value
                 });
                 updateRoulette(ctx);
-                ctx.answerCbQuery(msg);
+                ctx.answerCbQuery(msg).then(() => {
+                    //all ok
+                }, err => {
+                    console.error(err);
+                });
             });
         } else {
             console.error("Invalid bet kind: " + ctx.update.callback_query.data)
-            ctx.answerCbQuery("Cannot add bet.");
+            ctx.answerCbQuery("Cannot add bet.").then(() => {
+                //all ok
+            }, err => {
+                console.error(err);
+            });
         }
     } else if (checkCreditAvailability(ctx)) {
-        ctx.answerCbQuery("Okey! I have nothing to do.");
+        ctx.answerCbQuery("Okey! I have nothing to do.").then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
     } else {
-        ctx.answerCbQuery("You don't have enought credits!");
+        ctx.answerCbQuery("You don't have enought credits!").then(() => {
+            //all ok
+        }, err => {
+            console.error(err);
+        });
     }
 });
 
