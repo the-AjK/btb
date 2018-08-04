@@ -777,7 +777,7 @@ scene.on("callback_query", ctx => {
                             ctx.reply("Something went wrong!");
                             return console.error(err);
                         }
-                        ctx.telegram.sendMessage(bombUser.telegram.id, "Your bomb shield neutralized " + bot.getUserLink(ctx.session.user) + "'s bombs.\n" + bot.getUserLink(ctx.session.user) + " lost " + points + " points 😬 !", {
+                        ctx.telegram.sendMessage(bombUser.telegram.id, "Your bomb shield neutralized " + bot.getUserLink(ctx.session.user) + "'s bombs.\n" + bot.getUserLink(ctx.session.user) + " lost " + points + " beercoins 😬 !", {
                             parse_mode: "markdown"
                         });
                         ctx.session.slot.bombSent = true;
