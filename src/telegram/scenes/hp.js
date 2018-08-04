@@ -29,7 +29,7 @@ class HP {
         this.startCounter = 0 //step starting counter
         this.counter = 0 //actual counter,
         this.damage = 1 //hp damage level
-        this.maxDamage = 5
+        this.maxDamage = 50
         this.enableCountdownUpdate = true;
     }
 
@@ -71,7 +71,7 @@ class HP {
                 deleted: false
             };
             //add potato owner to the user list only if we are under 40seconds countdown
-            if (this.startCounter >= 40) {
+            if (this.startCounter >= 20) {
                 query._id = {
                     "$ne": this.owner._id
                 }
@@ -155,8 +155,20 @@ class HP {
         this.startCounter = this.config.counter;
         this.counter = this.startCounter;
         this.damage = 1; // start with first degree burns
+        this.startTime = moment();
         this.sendCountdown();
         console.log("HP Start: " + this.owner.email);
+    }
+
+    durationText(){
+        const diff = moment().diff(this.startTime, 'seconds'),
+            minutes = Math.floor(diff / 60),
+            seconds = diff % 60;
+        return (minutes > 0 ? (minutes + " minute" + (minutes > 1 ? "s" : "") + " and ") : "") + seconds + " seconds";
+    }
+
+    statsText(){
+        return "Burning level: *" + this.damage + "*\nBouncing time: *" + this.durationText() + "*";
     }
 
     clearMessages() {
@@ -178,11 +190,12 @@ class HP {
         this.enableCountdownUpdate = false; //stop updating countdown message
         clearInterval(this.interval); //clear interval
         this.clearMessages(); //delete messages
-        let fromUserText = "";
+        let fromUserText = "",
+            stats = this.statsText();
         if (this.history.length && this.history[this.history.length - 1].owner.email != this.owner.email) {
             fromUserText += " from " + bot.getUserLink(this.history[this.history.length - 1].owner);
         }
-        this.ctx.telegram.sendMessage(this.owner.telegram.id, "You didn't throw the *Hot Potato*" + fromUserText + " and got burned! 🔥", {
+        this.ctx.telegram.sendMessage(this.owner.telegram.id, "You didn't throw the *Hot Potato*" + fromUserText + " and got burned! 🔥\n\n" + stats, {
             parse_mode: "markdown"
         }).then(() => {
             levels.removePoints(this.owner._id, this.damage, false, (err) => {
@@ -210,7 +223,7 @@ class HP {
                     for (let i = 0; i < this.history.length; i++) {
                         if (usersNotified.indexOf(this.history[i].owner.email) < 0) {
                             usersNotified.push(this.history[i].owner.email);
-                            this.ctx.telegram.sendMessage(this.history[i].owner.telegram.id, burnedUserLink + " didn't throw the *Hot Potato* and got burned! 😂", {
+                            this.ctx.telegram.sendMessage(this.history[i].owner.telegram.id, burnedUserLink + " didn't throw the *Hot Potato* and got burned! 😂\n\n" + stats, {
                                 parse_mode: "markdown"
                             });
                         }
@@ -248,10 +261,10 @@ class HP {
         //New user
         this.owner = user;
         //setup counters
-        if (this.startCounter >= 40) {
+        if (this.startCounter >= 30) {
             this.startCounter -= 10;
         } else {
-            this.startCounter = 30;
+            this.startCounter = 15;
         }
         this.counter = this.startCounter;
         this.sendCountdown();
@@ -264,6 +277,8 @@ class HP {
             if (i < this.damage) {
                 text += "🔥"
             }
+            if (i > 4) //show max 5 flames
+                break;
         }
         return text;
     }
