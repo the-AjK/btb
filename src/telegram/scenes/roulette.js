@@ -135,7 +135,7 @@ class Roulette {
                 this._bets = this._bets.filter(b => b.owner._id != owner._id);
                 release();
                 cb();
-            });
+            }, true); //disable levelUp notifications in case of
         });
     }
 
@@ -167,7 +167,7 @@ class Roulette {
                             cb("Something went wrong");
                         } else {
                             uBets[i].value += bet.value
-                            console.log(bet.owner.email + " roulette bet update: " + bet.value);
+                            console.log(bet.owner.email + " roulette bet update: " + bet.value + " kind: " + bet.kind + (bet.kind == BETKIND.number ? (" number: " + bet.number) : ""));
                             cb("Bet updated!");
                         }
                         release();
@@ -182,7 +182,7 @@ class Roulette {
                     cb("Something went wrong");
                 } else {
                     this._bets.push(new Bet(bet));
-                    console.log(bet.owner.email + " roulette bet: " + bet.value);
+                    console.log(bet.owner.email + " roulette bet: " + bet.value + " kind: " + bet.kind);
                     cb("Bet added!");
                 }
                 release();
@@ -237,7 +237,7 @@ class Roulette {
             console.log("Roulette is running!");
             setTimeout(() => {
                 const number = this.wheelRun();
-                console.log("Roulette lucky number is: " + number + "-" + (redNumbers.indexOf(number) >= 0 ? "red" : "black"));
+                console.log("Roulette lucky number is: " + number + "-" + (number == 0 ? "green" : (redNumbers.indexOf(number) >= 0 ? "red" : "black")));
                 this.lastWinnings = this.getWinningUsers();
                 for (let i = 0; i < this.lastWinnings.length; i++) {
                     const winning = this.lastWinnings[i];
@@ -272,12 +272,8 @@ class Roulette {
                             console.error(err);
                         }
                     });
-                    //force update roulette
-                    for (let j = 0; j < activeUsers.length; j++) {
-                        updateRoulette(activeUsers[j]);
-                    }
                     //send notifications to winner users
-                    let msg = "*BTB Roulette results:*\n\nLucky number: *" + number + "* " + (redNumbers.indexOf(number) >= 0 ? "🔴" : "⚫️") + "\n\nYour bets:";
+                    let msg = "*BTB Roulette results:*\n\nLucky number: *" + number + "* " + (number == 0 ? "" : (redNumbers.indexOf(number) >= 0 ? "🔴" : "⚫️")) + "\n\nYour bets:";
                     for (let j = 0; j < winning.bets.length; j++) {
                         const isWinning = winning.bets[j].getResult(number) > 0;
                         msg += "\n" + (isWinning ? "✅" : "✖️") + " " + formatSingleBet(winning.bets[j]);
@@ -299,6 +295,10 @@ class Roulette {
                 this._bets = [];
                 this.lastNumber = number;
                 this._isRunning = false;
+                //force update roulette
+                for (let j = 0; j < activeUsers.length; j++) {
+                    updateRoulette(activeUsers[j]);
+                }
                 release();
             }, 1000 * runningTimeSec);
         });
@@ -370,7 +370,7 @@ function formatRoulette(ctx, cb) {
 
     if (!btbRoulette.isRunning) {
         if (btbRoulette.lastNumber != undefined)
-            text += "\n\nLast run: *" + moment(btbRoulette.lastRun).format("Do MMMM YYYY HH:mm") + "*\nLast winning number: *" + btbRoulette.lastNumber + "* " + (redNumbers.indexOf(btbRoulette.lastNumber) >= 0 ? "🔴" : "⚫️");
+            text += "\n\nLast run: *" + moment(btbRoulette.lastRun).format("Do MMMM YYYY HH:mm") + "*\nLast winning number: *" + btbRoulette.lastNumber + "* " + (btbRoulette.lastNumber == 0 ? "" : (redNumbers.indexOf(btbRoulette.lastNumber) >= 0 ? "🔴" : "⚫️"));
         if (btbRoulette.lastWinnings != undefined && btbRoulette.lastNumber != undefined && btbRoulette.lastWinnings.length > 0) {
             text += "\nLast bets:";
             for (let i = 0; i < btbRoulette.lastWinnings.length; i++) {
@@ -415,12 +415,16 @@ function updateRoulette(ctx, doNotResetUpdateCounter) {
     if (!doNotResetUpdateCounter)
         ctx.session.updateMessageCounter = 0;
     if (ctx.session.rouletteMessage) {
+        const opts = (btbRoulette.isRunning ? {
+            parse_mode: "markdown",
+            reply_markup: undefined
+        } : ctx.session.rouletteOptions);
         formatRoulette(ctx, text => {
-            ctx.telegram.editMessageText(ctx.session.rouletteMessage.chat.id, ctx.session.rouletteMessage.message_id, null, text, ctx.session.rouletteOptions).then(() => {
+            ctx.telegram.editMessageText(ctx.session.rouletteMessage.chat.id, ctx.session.rouletteMessage.message_id, null, text, opts).then(() => {
 
             }, err => {
                 //console.error(err);
-                //console.error("cannot update message")
+                console.error("cannot update message")
             });
         });
     }
@@ -437,11 +441,10 @@ function initRoulette(ctx) {
         if (ctx.session.updateMessageCounter > 30) { //30 * 10sec = 5mins timeout
             ctx.session.updateMessageCounter = 0;
             deleteLastMessage(ctx);
-            ctx.reply("*BiteTheBot Roulette* has been closed due to user inactivity", {
-                parse_mode: "markdown",
-                disable_notification: true
-            });
-            ctx.scene.enter('extra');
+            const opts = keyboards.extra(ctx).opts; //use the extra keyboard
+            opts.disable_notification = true; //disable notification for the next message
+            ctx.reply("*BiteTheBot Roulette* has been closed due to user inactivity", opts);
+            ctx.scene.enter('extra', {}, true); //silently enter extra scene
         } else {
             updateRoulette(ctx, true);
         }
@@ -459,7 +462,15 @@ scene.enter((ctx) => {
             });
             return ctx.scene.enter('extra', {}, true);
         } else if (btbRoulette.isRunning) {
-            ctx.reply("*BiteTheBot Roulette* is running... please wait", {
+            let text = "*BiteTheBot Roulette* is running... please wait.";
+            const userBets = btbRoulette.getBets();
+            if (userBets.length > 0) {
+                text += "\n\nActual bets:";
+                for (let i = 0; i < userBets.length; i++) {
+                    text += "\n- " + formatBet(userBets[i]);
+                }
+            }
+            ctx.reply(text, {
                 parse_mode: "markdown"
             });
             return ctx.scene.enter('extra', {}, true);
@@ -542,17 +553,18 @@ scene.on("callback_query", ctx => {
     if (ctx.update.callback_query.data.indexOf("betmore") == 0) {
         ctx.session.bet.increment(parseInt(ctx.update.callback_query.data.replace("betmore", "")));
         updateRoulette(ctx);
-        ctx.answerCbQuery("Actual bet updated!");
+        ctx.answerCbQuery("Default bet set to " + ctx.session.bet.value);
     } else if (ctx.update.callback_query.data.indexOf("betless") == 0) {
         ctx.session.bet.decrement(parseInt(ctx.update.callback_query.data.replace("betless", "")));
         updateRoulette(ctx);
-        ctx.answerCbQuery("Actual bet updated!");
+        ctx.answerCbQuery("Default bet set to " + ctx.session.bet.value);
     } else if (!isNaN(parseInt(ctx.update.callback_query.data)) && checkCreditAvailability(ctx)) {
         ctx.session.bet.kind = BETKIND.number;
         ctx.session.bet.number = parseInt(ctx.update.callback_query.data);
         btbRoulette.addBet(ctx.session.bet, (msg) => {
             ctx.session.bet = new Bet({
-                owner: ctx.session.user
+                owner: ctx.session.user,
+                value: ctx.session.bet.value //keep the selected default value
             });
             updateRoulette(ctx);
             ctx.answerCbQuery(msg);
@@ -564,13 +576,19 @@ scene.on("callback_query", ctx => {
         });
     } else if (keyboards.roulette.availableCmd.indexOf(ctx.update.callback_query.data) && checkCreditAvailability(ctx)) {
         ctx.session.bet.kind = BETKIND[ctx.update.callback_query.data];
-        btbRoulette.addBet(ctx.session.bet, (msg) => {
-            ctx.session.bet = new Bet({
-                owner: ctx.session.user
+        if (ctx.session.bet.kind != undefined) {
+            btbRoulette.addBet(ctx.session.bet, (msg) => {
+                ctx.session.bet = new Bet({
+                    owner: ctx.session.user,
+                    value: ctx.session.bet.value //keep the selected default value
+                });
+                updateRoulette(ctx);
+                ctx.answerCbQuery(msg);
             });
-            updateRoulette(ctx);
-            ctx.answerCbQuery(msg);
-        });
+        } else {
+            console.error("Invalid bet kind: " + ctx.update.callback_query.data)
+            ctx.answerCbQuery("Cannot add bet.");
+        }
     } else if (checkCreditAvailability(ctx)) {
         ctx.answerCbQuery("Okey! I have nothing to do.");
     } else {
