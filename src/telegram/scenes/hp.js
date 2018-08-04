@@ -160,15 +160,15 @@ class HP {
         console.log("HP Start: " + this.owner.email);
     }
 
-    durationText(){
+    durationText() {
         const diff = moment().diff(this.startTime, 'seconds'),
             minutes = Math.floor(diff / 60),
             seconds = diff % 60;
         return (minutes > 0 ? (minutes + " minute" + (minutes > 1 ? "s" : "") + " and ") : "") + seconds + " seconds";
     }
 
-    statsText(){
-        return "Burning level: *" + this.damage + "*\nBouncing time: *" + this.durationText() + "*";
+    statsText() {
+        return "*Game stats:*\nBurning level reached: *" + this.damage + "*\nBouncing time: *" + this.durationText() + "*";
     }
 
     clearMessages() {
@@ -210,6 +210,7 @@ class HP {
                     });
                     const event = new DB.HPEvent({
                         owner: this.startPlayer,
+                        duration: moment().diff(this.startTime, 'seconds'),
                         history: this.history
                     });
                     event.save((err, s) => {
@@ -299,7 +300,13 @@ class HP {
 const HotPotato = new HP(),
     hpPrice = 4;
 
+exports.HotPotato = HotPotato;
 exports.hpPrice = hpPrice;
+
+function busyMessage() {
+    return "The *Hot Potato* is still bouncing in " + bot.getUserLink(HotPotato.owner) + "'s hands!\nPlease wait until the game ends!";
+}
+exports.busyMessage = busyMessage;
 
 const scene = new Scene('hp')
 scene.enter((ctx) => {
@@ -308,7 +315,7 @@ scene.enter((ctx) => {
         ctx.reply("I'm sorry. You don't have enough beercoins.");
         return ctx.scene.enter('shop', {}, true);
     } else if (HotPotato.isRunning) {
-        ctx.reply("The *Hot Potato* is still bouncing in " + bot.getUserLink(HotPotato.owner) + "'s hands!\nPlease wait until the game ends!", {
+        ctx.reply(busyMessage(), {
             parse_mode: "markdown"
         });
         return ctx.scene.enter('shop', {}, true);
@@ -331,9 +338,15 @@ scene.enter((ctx) => {
 
 
 function textManager(ctx) {
-    ctx.scene.leave();
-    //fallback to main bot scene
-    bot.textManager(ctx);
+    if (HotPotato.isRunning && ctx.session.user._id == HotPotato.owner._id) {
+        return ctx.reply("Hurry Up!\nGet rid of the *Hot Potato*!", {
+            parse_mode: "markdown"
+        });
+    } else {
+        ctx.scene.leave();
+        //fallback to main bot scene
+        bot.textManager(ctx);
+    }
 }
 
 scene.on("text", textManager);

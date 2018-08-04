@@ -296,8 +296,6 @@ function formatNews(news, topUsers, dailyOrders, premium) {
                 case 5:
                     damage = "fifth";
                     break;
-                default:
-                    damage = "unknow";
             }
             if (burnedUser.email != n.owner.email) {
                 text += "! " + bot.getUserLink(burnedUser) + " got " + damage + " degree burns!";

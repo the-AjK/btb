@@ -470,6 +470,10 @@ const LevelEventSchema = new mongoose.Schema({
 }, eventOptions);
 
 const HPEventSchema = new mongoose.Schema({
+  duration: {
+    type: Number,
+    required: true
+  },
   history: [{
     createdAt: {
       type: Date,

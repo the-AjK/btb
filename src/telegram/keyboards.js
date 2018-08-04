@@ -788,6 +788,8 @@ module.exports = {
 
         keyboard.push([{
             text: cmd.news
+        }, {
+            text: cmd.trade
         }]);
 
         keyboard.push([{
@@ -800,10 +802,6 @@ module.exports = {
             text: cmd.bombs
         }, {
             text: cmd.hp
-        }]);
-
-        keyboard.push([{
-            text: cmd.trade
         }]);
 
         keyboard.push([{
@@ -856,6 +854,13 @@ module.exports = {
                     }]
                 ],
                 text = "Never play with fire!";
+            const HP = require('./scenes/hp'),
+                HotPotato = HP.HotPotato;
+            if (HotPotato.isRunning) {
+                return ctx.reply(HP.busyMessage(), {
+                    parse_mode: "markdown"
+                });
+            }
             if ((ctx && ctx.session.user && levels.getLevel(ctx.session.user.points) > 1) || checkUserAccessLevel(ctx.session.user.role, accessLevels.root)) {
                 ctx.reply(text, {
                     parse_mode: "markdown",

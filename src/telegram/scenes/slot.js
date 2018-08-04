@@ -16,6 +16,7 @@ const Scene = require('telegraf/scenes/base'),
     accessLevels = roles.accessLevels,
     levels = require('../../levels'),
     utils = require('../../utils'),
+    HotPotato = require('./hp').HotPotato,
     DB = require("../../db"),
     bot = require('../bot'),
     ACTIONS = bot.ACTIONS;
@@ -27,7 +28,7 @@ class Slot {
         this._progress = 0;
         this._position = [];
         this.isRunning = false;
-        this._elements = ["🍔", "🚰", "💣", "💰", "🍺"];
+        this._elements = ["🥔", "🚰", "💣", "💰", "🍺"];
         this._colElements = this._elements.length;
         this.initPosition();
         this.initSlot();
@@ -114,10 +115,10 @@ class Slot {
         return counter;
     }
 
-    isWinningBomb() {
+    _isCustomWinning(value) {
         for (let i = 0; i < this._row; i++) {
             if (this.isWinningRow(i)) {
-                if (this.getRelativeRow(i)[0] == "💣") {
+                if (this.getRelativeRow(i)[0] == value) {
                     return true;
                 }
             }
@@ -125,15 +126,16 @@ class Slot {
         return false;
     }
 
+    isWinningBomb() {
+        return this._isCustomWinning("💣");
+    }
+
     isWinningRob() {
-        for (let i = 0; i < this._row; i++) {
-            if (this.isWinningRow(i)) {
-                if (this.getRelativeRow(i)[0] == "💰") {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return this._isCustomWinning("💰");
+    }
+
+    isWinningPotato() {
+        return this._isCustomWinning("🥔");
     }
 
     formatProgress() {
@@ -178,7 +180,7 @@ class Slot {
     bombPoints() {
         let winningRows = this.isWinningState();
         if (winningRows > 0) {
-            return this.getPoints(winningRows) * 2;
+            return this.getPoints(winningRows) * utils.getRandomInt(2, 4);
         } else {
             return 0;
         }
@@ -187,7 +189,7 @@ class Slot {
     robPoints() {
         let winningRows = this.isWinningState();
         if (winningRows > 0) {
-            return this.getPoints(winningRows) * 2;
+            return this.getPoints(winningRows) * utils.getRandomInt(2, 4);
         } else {
             return 0;
         }
@@ -337,11 +339,12 @@ function printSlot(ctx, cb) {
         }]
     ];
     const bombWin = ctx.session.slot.isWinningBomb() && ctx.session.slot.bombPoints() > 0,
-        robWin = ctx.session.slot.isWinningRob() && ctx.session.slot.robPoints() > 0;
+        robWin = ctx.session.slot.isWinningRob() && ctx.session.slot.robPoints() > 0,
+        potatoWin = ctx.session.slot.isWinningPotato();
     if (ctx.session.slot_message) {
         ctx.telegram.editMessageText(ctx.session.slot_message.chat.id, ctx.session.slot_message.message_id, null, ctx.session.slot.toString(ctx), {
             parse_mode: "markdown",
-            reply_markup: !ctx.session.user.dailySlotRunning && !bombWin && !robWin ? JSON.stringify({
+            reply_markup: !ctx.session.user.dailySlotRunning && !bombWin && !robWin && !potatoWin ? JSON.stringify({
                 inline_keyboard: inline_keyboard
             }) : undefined
         }).then(() => {
@@ -351,9 +354,39 @@ function printSlot(ctx, cb) {
                 return selectUserToBomb(ctx);
             if (robWin)
                 return selectUserToRob(ctx);
+            if (potatoWin)
+                return retrievePotato(ctx);
         }, cb);
     } else {
         cb("Cannot edit slot message");
+    }
+}
+
+function retrievePotato(ctx) {
+    if (HotPotato.isRunning) {
+        console.log("User: " + ctx.session.user.email + " won a busy hot potato");
+        ctx.reply("What a pity!\nYou won one *Hot Potato* but it's already bouncing in " + bot.getUserLink(HotPotato.owner) + "'s hands!", {
+            parse_mode: "markdown"
+        });
+    } else {
+        ctx.session.slot.potato = true;
+        console.log("User: " + ctx.session.user.email + " won a hot potato");
+        ctx.reply("You won one *Hot Potato*! Do you want it?", {
+            parse_mode: "markdown",
+            reply_markup: JSON.stringify({
+                inline_keyboard: [
+                    [{
+                        text: "Yeah",
+                        callback_data: "hp"
+                    }, {
+                        text: "Cancel",
+                        callback_data: "discardhp"
+                    }]
+                ]
+            })
+        }).then(m => {
+            ctx.session.lastMessage = m;
+        });
     }
 }
 
@@ -466,6 +499,11 @@ function slotCleanUp(ctx) {
 function textManager(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
     slotCleanUp(ctx);
+
+    if (ctx.session.slot.potato) {
+        ctx.session.slot.potato = false;
+        console.log("User: " + ctx.session.user.email + " discard hot potato");
+    }
 
     if (ctx.session.slot.isWinningBomb() && ctx.message.text.toLowerCase() == 'neutralize') {
         ctx.session.slot.bombSent = true;
@@ -745,6 +783,16 @@ scene.on("callback_query", ctx => {
     } else if (ctx.session.users_inline_keyboard && ctx.update.callback_query.data == ctx.session.users_inline_keyboard.nextCallbackData()) {
         ctx.session.users_inline_keyboard.next();
         updateUsersKeyboard(ctx);
+    } else if (ctx.update.callback_query.data == "discardhp") {
+        slotCleanUp(ctx);
+        //deleteLastMessage(ctx);
+        ctx.scene.enter('extra');
+    } else if (ctx.update.callback_query.data == "hp") {
+        slotCleanUp(ctx);
+        //deleteLastMessage(ctx);
+        ctx.session.slot.potato = false;
+        bot.enterScene(ctx, 'hp', true);
+        HotPotato.startGame(ctx);
     } else if (ctx.update.callback_query.data.indexOf("userbomb_") == 0) {
         const userTelegramID = parseInt(ctx.update.callback_query.data.substring(9));
         if (isNaN(userTelegramID)) {
