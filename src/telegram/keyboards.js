@@ -12,7 +12,6 @@ const roles = require("../roles"),
     checkUserAccessLevel = roles.checkUserAccessLevel,
     accessLevels = roles.accessLevels;
 
-
 class Keyboard {
 
     constructor(config) {
@@ -60,8 +59,8 @@ const roulette = new Keyboard({
         betmore10: "+10",
         betless10: "-10",
         number: "Number",
-        manque: "Manque (1-18)",
-        passe: "Passe (19-36)",
+        manque: "1 to 18",
+        passe: "19 to 36",
         red: "Red",
         black: "Black",
         even: "Even",
@@ -76,8 +75,26 @@ const roulette = new Keyboard({
         back: "◀️ Back to extra"
     }
 });
+
 roulette.optionsFunc = (self, ctx, cb) => {
-    let keyboard = [];
+    const btbRoulette = require("./scenes/roulette").btbRoulette,
+        BETKIND = require("./scenes/roulette").BETKIND,
+        userBets = btbRoulette.userBets(ctx.session.user),
+        getBetButton = (text, kind, number) => {
+            if (userBets.length > 0) {
+                if (userBets.filter(b => {
+                        if (kind == BETKIND.number) {
+                            return b.kind == kind && b.number === number;
+                        } else {
+                            return b.kind == kind;
+                        }
+                    }).length > 0) {
+                    text = "(" + text + ")";
+                }
+            }
+            return text;
+        },
+        keyboard = [];
     keyboard.push([{
         text: self._cmd.betless10,
         callback_data: "betless10"
@@ -98,7 +115,7 @@ roulette.optionsFunc = (self, ctx, cb) => {
         callback_data: "betmore10"
     }]);
     keyboard.push([{
-        text: "0",
+        text: getBetButton("0", BETKIND.number, 0),
         callback_data: "0"
     }]);
     const cols = 6;
@@ -108,50 +125,50 @@ roulette.optionsFunc = (self, ctx, cb) => {
         let start = (1 + cols * j);
         for (let i = start; i < start + cols; i++) {
             keyboard[keyboard.length - 1].push({
-                text: "" + i,
+                text: getBetButton("" + i, BETKIND.number, i),
                 callback_data: "" + i
             });
         }
     }
 
     keyboard.push([{
-        text: self._cmd.red,
+        text: getBetButton(self._cmd.red, BETKIND.red),
         callback_data: "red"
     }, {
-        text: self._cmd.black,
+        text: getBetButton(self._cmd.black, BETKIND.black),
         callback_data: "black"
     }, {
-        text: self._cmd.even,
+        text: getBetButton(self._cmd.even, BETKIND.even),
         callback_data: "even"
     }, {
-        text: self._cmd.odd,
+        text: getBetButton(self._cmd.odd, BETKIND.odd),
         callback_data: "odd"
     }]);
     keyboard.push([{
-        text: self._cmd.firstDozen,
+        text: getBetButton(self._cmd.firstDozen, BETKIND.firstDozen),
         callback_data: "firstDozen"
     }, {
-        text: self._cmd.secondDozen,
+        text: getBetButton(self._cmd.secondDozen, BETKIND.secondDozen),
         callback_data: "secondDozen"
     }, {
-        text: self._cmd.thirdDozen,
+        text: getBetButton(self._cmd.thirdDozen, BETKIND.thirdDozen),
         callback_data: "thirdDozen"
     }]);
     keyboard.push([{
-        text: self._cmd.firstColumn,
+        text: getBetButton(self._cmd.firstColumn, BETKIND.firstColumn),
         callback_data: "firstColumn"
     }, {
-        text: self._cmd.secondColumn,
+        text: getBetButton(self._cmd.secondColumn, BETKIND.secondColumn),
         callback_data: "secondColumn"
     }, {
-        text: self._cmd.thirdColumn,
+        text: getBetButton(self._cmd.thirdColumn, BETKIND.thirdColumn),
         callback_data: "thirdColumn"
     }]);
     keyboard.push([{
-        text: self._cmd.manque,
+        text: getBetButton(self._cmd.manque, BETKIND.manque),
         callback_data: "manque"
     }, {
-        text: self._cmd.passe,
+        text: getBetButton(self._cmd.passe, BETKIND.passe),
         callback_data: "passe"
     }]);
     keyboard.push([{
