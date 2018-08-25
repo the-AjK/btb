@@ -168,7 +168,16 @@ class HP {
     }
 
     statsText() {
-        return "*Game stats:*\nBurning level reached: *" + this.damage + "*\nBouncing time: *" + this.durationText() + "*";
+        let playersTextList = "",
+            players = {};
+        players[this.owner._id] = 1;
+        for (let i = 0; i < this.history.length; i++) {
+            let playerID = this.history[i].owner._id;
+            players[playerID] = (players[playerID] ? (players[playerID] + 1) : 1);
+            playersTextList += "\n" + i + " - " + bot.getUserLink(this.history[i].owner) + " (" + this.history[i].counter + " sec)";
+        }
+        playersTextList += "\n" + this.history.length + " - " + bot.getUserLink(this.owner) + " (" + this.counter + " sec)";
+        return "*Game stats:*\nBurning level reached: *" + this.damage + "*\nTotal players: *" + Object.keys(players).length + "*\nTotal bounces: *" + (this.history.length + 1) + "*\nBouncing time: *" + this.durationText() + "*\nBounces:" + playersTextList;
     }
 
     clearMessages() {
