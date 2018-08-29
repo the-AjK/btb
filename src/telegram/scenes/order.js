@@ -319,7 +319,7 @@ const firstCourseWizard = new WizardScene('firstCourseWizard',
                                 });
                             }
                             release();
-                            return ctx.scene.enter('firstCourseWizard');
+                            return ctx.scene.enter('order');
                         } else {
                             const newOrder = new DB.Order(ctx.session.order);
                             newOrder.save((err, order) => {
@@ -575,7 +575,7 @@ const secondCourseWizard = new WizardScene('secondCourseWizard',
                                 });
                             }
                             release();
-                            return ctx.scene.enter('secondCourseWizard');
+                            return ctx.scene.enter('order');
                         } else {
                             const newOrder = new DB.Order(ctx.session.order);
                             newOrder.save((err, order) => {
