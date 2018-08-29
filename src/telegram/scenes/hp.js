@@ -137,9 +137,13 @@ class HP {
                 this.startTimer(this.startCounter);
             }, (err) => {
                 console.error(err);
+                //got some error, start the timer anyway!
+                this.startTimer(this.startCounter);
             });
         }, (err) => {
             console.error(err);
+            //got some error, start the timer anyway!
+            this.startTimer(this.startCounter);
         });
     }
 
