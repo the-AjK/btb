@@ -1579,7 +1579,7 @@ exports.getStats = function (req, res) {
             let activeSessions = bot.session.getTopSessions();
             callback(null, activeSessions.map(s => {
                 return {
-                    user: s.user.email,
+                    user: s.user ? s.user.email : "Unregistered user",
                     count: s.count
                 }
             }));
