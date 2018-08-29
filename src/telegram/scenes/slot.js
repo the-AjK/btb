@@ -38,6 +38,7 @@ class Slot {
     }
 
     initSlot() {
+        this._multiplier = utils.getRandomInt(2, 5); //random multiplier for bombs/moneybags
         this._slot = [];
         for (let i = 0; i < this._col; i++) {
             this._slot.push([]);
@@ -180,7 +181,7 @@ class Slot {
     bombPoints() {
         let winningRows = this.isWinningState();
         if (winningRows > 0) {
-            return this.getPoints(winningRows) * utils.getRandomInt(2, 4);
+            return this.getPoints(winningRows) * this._multiplier;
         } else {
             return 0;
         }
@@ -189,7 +190,7 @@ class Slot {
     robPoints() {
         let winningRows = this.isWinningState();
         if (winningRows > 0) {
-            return this.getPoints(winningRows) * utils.getRandomInt(2, 4);
+            return this.getPoints(winningRows) * this._multiplier;
         } else {
             return 0;
         }
