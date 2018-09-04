@@ -8,16 +8,16 @@
 const Scene = require('telegraf/scenes/base'),
     keyboards = require('../keyboards'),
     async = require("async"),
-    moment = require("moment"),
-    roles = require("../../roles"),
-    checkUserAccessLevel = roles.checkUserAccessLevel,
-    checkUser = roles.checkUser,
-    userRoles = roles.userRoles,
-    accessLevels = roles.accessLevels,
-    levels = require('../../levels'),
-    DB = require("../../db"),
-    bot = require('../bot'),
-    ACTIONS = bot.ACTIONS;
+        moment = require("moment"),
+        roles = require("../../roles"),
+        checkUserAccessLevel = roles.checkUserAccessLevel,
+        checkUser = roles.checkUser,
+        userRoles = roles.userRoles,
+        accessLevels = roles.accessLevels,
+        levels = require('../../levels'),
+        DB = require("../../db"),
+        bot = require('../bot'),
+        ACTIONS = bot.ACTIONS;
 
 const scene = new Scene('shop')
 scene.enter((ctx) => {
@@ -268,7 +268,11 @@ function formatNews(news, topUsers, dailyOrders, premium) {
             }
         } else if (n.type != undefined) {
             //beer stuff
-            text += " sent a beer 🍺";
+            if (n.type == 0) {
+                text += " sent a beer 🍺";
+            } else {
+                text += " sent a double beer 🍻";
+            }
             if (n.drunk) {
                 text += " and made the bot drunk 😵";
             }

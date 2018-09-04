@@ -30,9 +30,9 @@ const Telegraf = require("telegraf"),
 
 moment.locale("en");
 
-// Set limit to 1 message per second
+// Set messages limit
 const limitConfig = {
-  window: 800,
+  window: 400,
   limit: 1,
   onLimitExceeded: (ctx, next) => {
     const text = "Hey bro, calm down... Too many requests!";
@@ -96,6 +96,7 @@ exports.leaveScene = leaveScene;
 // Scene manager
 const stage = new Stage()
 stage.register(mainScene);
+stage.register(require('./scenes/brewery').scene)
 stage.register(require('./scenes/trade').trade)
 stage.register(require('./scenes/bombs').bombs)
 stage.register(require('./scenes/order').scene)
@@ -153,6 +154,7 @@ bot.use((ctx, next) => {
           return ctx.reply("Hey! my name is *BiteTheBot*!\nI do things.\nType \"register\" to register yourself.", keyboards.register(ctx).opts);
         } else {
           //for other messages lets discard the request
+          console.log("[Unregistered user] " + JSON.stringify(ctx.from) + " message: '" + ctx.message.text + "'");
           ctx.reply(keyboards.register(ctx).text, keyboards.register(ctx).opts);
           return;
         }
@@ -185,6 +187,8 @@ bot.use((ctx, next) => {
       ctx.session.user = dbuser;
       return next();
     });
+  } else {
+    console.log("[User auth] strangers and bots are not allowed")
   }
 });
 

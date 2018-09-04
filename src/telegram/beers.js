@@ -26,6 +26,12 @@ let beerLock = null,
     drinkingSchedule,
     lock = new ReadWriteLock();
 
+const beerType = {
+    "single": 0,
+    "double": 1
+}
+exports.beerType = beerType;
+
 exports.botIsDrunk = function () {
     return drunkBot;
 }
@@ -109,7 +115,6 @@ function setDrinkingSchedule(minimumToWait) {
 function autoDrink() {
     if (beerLock) {
         console.log("Locked beer from: btb@btb.com [" + beerLock.email + "]");
-        //bot.broadcastMessage("I wish to drink but I can't", accessLevels.root, null, true);
         setDrinkingSchedule(beerLockTimeout);
     } else {
         drinkBeer({
@@ -117,7 +122,6 @@ function autoDrink() {
             email: "btb@btb.com",
             username: "BiteTheBot"
         });
-        //bot.broadcastMessage("I'm drinking!", accessLevels.root, null, true);
         const halfhour = 60000 * 30;
         setDrinkingSchedule(beerLockTimeout + halfhour);
     }
@@ -136,7 +140,18 @@ function saveLockedBeerEvent(ctx) {
     });
 }
 
-function addBeer(ctx) {
+function checkDoubleBeer(ctx, type) {
+    if (type == "double") {
+        levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
+            ctx.scene.enter('extra');
+            bot.broadcastMessage("Double locked beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
+        });
+    } else {
+        ctx.scene.enter('extra');
+    }
+}
+
+function addBeer(ctx, type) {
     lock.readLock('beer', function (release) {
         if (drunkBot && beerLock.username != ctx.session.user.username) {
             ctx.reply("😵 " + bot.getUserLink(lastUserBeer) + " got me drunk!", {
@@ -144,6 +159,7 @@ function addBeer(ctx) {
             });
             console.log("Drunk beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
             saveLockedBeerEvent(ctx);
+            ctx.scene.enter('extra');
             return release();
         } else if (drunkBot) {
             ctx.reply("😵 You got me drunk!", {
@@ -151,20 +167,27 @@ function addBeer(ctx) {
             });
             console.log("Drunk beer from: " + ctx.session.user.email);
             saveLockedBeerEvent(ctx);
+            ctx.scene.enter('extra');
             return release();
         }
         if (beerLock != null) {
             if (beerLock.username == "BiteTheBot") {
                 ctx.reply("Wait wait, I'm drinking my own beer!\nI can get one beer at time!", {
                     parse_mode: "markdown"
+                }).then(() => {
+                    checkDoubleBeer(ctx, type);
                 });
             } else if (beerLock.username != ctx.session.user.username) {
                 ctx.reply("Wait wait, I can get one beer at time!\nI'm still drinking the " + bot.getUserLink(beerLock) + "'s one!", {
                     parse_mode: "markdown"
+                }).then(() => {
+                    checkDoubleBeer(ctx, type);
                 });
             } else {
                 ctx.reply("Wait wait, I can get one beer at time!", {
                     parse_mode: "markdown"
+                }).then(() => {
+                    checkDoubleBeer(ctx, type);
                 });
             }
             console.log("Locked beer from: " + ctx.session.user.email + " [" + beerLock.email + "]");
@@ -177,12 +200,11 @@ function addBeer(ctx) {
             //set the addBeer flag
             ctx.session.addBeer = true;
             drinkBeer(ctx.session.user);
-            const type = ctx.update.callback_query.data,
-                newBeer = new DB.BeerEvent({
-                    owner: ctx.session.user._id,
-                    drunk: drunkBot,
-                    type: (type == 'pint' ? 1 : 0)
-                });
+            const newBeer = new DB.BeerEvent({
+                owner: ctx.session.user._id,
+                drunk: drunkBot,
+                type: beerType[type]
+            });
             newBeer.save((err, beer) => {
                 if (err) {
                     console.error(err);
@@ -194,9 +216,10 @@ function addBeer(ctx) {
                 ctx.reply("Oh yeah, let me drink it...");
                 ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
                 setTimeout(() => {
+                    const beerPoints = type == "single" ? 1 : 2;
                     if (drunkBot) {
                         ctx.reply("😵 You got me drunk!");
-                        levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
+                        levels.removePoints(ctx.session.user._id, beerPoints, false, (err, points) => {
                             if (err) {
                                 ctx.session.addBeer = false;
                                 console.error(err);
@@ -206,12 +229,12 @@ function addBeer(ctx) {
                                 bot.broadcastMessage("New drunk beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
                             }
                             ctx.session.addBeer = false;
-                            //console.log("New drunk beer from: " + ctx.session.user.email + " (" + points + ")");
+                            ctx.scene.enter('extra');
                             return release();
                         });
                     } else {
                         ctx.reply("Thank you bro!");
-                        levels.addPoints(ctx.session.user._id, 1, false, (err, points) => {
+                        levels.addPoints(ctx.session.user._id, beerPoints, false, (err, points) => {
                             if (err) {
                                 ctx.session.addBeer = false;
                                 console.error(err);
@@ -221,11 +244,11 @@ function addBeer(ctx) {
                                 bot.broadcastMessage("New beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
                             }
                             ctx.session.addBeer = false;
-                            //console.log("New beer from: " + ctx.session.user.email + " (" + points + ")");
+                            ctx.scene.enter('extra');
                             return release();
                         });
                     }
-                }, type == 'pint' ? 3000 : 2000)
+                }, type == 'double' ? 3000 : 2000)
             });
         }
     });

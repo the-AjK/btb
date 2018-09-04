@@ -577,7 +577,7 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
             for (let z = 0; z < orders.length; z++) {
                 if (orders[z].deprecated)
                     continue;
-                orders[z].deprecated = orders[z].secondCourse && orders[z].secondCourse.item.localeCompare(oldSc) == 0;
+                orders[z].deprecated = orders[z].secondCourse && orders[z].secondCourse.item && orders[z].secondCourse.item.localeCompare(oldSc) == 0;
                 if (orders[z].deprecated) {
                     console.log("Order _id:" + orders[z]._id + " (" + orders[z].owner.email + ") will be removed because second course '" + oldSc + "' has been removed");
                 }
@@ -593,7 +593,7 @@ function getOrdersMenuDiff(oldMenu, menu, orders) {
             for (let z = 0; z < orders.length; z++) {
                 if (orders[z].deprecated)
                     continue;
-                orders[z].deprecated = orders[z].secondCourse && orders[z].secondCourse.sideDishes.indexOf(oldSideDish) >= 0;
+                orders[z].deprecated = orders[z].secondCourse && orders[z].secondCourse.sideDishes && orders[z].secondCourse.sideDishes.indexOf(oldSideDish) >= 0;
                 if (orders[z].deprecated) {
                     console.log("Order _id:" + orders[z]._id + " (" + orders[z].owner.email + ") will be removed because side dish '" + oldSideDish + "' has been removed");
                 }

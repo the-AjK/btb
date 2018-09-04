@@ -33,6 +33,8 @@ function textManager(ctx) {
 
     if (keyboards.extra(ctx)[ctx.message.text]) {
         keyboards.extra(ctx)[ctx.message.text]();
+    } else if (ctx.message.text == keyboards.extra(ctx).cmd.beer) {
+        ctx.scene.enter('brewery');
     } else if (ctx.message.text == keyboards.extra(ctx).cmd.slot) {
         ctx.scene.enter('slot');
     } else if (ctx.message.text == keyboards.extra(ctx).cmd.roulette) {
@@ -41,6 +43,9 @@ function textManager(ctx) {
         ctx.scene.enter('shop');
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
         //back from slot
+        ctx.reply(keyboards.extra(ctx).text, keyboards.extra(ctx).opts);
+    } else if (ctx.message.text == keyboards.beer(ctx).cmd.back) {
+        //back from beer
         ctx.reply(keyboards.extra(ctx).text, keyboards.extra(ctx).opts);
     } else if (ctx.message.text == keyboards.extra(ctx).cmd.back) {
         //back button
@@ -124,12 +129,6 @@ scene.on("callback_query", ctx => {
                 }
                 ctx.session.getNotOrderUsers = false;
             });
-        } else {
-            ctx.answerCbQuery("Operation already in progress. Please wait...");
-        }
-    } else if (ctx.update.callback_query.data.toLowerCase().indexOf('pint') != -1) {
-        if (!ctx.session.addBeer) {
-            beers.addBeer(ctx);
         } else {
             ctx.answerCbQuery("Operation already in progress. Please wait...");
         }

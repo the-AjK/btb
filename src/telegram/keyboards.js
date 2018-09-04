@@ -647,7 +647,7 @@ module.exports = {
         let keyboard = [],
             cmd = {
                 back: "◀️ Back",
-                beer: "🍺 Beer",
+                beer: "🏭 Brewery",
                 status: "📋 Status",
                 slot: "🎰 Slot",
                 shop: "🛍 Shop",
@@ -709,30 +709,6 @@ module.exports = {
             cmd: cmd
         };
 
-        obj[cmd.beer] = () => {
-            let inline_keyboard = [
-                    [{
-                        text: 'Pint',
-                        callback_data: 'pint'
-                    }, {
-                        text: 'Half Pint',
-                        callback_data: 'halfPint'
-                    }]
-                ],
-                text = "Send me a beer!";
-
-            ctx.reply(text, {
-                parse_mode: "markdown",
-                force_reply: true,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: inline_keyboard
-                })
-            }).then((msg) => {
-                //lets save the message to delete it afterward
-                ctx.session.lastMessage = msg;
-            });
-        }
-
         obj[cmd.status] = () => {
             let inline_keyboard = [
                     [{
@@ -788,6 +764,88 @@ module.exports = {
             text: "*Welcome to BTB Slot*",
             cmd: cmd
         };
+
+        return obj;
+    },
+    beer: function (ctx) {
+        let keyboard = [],
+            cmd = {
+                beer: "🍺 Single Beer",
+                beers: "🍻 Double Beer",
+                back: "◀️ Back to extra"
+            };
+
+        keyboard.push([{
+            text: cmd.beer
+        }, {
+            text: cmd.beers
+        }]);
+        keyboard.push([{
+            text: cmd.back
+        }]);
+
+        let obj = {
+            availableCmd: Object.keys(cmd).map(c => cmd[c]),
+            opts: {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    one_time_keyboard: false,
+                    resize_keyboard: true,
+                    keyboard: keyboard
+                })
+            },
+            text: "*Welcome to BTB Brewery*",
+            cmd: cmd
+        };
+
+        obj[cmd.beer] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'Yes',
+                        callback_data: 'single'
+                    }, {
+                        text: 'No',
+                        callback_data: 'nosingle'
+                    }]
+                ],
+                text = "Wanna send me a single beer?";
+
+            ctx.reply(text, {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    inline_keyboard: inline_keyboard
+                })
+            }).then((msg) => {
+                //lets save the message to delete it afterward
+                ctx.session.lastMessage = msg;
+            });
+        }
+
+        obj[cmd.beers] = () => {
+            let inline_keyboard = [
+                    [{
+                        text: 'Yes',
+                        callback_data: 'double'
+                    }, {
+                        text: 'No',
+                        callback_data: 'nodouble'
+                    }]
+                ],
+                text = "Wanna send me a double beer?";
+
+            ctx.reply(text, {
+                parse_mode: "markdown",
+                force_reply: true,
+                reply_markup: JSON.stringify({
+                    inline_keyboard: inline_keyboard
+                })
+            }).then((msg) => {
+                //lets save the message to delete it afterward
+                ctx.session.lastMessage = msg;
+            });
+        }
 
         return obj;
     },
