@@ -153,6 +153,7 @@ bot.use((ctx, next) => {
           return ctx.reply("Hey! my name is *BiteTheBot*!\nI do things.\nType \"register\" to register yourself.", keyboards.register(ctx).opts);
         } else {
           //for other messages lets discard the request
+          console.log("[Unregistered user] " + JSON.stringify(ctx.from) + " message: '" + ctx.message.text + "'");
           ctx.reply(keyboards.register(ctx).text, keyboards.register(ctx).opts);
           return;
         }
@@ -185,6 +186,8 @@ bot.use((ctx, next) => {
       ctx.session.user = dbuser;
       return next();
     });
+  } else {
+    console.log("[User auth] strangers and bots are not allowed")
   }
 });
 

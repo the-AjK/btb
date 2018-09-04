@@ -16,11 +16,14 @@ const Scene = require('telegraf/scenes/base'),
     ACTIONS = bot.ACTIONS;
 
 const scene = new Scene('register')
-scene.enter((ctx) => ctx.reply("Please type a valid email", {
-    reply_markup: JSON.stringify({
-        remove_keyboard: true
-    })
-}));
+scene.enter((ctx) => {
+    console.log("[New user] " + JSON.stringify(ctx.from) + " message: '" + ctx.message.text + "'");
+    ctx.reply("Please type a valid email", {
+        reply_markup: JSON.stringify({
+            remove_keyboard: true
+        })
+    });
+});
 
 function textManager(ctx) {
     ctx.replyWithChatAction(ACTIONS.TEXT_MESSAGE);
@@ -46,6 +49,7 @@ function textManager(ctx) {
             ],
             text = "Confirm: *" + ctx.message.text + "*?";
 
+        console.log("[New user] email: " + ctx.message.text);
         ctx.reply(text, {
             parse_mode: "markdown",
             force_reply: true,
@@ -58,6 +62,7 @@ function textManager(ctx) {
         });
 
     } else {
+        console.log("[New user] wrong email: " + ctx.message.text);
         ctx.reply("This is not a valid email, just sayin...\nRegistration unsuccessfull.", keyboards.register(ctx).opts);
         ctx.scene.leave();
     }
@@ -72,6 +77,7 @@ scene.on("callback_query", ctx => {
     if (ctx.update.callback_query.data == 'confirm') {
         registerUser(ctx);
     } else {
+        console.log("[New user] email not confirmed");
         ctx.reply("Registration aborted. See ya!", keyboards.register(ctx).opts);
         ctx.scene.leave();
     }
