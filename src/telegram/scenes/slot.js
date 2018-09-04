@@ -513,6 +513,9 @@ function textManager(ctx) {
         keyboards.slot(ctx)[ctx.message.text]();
     } else if (ctx.message.text == keyboards.slot(ctx).cmd.back) {
         //back button
+        if (ctx.session.slot.isRunning) {
+            return ctx.reply("Running slot... please wait.");
+        }
         ctx.scene.enter('extra');
     } else {
         ctx.scene.leave();
