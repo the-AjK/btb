@@ -96,6 +96,7 @@ exports.leaveScene = leaveScene;
 // Scene manager
 const stage = new Stage()
 stage.register(mainScene);
+stage.register(require('./scenes/brewery').scene)
 stage.register(require('./scenes/trade').trade)
 stage.register(require('./scenes/bombs').bombs)
 stage.register(require('./scenes/order').scene)
