@@ -181,7 +181,7 @@ class HP {
             playersTextList += "\n" + i + " - " + bot.getUserLink(this.history[i].owner) + " (" + this.history[i].counter + " sec)";
         }
         playersTextList += "\n" + this.history.length + " - " + bot.getUserLink(this.owner) + " (" + this.counter + " sec)";
-        return "*Game stats:*\nBurning level reached: *" + this.damage + "*\nTotal players: *" + Object.keys(players).length + "*\nTotal bounces: *" + (this.history.length + 1) + "*\nBouncing time: *" + this.durationText() + "*\nBounces:" + playersTextList;
+        return "*Game stats:*\nBurning level reached: *" + this.damage + "*\nTotal players: *" + Object.keys(players).length + "*\nTotal bounces: *" + this.history.length + "*\nBouncing time: *" + this.durationText() + "*\nBounces:" + playersTextList;
     }
 
     clearMessages() {
