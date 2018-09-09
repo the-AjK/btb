@@ -32,7 +32,7 @@ moment.locale("en");
 
 // Set messages limit
 const limitConfig = {
-  window: 400,
+  window: 100,
   limit: 1,
   onLimitExceeded: (ctx, next) => {
     const text = "Hey bro, calm down... Too many requests!";
@@ -49,7 +49,7 @@ const botOptions = {
 };
 
 const bot = new Telegraf(process.env.BOT_TOKEN, botOptions);
-bot.use(rateLimit(limitConfig));
+//bot.use(rateLimit(limitConfig));
 
 const ACTIONS = {
   TEXT_MESSAGE: "typing",
