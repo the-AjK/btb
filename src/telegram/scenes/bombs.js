@@ -119,6 +119,8 @@ function dropBombs(ctx) {
                             console.error(err);
                             return leave(ctx);
                         }
+                        //update user session
+                        bot.session.setSessionParam(bombUser.telegram.id, "user.backpack.shields", bombUser.backpack.shields);
                         ctx.reply(bot.getUserLink(bombUser) + " used a bomb shield 🛡 !", {
                             parse_mode: "markdown"
                         });
