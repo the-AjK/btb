@@ -639,11 +639,14 @@ function mentionHandler(ctx) {
           counter = 0;
         if (mention.indexOf("ables") >= 0) {
           for (let i = 0; i < orders.length; i++) {
-            if (!orders[i].owner._id.equals(ctx.session.user._id)) {
-              ctx.telegram.sendMessage(orders[i].owner.telegram.id, message, {
+            let o = orders[i];
+            if (!o.owner._id.equals(ctx.session.user._id)) {
+              ctx.telegram.sendMessage(o.owner.telegram.id, message, {
                 parse_mode: "markdown"
               }).then(() => {
-                console.log("Mention tables sent to " + orders[i].owner.telegram.id + "-" + orders[i].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
+                console.log("Mention tables sent to " + o.owner.telegram.id + "-" + o.owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
+              }, err => {
+                console.error(err);
               });
               counter += 1;
             } else {
@@ -660,12 +663,15 @@ function mentionHandler(ctx) {
               userHasOrdered = true;
               const userTableName = orders[i].table.name;
               for (let j = 0; j < orders.length; j++) {
-                if (!orders[j].owner._id.equals(ctx.session.user._id) &&
-                  orders[j].table.name == userTableName) {
-                  ctx.telegram.sendMessage(orders[j].owner.telegram.id, message, {
+                let o = orders[j];
+                if (!o.owner._id.equals(ctx.session.user._id) &&
+                  o.table.name == userTableName) {
+                  ctx.telegram.sendMessage(o.owner.telegram.id, message, {
                     parse_mode: "markdown"
                   }).then(() => {
-                    console.log("Mention table sent to " + orders[j].owner.telegram.id + "-" + orders[j].owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
+                    console.log("Mention table sent to " + o.owner.telegram.id + "-" + o.owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
+                  }, err => {
+                    console.error(err);
                   });
                   counter += 1;
                 }
