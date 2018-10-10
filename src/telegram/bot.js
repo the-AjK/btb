@@ -638,20 +638,23 @@ function mentionHandler(ctx) {
           userHasOrdered = false,
           counter = 0;
         if (mention.indexOf("ables") >= 0) {
+          console.log("Broadcasting to all tables: '" + message + "'");
           for (let i = 0; i < orders.length; i++) {
             let o = orders[i];
-            if (!o.owner._id.equals(ctx.session.user._id)) {
-              ctx.telegram.sendMessage(o.owner.telegram.id, message, {
-                parse_mode: "markdown"
-              }).then(() => {
-                console.log("Mention tables sent to " + o.owner.telegram.id + "-" + o.owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
-              }, err => {
-                console.error(err);
-              });
-              counter += 1;
-            } else {
+            if (o.owner._id.equals(ctx.session.user._id)) {
               userHasOrdered = true;
+              continue;
             }
+            console.log("Sending tables mention to " + o.table.name + "-" + o.owner.telegram.id + "-" + o.owner.telegram.first_name);
+            ctx.telegram.sendMessage(o.owner.telegram.id, message, {
+              parse_mode: "markdown"
+            }).then(() => {
+              console.log("Tables mention sent to " + o.table.name + "-" + o.owner.telegram.id + "-" + o.owner.telegram.first_name);
+            }, err => {
+              console.error("Tables mention sendMessage error!")
+              console.error(err);
+            });
+            counter += 1;
           }
           if (counter == 0) {
             userMessage = "Seems like people are not hungry anymore!"
@@ -662,16 +665,19 @@ function mentionHandler(ctx) {
             if (orders[i].owner._id.equals(ctx.session.user._id)) {
               userHasOrdered = true;
               const userTableName = orders[i].table.name;
+              console.log("Broadcasting to '" + userTableName + "': '" + message + "'");
               for (let j = 0; j < orders.length; j++) {
                 let o = orders[j];
-                if (!o.owner._id.equals(ctx.session.user._id) &&
-                  o.table.name == userTableName) {
-                  console.log("Sending mention table to " + o.owner.telegram.id + "-" + o.owner.telegram.first_name);
+                if (o.owner._id.equals(ctx.session.user._id))
+                  continue;
+                if (o.table.name == userTableName) {
+                  console.log("Sending table mention to " + userTableName + "-" + o.owner.telegram.id + "-" + o.owner.telegram.first_name);
                   ctx.telegram.sendMessage(o.owner.telegram.id, message, {
                     parse_mode: "markdown"
                   }).then(() => {
-                    console.log("Mention table sent to " + o.owner.telegram.id + "-" + o.owner.telegram.first_name + " message: '" + message.substring(0, 50) + "...'");
+                    console.log("Table mention sent to " + "-" + userTableName + o.owner.telegram.id + "-" + o.owner.telegram.first_name);
                   }, err => {
+                    console.error("Table mention sendMessage error!")
                     console.error(err);
                   });
                   counter += 1;
