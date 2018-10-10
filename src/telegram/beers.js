@@ -194,7 +194,7 @@ function addBeer(ctx, type) {
             saveLockedBeerEvent(ctx);
             return release();
         } else {
-            if (lastUserBeer && lastUserBeer.email == ctx.session.user.email && levels.getLevel(ctx.session.user.points) > 0) {
+            if (lastUserBeer && lastUserBeer.email == ctx.session.user.email) { // && levels.getLevel(ctx.session.user.points) > 0) {
                 drunkBot = true;
             }
             //set the addBeer flag
