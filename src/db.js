@@ -17,6 +17,8 @@ exports.init = function (cb) {
   console.log("DB connecting to " + process.env.MONGODB_URI.split('@')[1] + "...");
   mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
+    useFindAndModify: false, //https://mongoosejs.com/docs/deprecations.html
+    useCreateIndex: true,
     reconnectTries: Number.MAX_VALUE,
   });
   db.on("error", console.error.bind(console, "connection error:"));
