@@ -144,7 +144,7 @@ function checkDoubleBeer(ctx, type) {
     if (type == "double") {
         levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
             ctx.scene.enter('extra');
-            bot.broadcastMessage("Double locked beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
+            //bot.broadcastMessage("Double locked beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
         });
     } else {
         ctx.scene.enter('extra');
