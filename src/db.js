@@ -572,7 +572,7 @@ function getDailyMenu(day, cb) {
     };
   Menu.findOne(query).populate('tables').populate({
     path: 'owner',
-    select: 'username email _id'
+    select: 'username email _id telegram'
   }).exec(cb);
 }
 exports.getDailyMenu = getDailyMenu;

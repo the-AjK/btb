@@ -792,7 +792,8 @@ function formatWiki() {
 
 function formatMenu(menu) {
   let text =
-    "\n__Daily menu__: *" + moment(menu.day).format("MMMM Do YYYY") + "*";
+    "\n__Daily menu__: *" + moment(menu.day).format("MMMM Do YYYY") + "*\
+    \n(_brought to you by_ " + getUserLink(menu.owner) + ")";
   if (menu.firstCourse && menu.firstCourse.items && menu.firstCourse.items.length) {
     text += "\n\n__First courses__:";
     menu.firstCourse.items.map((fc) => {
@@ -821,7 +822,7 @@ function formatMenu(menu) {
     text = text + "\n\nThe deadline was at *" + moment(menu.deadline).format("HH:mm") + "*.\nNo more orders will be accepted.";
   } else {
     text = text + "\n\nHurry up, the deadline is at *" + moment(menu.deadline).format("HH:mm") + "*" +
-      "\n\n(🍻 Beers are sold separately 😬)";
+      "\n\n(🍻 _Beers are sold separately_ 😬)";
   }
 
   return text;
