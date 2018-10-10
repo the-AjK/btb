@@ -144,7 +144,7 @@ function checkDoubleBeer(ctx, type) {
     if (type == "double") {
         levels.removePoints(ctx.session.user._id, 1, false, (err, points) => {
             ctx.scene.enter('extra');
-            bot.broadcastMessage("Double locked beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
+            //bot.broadcastMessage("Double locked beer from: *" + ctx.session.user.email + "* (" + points + ")", accessLevels.root, null, true);
         });
     } else {
         ctx.scene.enter('extra');
@@ -194,7 +194,7 @@ function addBeer(ctx, type) {
             saveLockedBeerEvent(ctx);
             return release();
         } else {
-            if (lastUserBeer && lastUserBeer.email == ctx.session.user.email && levels.getLevel(ctx.session.user.points) > 0) {
+            if (lastUserBeer && lastUserBeer.email == ctx.session.user.email) { // && levels.getLevel(ctx.session.user.points) > 0) {
                 drunkBot = true;
             }
             //set the addBeer flag

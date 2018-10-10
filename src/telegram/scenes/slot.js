@@ -823,6 +823,8 @@ scene.on("callback_query", ctx => {
                     ctx.reply(bot.getUserLink(bombUser) + " used a bomb shield 🛡 !", {
                         parse_mode: "markdown"
                     });
+                    //update user session
+                    bot.session.setSessionParam(bombUser.telegram.id, "user.backpack.shields", bombUser.backpack.shields);
                     const points = ctx.session.slot.bombPoints();
                     levels.removePoints(ctx.session.user._id, points, false, (err, _points) => {
                         if (err) {
@@ -910,6 +912,8 @@ scene.on("callback_query", ctx => {
                     ctx.reply(bot.getUserLink(robbedUser) + " used a watergun 🔫 !", {
                         parse_mode: "markdown"
                     });
+                    //update user session
+                    bot.session.setSessionParam(robbedUser.telegram.id, "user.backpack.guns", bombUser.backpack.guns);
                     const beercoins = ctx.session.slot.robPoints();
                     levels.removePoints(ctx.session.user._id, beercoins, false, (err, _points) => {
                         if (err) {
