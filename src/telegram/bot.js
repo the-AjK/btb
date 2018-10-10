@@ -666,6 +666,7 @@ function mentionHandler(ctx) {
                 let o = orders[j];
                 if (!o.owner._id.equals(ctx.session.user._id) &&
                   o.table.name == userTableName) {
+                  console.log("Sending mention table to " + o.owner.telegram.id + "-" + o.owner.telegram.first_name);
                   ctx.telegram.sendMessage(o.owner.telegram.id, message, {
                     parse_mode: "markdown"
                   }).then(() => {
