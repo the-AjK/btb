@@ -913,7 +913,7 @@ scene.on("callback_query", ctx => {
                         parse_mode: "markdown"
                     });
                     //update user session
-                    bot.session.setSessionParam(robbedUser.telegram.id, "user.backpack.guns", bombUser.backpack.guns);
+                    bot.session.setSessionParam(robbedUser.telegram.id, "user.backpack.guns", robbedUser.backpack.guns);
                     const beercoins = ctx.session.slot.robPoints();
                     levels.removePoints(ctx.session.user._id, beercoins, false, (err, _points) => {
                         if (err) {
