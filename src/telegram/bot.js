@@ -200,7 +200,15 @@ bot.use((ctx, next) => {
 
 //Utility function to get the markdown user link
 function getUserLink(u) {
-  return "[" + (u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "")) + "](tg://user?id=" + u.telegram.id + ")";
+  if (!u) {
+    return "Guest";
+  } else if (u.telegram) {
+    return "[" + (u.telegram.first_name + (u.telegram.last_name ? (" " + u.telegram.last_name) : "")) + "](tg://user?id=" + u.telegram.id + ")";
+  } else if (u.email) {
+    return u.email;
+  } else {
+    return "Mistery man";
+  }
 }
 exports.getUserLink = getUserLink;
 

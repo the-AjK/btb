@@ -451,7 +451,7 @@ function _addMenu(req, res) {
         data.owner = req.user._id;
     }
     if (!data.owner) {
-        data.owner = req.user._id;
+        data.owner = req.user;
     }
 
     data.createdAt = moment().format();
