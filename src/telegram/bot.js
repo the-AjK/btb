@@ -70,12 +70,12 @@ bot.catch(err => {
 //Main bot scene
 const mainScene = new Scene('main');
 mainScene.enter((ctx) => {
-  //console.log("enter main")
+  console.log("enter main")
   textManager(ctx);
 });
-/*mainScene.leave((ctx) => {
+mainScene.leave((ctx) => {
   console.log("exit main")
-});*/
+});
 
 //Utility function to enter a scene with the backTo sceneID
 function enterScene(ctx, sceneID, silent) {
