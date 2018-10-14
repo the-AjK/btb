@@ -125,7 +125,6 @@ bot.use((ctx, next) => {
   ctx.session.counter = ctx.session.counter || 0;
   ctx.session.counter++;
 
-  console.log(ctx.session.user)
   if (ctx.session && ctx.session.user) {
     //there is a user session, lets skip the auth procedure
     return next();
@@ -143,7 +142,7 @@ bot.use((ctx, next) => {
         ctx.reply("500 - Internal server error :/");
         return;
       } else if (!dbuser) {
-        //console.log("user not found: " + newUser.id);
+        console.log("user not found: " + newUser.id);
         if (ctx.message && ctx.message.text && ctx.message.text.toLowerCase().indexOf('register') == 0) {
           if (ctx.session.user) {
             ctx.reply("You are already registered!");
@@ -158,6 +157,7 @@ bot.use((ctx, next) => {
           console.log("[Unregistered user] " + JSON.stringify(ctx.from) + " message: '" + ctx.message.text + "'");
           console.log(keyboards.register(ctx).text);
           console.log(keyboards.register(ctx).opts);
+          console.log(newUser)
           return ctx.reply(keyboards.register(ctx).text, keyboards.register(ctx).opts).then(() => {
             console.log("sent")
           }, err => {
