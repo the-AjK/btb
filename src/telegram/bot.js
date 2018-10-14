@@ -122,7 +122,6 @@ bot.use(stage.middleware());
 // Authorization middleware
 bot.use((ctx, next) => {
 
-  console.log(ctx)
   if (ctx.session && ctx.session.user) {
     ctx.session.counter = ctx.session.counter || 0;
     ctx.session.counter++;
@@ -130,8 +129,11 @@ bot.use((ctx, next) => {
     return next();
   }
 
-  ctx.reply("I dont't know you...");
-  console.log(ctx)
+  ctx.reply("Do I know you?").then(() => {
+
+  }, err => {
+    console.error(err);
+  });
 
   //Unknow user, let's authenticate the request
   const newUser = ctx.from;
@@ -142,29 +144,37 @@ bot.use((ctx, next) => {
     }, (err, dbuser) => {
       if (err) {
         console.error(err);
-        ctx.reply("500 - Internal server error :/");
-        return;
+        return ctx.reply("500 - Internal server error :/").then(() => {
+
+        }, err => {
+          console.error(err);
+        });
       } else if (!dbuser) {
         console.log("user not found: " + newUser.id);
         if (ctx.message && ctx.message.text && ctx.message.text.toLowerCase().indexOf('register') == 0) {
           if (ctx.session.user) {
-            ctx.reply("You are already registered!");
+            ctx.reply("You are already registered!").then(() => {
+
+            }, err => {
+              console.error(err);
+            });
           } else {
             ctx.scene.enter('register');
           }
           return;
         } else if (ctx.message && ctx.message.text && ctx.message.text.toLowerCase().indexOf('/start') == 0) {
-          return ctx.reply("Hey! my name is *BiteTheBot*!\nI do things.\nType \"register\" to register yourself.", keyboards.register(ctx).opts);
+          return ctx.reply("Hey! my name is *BiteTheBot*!\nI do things.\nType \"register\" to register yourself.", keyboards.register(ctx).opts).then(() => {
+
+          }, err => {
+            console.error(err);
+          });
         } else {
           //for other messages lets discard the request
           console.log("[Unregistered user] " + JSON.stringify(ctx.from) + " message: '" + ctx.message.text + "'");
-          console.log(ctx)
-          
           return ctx.reply(keyboards.register(ctx).text, keyboards.register(ctx).opts).then(() => {
-            console.log("sent")
+
           }, err => {
             console.error(err);
-            console.log("failed")
           });
         }
       }
@@ -173,8 +183,11 @@ bot.use((ctx, next) => {
         return;
       }
       if (!dbuser.telegram.enabled) {
-        ctx.reply("The admin should enable your account soon. Please wait.");
-        return;
+        return ctx.reply("The admin should enable your account soon. Please wait.").then(() => {
+
+        }, err => {
+          console.error(err);
+        });
       }
       //Registered and enabled User found!
       //Sync telegram profile info
