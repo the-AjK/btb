@@ -156,8 +156,12 @@ bot.use((ctx, next) => {
         } else {
           //for other messages lets discard the request
           console.log("[Unregistered user] " + JSON.stringify(ctx.from) + " message: '" + ctx.message.text + "'");
-          ctx.reply(keyboards.register(ctx).text, keyboards.register(ctx).opts);
-          return;
+          return ctx.reply(keyboards.register(ctx).text, keyboards.register(ctx).opts).then(() => {
+            console.log("sent")
+          }, err => {
+            console.error(err);
+            console.log("failed")
+          });
         }
       }
       if (dbuser.telegram.banned) {
