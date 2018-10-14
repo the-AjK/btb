@@ -122,14 +122,15 @@ bot.use(stage.middleware());
 // Authorization middleware
 bot.use((ctx, next) => {
 
-  ctx.session.counter = ctx.session.counter || 0;
-  ctx.session.counter++;
-
-  console.log(ctx.session)
+  console.log(ctx)
   if (ctx.session && ctx.session.user) {
+    ctx.session.counter = ctx.session.counter || 0;
+    ctx.session.counter++;
     //there is a user session, lets skip the auth procedure
     return next();
   }
+
+  ctx.reply("I dont't know you...");
 
   //Unknow user, let's authenticate the request
   const newUser = ctx.from;
