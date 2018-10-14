@@ -129,6 +129,12 @@ bot.use((ctx, next) => {
     return next();
   }
 
+  ctx.reply("Ehm, do I know you?").then(() => {
+    //message has been sent
+  }, err => {
+    console.error(err);
+  });
+
   //Unknow user, let's authenticate the request
   const newUser = ctx.from;
   if (newUser && !newUser.is_bot) {
@@ -147,7 +153,7 @@ bot.use((ctx, next) => {
         console.log("user not found: " + newUser.id);
         if (ctx.message && ctx.message.text && ctx.message.text.toLowerCase().indexOf('register') == 0) {
           if (ctx.session.user) {
-            ctx.reply("You are already registered!").then(() => {
+            ctx.reply("Come on! You are already registered!").then(() => {
 
             }, err => {
               console.error(err);
