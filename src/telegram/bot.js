@@ -129,12 +129,6 @@ bot.use((ctx, next) => {
     return next();
   }
 
-  ctx.reply("Do I know you?").then(() => {
-
-  }, err => {
-    console.error(err);
-  });
-
   //Unknow user, let's authenticate the request
   const newUser = ctx.from;
   if (newUser && !newUser.is_bot) {
