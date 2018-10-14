@@ -155,7 +155,15 @@ bot.use((ctx, next) => {
         } else {
           //for other messages lets discard the request
           console.log("[Unregistered user] " + JSON.stringify(ctx.from) + " message: '" + ctx.message.text + "'");
-          ctx.reply("ciao");
+          try{
+            ctx.reply("ciao");
+          }catch(e){
+            console.error(e);
+            console.log("exce")
+          }
+          console.log("after ex")
+          ctx.reply("2ciao");
+         
           return ctx.reply(keyboards.register(ctx).text, keyboards.register(ctx).opts).then(() => {
             console.log("sent")
           }, err => {
