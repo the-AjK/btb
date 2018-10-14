@@ -157,7 +157,8 @@ bot.use((ctx, next) => {
           //for other messages lets discard the request
           console.log("[Unregistered user] " + JSON.stringify(ctx.from) + " message: '" + ctx.message.text + "'");
           try{
-            ctx.reply("ciao");
+            //ctx.reply("ciao");
+            ctx.telegram.sendMessage(ctx.chat_id, "hello");
           }catch(e){
             console.error(e);
             console.log("exce")
