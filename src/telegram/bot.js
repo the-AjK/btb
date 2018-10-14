@@ -70,12 +70,12 @@ bot.catch(err => {
 //Main bot scene
 const mainScene = new Scene('main');
 mainScene.enter((ctx) => {
-  console.log("enter main")
+  //console.log("enter main")
   textManager(ctx);
 });
-mainScene.leave((ctx) => {
+/*mainScene.leave((ctx) => {
   console.log("exit main")
-});
+});*/
 
 //Utility function to enter a scene with the backTo sceneID
 function enterScene(ctx, sceneID, silent) {
@@ -150,7 +150,7 @@ bot.use((ctx, next) => {
           console.error(err);
         });
       } else if (!dbuser) {
-        console.log("user not found: " + newUser.id);
+        //console.log("user not found: " + newUser.id);
         if (ctx.message && ctx.message.text && ctx.message.text.toLowerCase().indexOf('register') == 0) {
           if (ctx.session.user) {
             ctx.reply("Come on! You are already registered!").then(() => {
