@@ -131,6 +131,7 @@ bot.use((ctx, next) => {
   }
 
   ctx.reply("I dont't know you...");
+  console.log(ctx)
 
   //Unknow user, let's authenticate the request
   const newUser = ctx.from;
@@ -157,16 +158,8 @@ bot.use((ctx, next) => {
         } else {
           //for other messages lets discard the request
           console.log("[Unregistered user] " + JSON.stringify(ctx.from) + " message: '" + ctx.message.text + "'");
-          try{
-            //ctx.reply("ciao");
-            ctx.telegram.sendMessage(ctx.chat_id, "hello");
-          }catch(e){
-            console.error(e);
-            console.log("exce")
-          }
-          console.log("after ex")
-          ctx.reply("2ciao");
-         
+          console.log(ctx)
+          
           return ctx.reply(keyboards.register(ctx).text, keyboards.register(ctx).opts).then(() => {
             console.log("sent")
           }, err => {
