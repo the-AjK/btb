@@ -125,6 +125,7 @@ bot.use((ctx, next) => {
   ctx.session.counter = ctx.session.counter || 0;
   ctx.session.counter++;
 
+  console.log(ctx.session)
   if (ctx.session && ctx.session.user) {
     //there is a user session, lets skip the auth procedure
     return next();
