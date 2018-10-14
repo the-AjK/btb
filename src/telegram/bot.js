@@ -15,18 +15,18 @@ const Telegraf = require("telegraf"),
   request = require('request'),
   moment = require("moment"),
   async = require("async"),
-  bender = require("./bender"),
-  keyboards = require('./keyboards'),
-  DB = require("../db"),
-  utils = require("../utils"),
-  levels = require("../levels"),
-  roles = require("../roles"),
-  userRoles = roles.userRoles,
-  accessLevels = roles.accessLevels,
-  Wit = require('node-wit').Wit,
-  client = new Wit({
-    accessToken: process.env.WIT_TOKEN
-  });
+    bender = require("./bender"),
+    keyboards = require('./keyboards'),
+    DB = require("../db"),
+    utils = require("../utils"),
+    levels = require("../levels"),
+    roles = require("../roles"),
+    userRoles = roles.userRoles,
+    accessLevels = roles.accessLevels,
+    Wit = require('node-wit').Wit,
+    client = new Wit({
+      accessToken: process.env.WIT_TOKEN
+    });
 
 moment.locale("en");
 
@@ -125,6 +125,7 @@ bot.use((ctx, next) => {
   ctx.session.counter = ctx.session.counter || 0;
   ctx.session.counter++;
 
+  console.log(ctx.session.user)
   if (ctx.session && ctx.session.user) {
     //there is a user session, lets skip the auth procedure
     return next();
@@ -1085,6 +1086,9 @@ function broadcastMessage(message, accessLevel, opts, silent, additionalQuery, n
         bot.telegram.sendMessage(user.telegram.id, _message, _options).then(() => {
           if (!noLogs)
             console.log("Message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
+        }, err => {
+          console.error(err);
+          console.log("Sending message failed to: " + user.telegram.id + "-" + user.telegram.first_name);
         });
       }
     }
