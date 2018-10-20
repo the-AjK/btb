@@ -14,19 +14,20 @@ const Telegraf = require("telegraf"),
   googleTTS = require('google-tts-api'),
   request = require('request'),
   moment = require("moment"),
-  async = require("async"),
-    bender = require("./bender"),
-    keyboards = require('./keyboards'),
-    DB = require("../db"),
-    utils = require("../utils"),
-    levels = require("../levels"),
-    roles = require("../roles"),
-    userRoles = roles.userRoles,
-    accessLevels = roles.accessLevels,
-    Wit = require('node-wit').Wit,
-    client = new Wit({
-      accessToken: process.env.WIT_TOKEN
-    });
+  waterfall = require("async/waterfall"),
+  queue = require("async/queue"),
+  bender = require("./bender"),
+  keyboards = require('./keyboards'),
+  DB = require("../db"),
+  utils = require("../utils"),
+  levels = require("../levels"),
+  roles = require("../roles"),
+  userRoles = roles.userRoles,
+  accessLevels = roles.accessLevels,
+  Wit = require('node-wit').Wit,
+  client = new Wit({
+    accessToken: process.env.WIT_TOKEN
+  });
 
 moment.locale("en");
 
@@ -271,7 +272,7 @@ function sequentialReplies(ctx, interval, messages, opts, callback) {
       }
     }(messages[i]));
   }
-  async.waterfall(funList, (err, result) => {
+  waterfall(funList, (err, result) => {
     if (err) {
       console.error(err);
     }
@@ -665,8 +666,8 @@ function mentionHandler(ctx) {
       } else {
         let message = getUserLink(ctx.session.user) + ": " + ctx.message.text,
           userMessage = "Broadcast service",
-          userHasOrdered = false,
-          counter = 0;
+          messagesToSend = [],
+          userHasOrdered = false;
         if (mention.indexOf("ables") >= 0) {
           console.log("Broadcasting to all tables: '" + message + "'");
           for (let i = 0; i < orders.length; i++) {
@@ -676,17 +677,15 @@ function mentionHandler(ctx) {
               continue;
             }
             console.log("Sending tables mention to " + o.table.name + "-" + o.owner.telegram.id + "-" + o.owner.telegram.first_name);
-            ctx.telegram.sendMessage(o.owner.telegram.id, message, {
-              parse_mode: "markdown"
-            }).then(() => {
-              console.log("Tables mention sent to " + o.table.name + "-" + o.owner.telegram.id + "-" + o.owner.telegram.first_name);
-            }, err => {
-              console.error("Tables mention sendMessage error!")
-              console.error(err);
+            messagesToSend.push({
+              id: o.owner.telegram.id,
+              text: message,
+              options: {
+                parse_mode: "markdown"
+              }
             });
-            counter += 1;
           }
-          if (counter == 0) {
+          if (messagesToSend.length == 0) {
             userMessage = "Seems like people are not hungry anymore!"
           }
         } else if (mention.indexOf("able") >= 0) {
@@ -702,15 +701,13 @@ function mentionHandler(ctx) {
                   continue;
                 if (o.table.name == userTableName) {
                   console.log("Sending table mention to " + userTableName + "-" + o.owner.telegram.id + "-" + o.owner.telegram.first_name);
-                  ctx.telegram.sendMessage(o.owner.telegram.id, message, {
-                    parse_mode: "markdown"
-                  }).then(() => {
-                    console.log("Table mention sent to " + "-" + userTableName + o.owner.telegram.id + "-" + o.owner.telegram.first_name);
-                  }, err => {
-                    console.error("Table mention sendMessage error!")
-                    console.error(err);
+                  messagesToSend.push({
+                    id: o.owner.telegram.id,
+                    text: message,
+                    options: {
+                      parse_mode: "markdown"
+                    }
                   });
-                  counter += 1;
                 }
               }
               break;
@@ -718,12 +715,20 @@ function mentionHandler(ctx) {
           }
           if (!userHasOrdered) {
             userMessage = "You should place an order and choose your table!"
-          } else if (counter == 0) {
+          } else if (messagesToSend.length == 0) {
             userMessage = "Ehm, you are the only one in your table...\nForever alone? 🐒"
+          } else {
+            messageQueue.push(messagesToSend, err => {
+              if (err) {
+                console.error(err);
+              } else {
+                console.log("Table broadcast completed!")
+              }
+            });
           }
         }
-        if (counter > 0) {
-          userMessage = "Message broadcasted to " + counter + " users."
+        if (messagesToSend.length > 0) {
+          userMessage = "Message broadcasted to " + messagesToSend.length + " users."
         }
         ctx.reply(userMessage, keyboards.btb(ctx).opts);
       }
@@ -1045,6 +1050,24 @@ function _getDailyMenu(cb) {
   });
 }
 
+const messageQueue = queue(function (message, cb) {
+  bot.telegram.sendMessage(message.id, message.text, message.options).then(() => {
+    cb();
+  }, err => {
+    cb(err);
+  });
+}, 1);
+
+function sendMessages(userIDs, message, opts) {
+  for (let i = 0; i < userIDs.length; i++) {
+    messageQueue.push({
+      id: userIDs[i],
+      text: message,
+      options: opts
+    });
+  }
+}
+
 function broadcastMessage(message, accessLevel, opts, silent, additionalQuery, noLogs) {
   let _options = opts || {
     parse_mode: "markdown"
@@ -1104,12 +1127,18 @@ function broadcastMessage(message, accessLevel, opts, silent, additionalQuery, n
         }
         if (!noLogs)
           console.log(logText);
-        bot.telegram.sendMessage(user.telegram.id, _message, _options).then(() => {
-          if (!noLogs)
-            console.log("Message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
+        messageQueue.push({
+          id: user.telegram.id,
+          text: _message,
+          options: _options
         }, err => {
-          console.error(err);
-          console.log("Sending message failed to: " + user.telegram.id + "-" + user.telegram.first_name);
+          if (err) {
+            console.error(err);
+            console.log("Sending message failed to: " + user.telegram.id + "-" + user.telegram.first_name);
+          } else {
+            if (!noLogs)
+              console.log("Message sent to: " + user.telegram.id + "-" + user.telegram.first_name);
+          }
         });
       }
     }
