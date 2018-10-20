@@ -451,7 +451,7 @@ function _addMenu(req, res) {
         data.owner = req.user._id;
     }
     if (!data.owner) {
-        data.owner = req.user;
+        data.owner = req.user._id;
     }
 
     data.createdAt = moment().format();
@@ -488,6 +488,7 @@ function _addMenu(req, res) {
                     }
                     if (data.sendNotification && menu.enabled) {
                         if (moment(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
+                            menu.owner = req.user;
                             notifyDailyMenu(menu);
                             //Add 1 point
                             /*levels.addPoints(req.user._id, 1, false, (err, points) => {
@@ -694,7 +695,8 @@ function _updateMenu(req, res) {
                                 if (data.sendNotification) {
                                     if (moment.utc(menu.day).isSame(moment(), 'day') && moment().isBefore(moment(menu.deadline))) {
                                         if (!oldMenu.enabled && menu.enabled) {
-                                            console.log("Daily menu has been enabled!")
+                                            console.log("Daily menu has been enabled!");
+                                            menu.owner = req.user;
                                             notifyDailyMenu(menu);
                                             release();
                                         } else if (menu.enabled) {
