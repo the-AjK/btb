@@ -18,7 +18,9 @@ const moment = require('moment'),
     ACTIONS = bot.ACTIONS;
 
 const scene = new Scene('orderRating'),
-    ratingDeadline = "14:00";
+    ratingDeadline = (order) => {
+        return moment(order.menu.deadline).add(2, 'hours');
+    };
 
 exports.ratingDeadline = ratingDeadline;
 
@@ -31,7 +33,7 @@ scene.enter((ctx) => {
             ctx.reply("You didn't placed any order yet! c'mon...");
         } else if (order.rating) {
             ctx.reply("You already rate your order!");
-        } else if (moment().isBefore(moment(ratingDeadline, "HH:mm"))) {
+        } else if (moment().isBefore(ratingDeadline(order))) {
             ctx.reply("You can't rate your order yet! Please wait");
         } else {
             //Default start rating
@@ -96,7 +98,7 @@ function setOrderRating(ctx) {
             ctx.reply("You didn't placed any order yet! c'mon...");
         } else if (order.rating) {
             ctx.reply("You already rate your order!");
-        } else if (moment().isBefore(moment(ratingDeadline, "HH:mm"))) {
+        } else if (moment().isBefore(ratingDeadline(order))) {
             ctx.reply("You can't rate your order yet! Please wait")
         } else {
             DB.Order.findByIdAndUpdate(order._id, {
